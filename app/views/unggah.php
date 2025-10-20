@@ -8,7 +8,7 @@
 
   <div class="flex flex-row flex-wrap justify-center gap-6 sm:gap-8 mt-2">
     <!-- Kartu 1: Skripsi -->
-    <a href="<?= url('submission/new') ?>" class="block">
+    <a href="<?= url('submission/skripsi') ?>" class="block">
       <div class="bg-green-500 text-white rounded-xl shadow-md w-64 sm:w-60 h-auto p-6 flex flex-col items-center hover:bg-green-600 transition">
         <div class="text-4xl mb-3">📄</div>
         <h3 class="text-base sm:text-lg font-bold">Unggah Skripsi</h3>
@@ -17,7 +17,7 @@
     </a>
 
     <!-- Kartu 2: Tesis -->
-    <a href="<?= url('submission/new') ?>" class="block">
+    <a href="<?= url('submission/tesis') ?>" class="block">
       <div class="bg-sky-500 text-white rounded-xl shadow-md w-64 sm:w-60 h-auto p-6 flex flex-col items-center hover:bg-sky-600 transition">
         <div class="text-4xl mb-3">📄</div>
         <h3 class="text-base sm:text-lg font-bold">Unggah Tesis</h3>
@@ -26,7 +26,7 @@
     </a>
 
     <!-- Kartu 3: Jurnal -->
-    <a href="<?= url('submission/new') ?>" class="block">
+    <a href="<?= url('submission/skripsi') ?>" class="block">
       <div class="bg-orange-500 text-white rounded-xl shadow-md w-64 sm:w-60 h-auto p-6 flex flex-col items-center hover:bg-orange-600 transition">
         <div class="text-4xl mb-3">📄</div>
         <h3 class="text-base sm:text-lg font-bold">Unggah Jurnal</h3>

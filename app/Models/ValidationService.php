@@ -16,7 +16,12 @@ class ValidationService
             'pdf' => 'application/pdf',
             'doc' => ['application/msword', 'application/CDFV2'],
             'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'txt' => 'text/plain'
+            'txt' => 'text/plain',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'bmp' => 'image/bmp'
         ]
     ];
 
@@ -141,12 +146,85 @@ class ValidationService
      */
     public function validateSubmissionFiles(array $files): bool
     {
-        // Define required file fields
+        // Define required file fields for bachelor's degree
         $requiredFiles = [
             'file_cover' => 'Cover Skripsi',
             'file_bab1' => 'Bab I - Daftar Pustaka',
             'file_bab2' => 'Bab II - Bab Terakhir',
             'file_doc' => 'Dokumen Skripsi (.doc/.docx)'
+        ];
+        
+        // Check each required file
+        foreach ($requiredFiles as $field => $fieldName) {
+            // Check if file field exists in $_FILES
+            if (!isset($files[$field])) {
+                $this->addError($field, "The {$fieldName} file is required for submission.");
+                continue;
+            }
+            
+            // Check if file was uploaded without errors
+            if (!isset($files[$field]['error']) || $files[$field]['error'] !== UPLOAD_ERR_OK) {
+                $this->addError($field, "The {$fieldName} file is required for submission.");
+                continue;
+            }
+            
+            // Check if file has a valid name
+            if (empty($files[$field]['name'])) {
+                $this->addError($field, "The {$fieldName} file is required for submission.");
+                continue;
+            }
+        }
+        
+        // If we have errors at this point, return false
+        if (!empty($this->errors)) {
+            return false;
+        }
+        
+        // Validate each file for size and type
+        $rules = [
+            'maxSize:' . $this->config['max_file_size'],
+            'mimes:pdf,doc,docx,txt'
+        ];
+        
+        foreach ($requiredFiles as $field => $fieldName) {
+            // Skip validation if file doesn't exist (already checked above)
+            if (!isset($files[$field]) || $files[$field]['error'] !== UPLOAD_ERR_OK) {
+                continue;
+            }
+            
+            // Validate file size and type
+            $fileData = [
+                'name' => [$files[$field]['name']],
+                'size' => [$files[$field]['size']],
+                'error' => [$files[$field]['error']]
+            ];
+            
+            foreach ($rules as $rule) {
+                $ruleParts = explode(':', $rule);
+                $ruleName = $ruleParts[0];
+                $ruleValue = $ruleParts[1] ?? null;
+                $this->applyFileRule($field, $ruleName, $ruleValue, 0, $fileData);
+            }
+        }
+        
+        return empty($this->errors);
+    }
+
+    /**
+     * Validate master's degree thesis submission files
+     * @param array $files File data from $_FILES
+     * @return bool True if validation passes
+     * @throws FileUploadException
+     */
+    public function validateMasterSubmissionFiles(array $files): bool
+    {
+        // Define required file fields for master's degree thesis
+        // Based on the form in unggah_tesis.php, we need 4 files:
+        $requiredFiles = [
+            'file_cover' => 'Cover Tesis (.pdf)',
+            'file_bab1' => 'Cover s/d Bab I & Daftar Pustaka Tesis (.pdf)',
+            'file_bab2' => 'Bab II s/d Bab Terakhir Tesis (.pdf)',
+            'file_doc' => 'Cover s/d Daftar Pustaka Tesis (.doc/.docx)'
         ];
         
         // Check each required file

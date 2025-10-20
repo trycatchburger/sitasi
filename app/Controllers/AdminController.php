@@ -148,10 +148,10 @@ class AdminController extends Controller {
                 $submissionModel = new Submission();
                 $adminId = $_SESSION['admin_id'];
                 
-                // Update status in database
-                // Update serial number in database
+                // Update serial number in database first
                 $submissionModel->updateSerialNumber($submissionId, $serialNumber);
                 
+                // Update status in database
                 $result = $submissionModel->updateStatus($submissionId, $status, $reason, $adminId);
                 
                 // Clear cache after updating status
@@ -161,10 +161,17 @@ class AdminController extends Controller {
                     // Send email notification
                     $submission = $submissionModel->getSubmissionWithEmail($submissionId);
                     if ($submission) {
-                        $emailService = new \App\Models\EmailService();
-                        $emailService->sendStatusUpdateNotification($submission);
-                        // Set success message
-                        $message = 'Status updated and email sent successfully to ' . $submission['nama_mahasiswa'] . '.';
+                        try {
+                            $emailService = new \App\Models\EmailService();
+                            $emailService->sendStatusUpdateNotification($submission);
+                            // Set success message
+                            $message = 'Status updated and email sent successfully to ' . $submission['nama_mahasiswa'] . '.';
+                        } catch (\Exception $e) {
+                            // If email sending fails, still consider the status update successful
+                            // Log the error but don't fail the entire operation
+                            error_log("Email notification failed: " . $e->getMessage());
+                            $message = 'Status updated successfully, but email notification failed.';
+                        }
                     } else {
                         $message = 'Status updated successfully.';
                     }
@@ -181,7 +188,19 @@ class AdminController extends Controller {
                         exit;
                     }
                 } else {
-                    throw new DatabaseException("Failed to update submission status.");
+                    // Create a more descriptive error message
+                    $error_message = "Failed to update submission status.";
+                    // Return JSON error for AJAX requests
+                    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => $error_message]);
+                        exit;
+                    } else {
+                        // Regular form submission
+                        $_SESSION['error_message'] = $error_message;
+                        header('Location: ' . url('admin/dashboard'));
+                        exit;
+                    }
                 }
             } else {
                 // Redirect back for non-POST requests
@@ -189,17 +208,41 @@ class AdminController extends Controller {
                 exit;
             }
         } catch (ValidationException $e) {
-            $_SESSION['error_message'] = $e->getMessage();
-            header('Location: ' . url('admin/dashboard'));
-            exit;
+            $error_message = $e->getMessage();
+            // Return JSON error for AJAX requests
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $error_message]);
+                exit;
+            } else {
+                $_SESSION['error_message'] = $error_message;
+                header('Location: ' . url('admin/dashboard'));
+                exit;
+            }
         } catch (DatabaseException $e) {
-            $_SESSION['error_message'] = "Database error occurred while updating status.";
-            header('Location: ' . url('admin/dashboard'));
-            exit;
+            $error_message = "Database error occurred while updating status.";
+            // Return JSON error for AJAX requests
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $error_message]);
+                exit;
+            } else {
+                $_SESSION['error_message'] = $error_message;
+                header('Location: ' . url('admin/dashboard'));
+                exit;
+            }
         } catch (Exception $e) {
-            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
-            header('Location: ' . url('admin/dashboard'));
-            exit;
+            $error_message = "An error occurred: " . $e->getMessage();
+            // Return JSON error for AJAX requests
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $error_message]);
+                exit;
+            } else {
+                $_SESSION['error_message'] = $error_message;
+                header('Location: ' . url('admin/dashboard'));
+                exit;
+            }
         }
     }
     

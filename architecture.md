@@ -66,7 +66,7 @@ Views are PHP files that generate the HTML interface:
 
 - **Main layout**: `main.php` provides the overall page structure
 - **Home page**: `home.php` is the main landing page
-- **Forms**: `new.php` for student submissions, `login.php` for admin authentication
+- **Forms**: `unggah_skripsi.php` for student submissions, `login.php` for admin authentication
 - **Dashboards**: `dashboard.php` for admin submission management
 - **Special pages**: `success.php` for submission confirmation, `404.php` for errors
 

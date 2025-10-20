@@ -9,7 +9,11 @@ try {
     $conn = $db->getConnection();
     
     // Read the SQL file
-    $sql = file_get_contents(__DIR__ . '/add_serial_number_column.sql');
+    if ($argc < 2) {
+        throw new Exception("Please provide the SQL file name as an argument.");
+    }
+    $sqlFile = $argv[1];
+    $sql = file_get_contents(__DIR__ . '/' . $sqlFile);
     
     // Execute the SQL command
     if ($conn->query($sql) === TRUE) {

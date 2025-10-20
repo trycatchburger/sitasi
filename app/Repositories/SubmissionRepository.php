@@ -98,7 +98,7 @@ class SubmissionRepository extends BaseRepository
             $offset = ($page - 1) * $perPage;
             
             // First get pending submissions only with pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Pending' ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Pending' ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -156,7 +156,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // First get approved submissions only
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC";
             $result = $this->conn->query($sql);
             if ($result === false) {
                 throw new DatabaseException("Database query failed: " . $this->conn->error);
@@ -191,7 +191,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Get recent approved submissions with limit
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC LIMIT ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC LIMIT ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -228,7 +228,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Get submissions with status 'Diterima' or 'Pending'
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
             $result = $this->conn->query($sql);
             if ($result === false) {
                 throw new DatabaseException("Database query failed: " . $this->conn->error);
@@ -262,7 +262,7 @@ class SubmissionRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, (s.created_at != s.updated_at) as is_resubmission FROM submissions s WHERE s.id = ?");
+            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s WHERE s.id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -298,17 +298,40 @@ class SubmissionRepository extends BaseRepository
     public function updateStatus(int $id, string $status, ?string $keterangan = null, ?int $adminId = null): bool
     {
         try {
-            $sql = "UPDATE submissions SET status = ?, keterangan = ?, admin_id = ? WHERE id = ?";
+            $sql = "UPDATE submissions SET status = ?, keterangan = ?, admin_id = ?, updated_at = updated_at WHERE id = ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
             
-            $stmt->bind_param("ssii", $status, $keterangan, $adminId, $id);
+            // Properly handle nullable values by creating variables and using references
+            $status_ref = $status;
+            $keterangan_ref = $keterangan;
+            $adminId_ref = $adminId;
+            $id_ref = $id;
+            
+            // Use call_user_func_array with references to properly handle nulls
+            $params = [$status_ref, $keterangan_ref, $adminId_ref, $id_ref];
+            $types = "ssii";
+            
+            // Create array of references for bind_param
+            $refs = [];
+            foreach ($params as $key => $value) {
+                $refs[$key] = &$params[$key];
+            }
+            
+            $stmt->bind_param($types, ...$refs);
+            
+            // Execute and check result
             $result = $stmt->execute();
+            
+            if (!$result) {
+                throw new DatabaseException("Statement execution failed: " . $stmt->error);
+            }
+            
             $stmt->close();
             
-            return $result;
+            return true;
         } catch (\Exception $e) {
             throw new DatabaseException("Error while updating submission status: " . $e->getMessage());
         }
@@ -323,7 +346,7 @@ class SubmissionRepository extends BaseRepository
     public function getSubmissionWithEmail(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id = ?");
+            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -349,7 +372,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Search recent approved submissions with limit
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' AND (s.judul_skripsi LIKE ? OR s.nama_mahasiswa LIKE ?) ORDER BY s.created_at DESC LIMIT ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' AND (s.judul_skripsi LIKE ? OR s.nama_mahasiswa LIKE ?) ORDER BY s.created_at DESC LIMIT ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);

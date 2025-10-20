@@ -13,8 +13,15 @@ class SubmissionController extends Controller {
     /**
      * Displays the new submission form.
      */
-    public function new() {
-        $this->render('new');
+    public function skripsi() {
+        $this->render('unggah_skripsi');
+    }
+    
+    /**
+     * Displays the new master's degree submission form.
+     */
+    public function tesis() {
+        $this->render('unggah_tesis');
     }
 
     public function create() {
@@ -45,13 +52,51 @@ class SubmissionController extends Controller {
             header('Location: ' . url());
             exit;
         } catch (ValidationException $e) {
-            $this->render('new', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
+            $this->render('unggah_skripsi', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
         } catch (FileUploadException $e) {
-            $this->render('new', ['error' => $e->getMessage()]);
+            $this->render('unggah_skripsi', ['error' => $e->getMessage()]);
         } catch (DatabaseException $e) {
-            $this->render('new', ['error' => "Terjadi kesalahan database. Silakan coba lagi."]);
+            $this->render('unggah_skripsi', ['error' => "Terjadi kesalahan database. Silakan coba lagi."]);
         } catch (Exception $e) {
-            $this->render('new', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
+            $this->render('unggah_skripsi', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
+        }
+    }
+
+    public function createMaster() {
+        try {
+            // Use ValidationService for detailed validation
+            $validationService = new ValidationService();
+            
+            // Validate form data and files
+            $isFormValid = $validationService->validateSubmissionForm($_POST);
+            $areFilesValid = $validationService->validateMasterSubmissionFiles($_FILES);
+
+            if (!$isFormValid || !$areFilesValid) {
+                $errors = $validationService->getErrors();
+                throw new ValidationException($errors, "There were issues with the information you provided. Please check your input and try again.");
+            }
+
+            $submissionModel = new Submission();
+            // Check if submission already exists for this NIM
+            if ($submissionModel->submissionExists($_POST['nim'])) {
+                // If submission exists, update it (resubmit)
+                $submissionModel->resubmitMaster($_POST, $_FILES);
+            } else {
+                // If no existing submission, create new one
+                $submissionModel->createMaster($_POST, $_FILES);
+            }
+            // Set a session variable to show the popup on the homepage
+            $_SESSION['submission_success'] = true;
+            header('Location: ' . url());
+            exit;
+        } catch (ValidationException $e) {
+            $this->render('unggah_tesis', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
+        } catch (FileUploadException $e) {
+            $this->render('unggah_tesis', ['error' => $e->getMessage()]);
+        } catch (DatabaseException $e) {
+            $this->render('unggah_tesis', ['error' => "Terjadi kesalahan database. Silakan coba lagi."]);
+        } catch (Exception $e) {
+            $this->render('unggah_tesis', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
         }
     }
 
@@ -81,13 +126,13 @@ class SubmissionController extends Controller {
             header('Location: ' . url());
             exit;
         } catch (ValidationException $e) {
-            $this->render('new', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
+            $this->render('unggah_skripsi', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
         } catch (FileUploadException $e) {
-            $this->render('new', ['error' => $e->getMessage()]);
+            $this->render('unggah_skripsi', ['error' => $e->getMessage()]);
         } catch (DatabaseException $e) {
-            $this->render('new', ['error' => "Terjadi kesalahan database. Silakan coba lagi."]);
+            $this->render('unggah_skripsi', ['error' => "Terjadi kesalahan database. Silakan coba lagi."]);
         } catch (Exception $e) {
-            $this->render('new', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
+            $this->render('unggah_skripsi', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
         }
     }
 

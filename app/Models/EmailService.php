@@ -161,8 +161,11 @@ class EmailService
             // }
         } catch (PHPMailerException $e) {
             error_log("Mailer Error (status update to student): " . $this->mailer->ErrorInfo);
+            // Don't throw exception, just log it to prevent the status update from failing
+            // The email sending failure shouldn't prevent the status update from completing
         } catch (\Exception $e) {
-            throw new FileUploadException("Error while sending status update notification: " . $e->getMessage());
+            error_log("General Error while sending status update notification: " . $e->getMessage());
+            // Don't throw exception, just log it to prevent the status update from failing
         }
     }
 }

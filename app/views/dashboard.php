@@ -321,14 +321,17 @@ document.querySelectorAll('form').forEach(form => {
         }
         
         // Also update the values displayed in the form in the table cell
-        const reasonField = reasonCell.querySelector('textarea[name="reason"]');
-        if (reasonField) {
-          reasonField.value = reasonInput.value;
-        }
-        
-        const serialField = reasonCell.querySelector('input[name="serial_number"]');
-        if (serialField) {
-          serialField.value = serialInput.value;
+        const reasonCell = this.querySelector('td:nth-child(6)'); // Reason column (6th column based on the table structure)
+        if (reasonCell) {
+            const reasonField = reasonCell.querySelector('textarea[name="reason"]');
+            if (reasonField) {
+              reasonField.value = reasonInput.value;
+            }
+            
+            const serialField = reasonCell.querySelector('input[name="serial_number"]');
+            if (serialField) {
+              serialField.value = serialInput.value;
+            }
         }
       } else {
         // Handle error from server
@@ -337,7 +340,9 @@ document.querySelectorAll('form').forEach(form => {
     })
     .catch(error => {
       console.error('Error:', error);
-      alert('An error occurred while updating the status.');
+      // Check if this is a JSON parsing error or network error
+      // In most cases, we still want to show a user-friendly message
+      alert('An error occurred while updating the status. The operation may have completed successfully. Please refresh the page to verify.');
     })
     .finally(() => {
       // Reset button state

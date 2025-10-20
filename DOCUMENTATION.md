@@ -309,7 +309,7 @@ Helper functions are utility functions that can be used throughout the applicati
 *   **`home.php`**: The main landing page of the application.
 *   **`login.php`**: The admin login form.
 *   **`dashboard.php`**: The admin dashboard, which displays a table of all submissions.
-*   **`new.php`**: The form for students to submit their thesis proposals.
+*   **`unggah_skripsi.php`**: The form for students to submit their thesis proposals.
 *   **`success.php`**: A success message displayed after a student successfully submits the form.
 *   **`main.php`**: The main layout template, which includes the header, footer, and content area.
 *   **`create_admin.php`**: The form for creating new admin users.
