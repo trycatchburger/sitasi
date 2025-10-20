@@ -1,0 +1,64 @@
+---
+# cPanel Git Deployment Configuration for Skripsi Submission System
+
+# Deployment settings
+deployment:
+  # Path where the application will be deployed
+  # For subdomain: /home/username/public_html/subdomain-name
+  # For subdirectory: /home/username/public_html/subdirectory-name
+  # Update this to match your actual cPanel username and desired path
+  path: /home/digilib/public_html/sitasi
+  
+  # Tasks to run during deployment
+  tasks:
+    - export DEPLOYPATH=/home/digilib/public_html/sitasi
+    
+    # Copy all files to the deployment directory
+    - /bin/cp -R * $CP_DEPLOY_PATH/
+    
+    # Copy hidden files (like .htaccess) to the deployment directory
+    - /bin/cp -R .[^.]* $CP_DEPLOY_PATH/
+    
+# Post-deployment tasks
+post_deploy:
+ # Install PHP dependencies with Composer
+  # Using --no-dev to exclude development dependencies
+  # Using --optimize-autoloader for better performance
+  - cd $CP_DEPLOY_PATH && /usr/local/bin/php composer.phar install --no-dev --optimize-autoloader
+  
+  # If Composer is installed globally, you can use:
+  # - cd $CP_DEPLOY_PATH && composer install --no-dev --optimize-autoloader
+
+# File permissions
+post_install:
+  # Set permissions for directories
+  - find $CP_DEPLOY_PATH -type d -exec chmod 755 {} \;
+  
+  # Set permissions for files
+  - find $CP_DEPLOY_PATH -type f -exec chmod 644 {} \;
+  
+  # Set specific permissions for upload directory
+  - chmod 755 $CP_DEPLOY_PATH/public/uploads
+  
+  # Set specific permissions for cache directory (if used)
+  - chmod 755 $CP_DEPLOY_PATH/cache
+  
+  # Ensure .htaccess files are readable
+  - chmod 644 $CP_DEPLOY_PATH/.htaccess
+ - chmod 644 $CP_DEPLOY_PATH/public/.htaccess
+
+# Optional: Build CSS with npm (uncomment if Node.js is available)
+# post_deploy:
+#   - cd $CP_DEPLOY_PATH && npm install --production
+#   - cd $CP_DEPLOY_PATH && npm run build
+
+# Environment variables (if needed)
+env:
+  # Set environment to production
+  APP_ENV: production
+
+# Notes for subdirectory deployment:
+# 1. Update the 'path' variable above to your subdirectory path
+# 2. Make sure to set the 'base_path' in config.php to match your subdirectory
+#    For example, if deploying to /home/username/public_html/skripsi, set base_path to '/skripsi'
+# 3. Update .htaccess files if needed for proper URL rewriting in subdirectory

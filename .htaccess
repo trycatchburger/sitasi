@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /sitasi/
+
+    # Redirect to public directory
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

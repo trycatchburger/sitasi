@@ -1,0 +1,28 @@
+# Configuration files
+config.php
+
+# Upload directories
+public/uploads/
+public/letters/
+
+# IDE files
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Composer
+/vendor/
+
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.production

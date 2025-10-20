@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Pengajuan Skripsi</title>
+    <link rel="icon" type="image/png" href="../public/images/icons/favicon.png">
+    <link href="../css/custom.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center py-8">
+    <div class="max-w-2xl w-full mx-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-center mb-8">
+                    <div class="mx-auto mb-4 p-3 bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">Form Pengajuan Skripsi</h1>
+                    <p class="text-gray-600 mt-2">Silakan isi data di bawah ini dan unggah file skripsi Anda.</p>
+                </div>
+                <form action="handle_submission.php" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="nama_mahasiswa" class="form-label">Nama Mahasiswa</label>
+                        <input type="text" id="nama_mahasiswa" name="nama_mahasiswa" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="nim" class="form-label">NIM</label>
+                        <input type="text" id="nim" name="nim" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" name="email" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="judul_skripsi" class="form-label">Judul Skripsi</label>
+                        <textarea id="judul_skripsi" name="judul_skripsi" rows="4" required class="form-control"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col md:col-6">
+                            <div class="form-group">
+                                <label for="program_studi" class="form-label">Program Studi</label>
+                                <input type="text" id="program_studi" name="program_studi" value="Teknik Informatika" required class="form-control">
+                            </div>
+                        </div>
+                        <div class="col md:col-6">
+                            <div class="form-group">
+                                <label for="tahun_publikasi" class="form-label">Tahun Publikasi</label>
+                                <input type="number" id="tahun_publikasi" name="tahun_publikasi" min="2000" max="2099" step="1" value="2024" required class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="skripsi_files" class="form-label">Unggah File Skripsi</label>
+                        <input type="file" id="skripsi_files" name="skripsi_files[]" multiple required class="form-control">
+                        <div class="form-text">Tahan Ctrl (atau Cmd di Mac) untuk memilih beberapa file.</div>
+                    </div>
+                    <div class="form-group mt-8">
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 01.707.293l5.414 5.414a1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Kirim Pengajuan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const namaMahasiswa = document.getElementById('nama_mahasiswa');
+            const nim = document.getElementById('nim');
+            const email = document.getElementById('email');
+            const judulSkripsi = document.getElementById('judul_skripsi');
+            const programStudi = document.getElementById('program_studi');
+            const tahunPublikasi = document.getElementById('tahun_publikasi');
+            const skripsiFiles = document.getElementById('skripsi_files');
+
+            // Validation functions
+            function validateNamaMahasiswa() {
+                if (namaMahasiswa.value.trim() === '') {
+                    showError(namaMahasiswa, 'Nama Mahasiswa is required.');
+                    return false;
+                } else if (namaMahasiswa.value.length > 100) {
+                    showError(namaMahasiswa, 'Nama Mahasiswa must not exceed 100 characters.');
+                    return false;
+                } else {
+                    clearError(namaMahasiswa);
+                    return true;
+                }
+            }
+
+            function validateNIM() {
+                if (nim.value.trim() === '') {
+                    showError(nim, 'NIM is required.');
+                    return false;
+                } else if (nim.value.length > 20) {
+                    showError(nim, 'NIM must not exceed 20 characters.');
+                    return false;
+                } else {
+                    clearError(nim);
+                    return true;
+                }
+            }
+
+            function validateEmail() {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (email.value.trim() === '') {
+                    showError(email, 'Email is required.');
+                    return false;
+                } else if (!emailRegex.test(email.value)) {
+                    showError(email, 'Please enter a valid email address.');
+                    return false;
+                } else if (email.value.length > 100) {
+                    showError(email, 'Email must not exceed 100 characters.');
+                    return false;
+                } else {
+                    clearError(email);
+                    return true;
+                }
+            }
+
+            function validateJudulSkripsi() {
+                if (judulSkripsi.value.trim() === '') {
+                    showError(judulSkripsi, 'Judul Skripsi is required.');
+                    return false;
+                } else if (judulSkripsi.value.length > 500) {
+                    showError(judulSkripsi, 'Judul Skripsi must not exceed 500 characters.');
+                    return false;
+                } else {
+                    clearError(judulSkripsi);
+                    return true;
+                }
+            }
+
+            function validateProgramStudi() {
+                if (programStudi.value.trim() === '') {
+                    showError(programStudi, 'Program Studi is required.');
+                    return false;
+                } else if (programStudi.value.length > 100) {
+                    showError(programStudi, 'Program Studi must not exceed 100 characters.');
+                    return false;
+                } else {
+                    clearError(programStudi);
+                    return true;
+                }
+            }
+
+            function validateTahunPublikasi() {
+                const year = parseInt(tahunPublikasi.value);
+                if (tahunPublikasi.value.trim() === '') {
+                    showError(tahunPublikasi, 'Tahun Publikasi is required.');
+                    return false;
+                } else if (isNaN(year) || year < 2000 || year > 2099 || tahunPublikasi.value.length !== 4) {
+                    showError(tahunPublikasi, 'Please enter a valid four-digit year between 2000 and 2099.');
+                    return false;
+                } else {
+                    clearError(tahunPublikasi);
+                    return true;
+                }
+            }
+
+            function validateSkripsiFiles() {
+                if (skripsiFiles.files.length === 0) {
+                    showError(skripsiFiles, 'At least one file is required.');
+                    return false;
+                } else {
+                    // Check file types only (removed size limit)
+                    const allowedTypes = ['pdf', 'doc', 'docx', 'txt'];
+
+                    for (let i = 0; i < skripsiFiles.files.length; i++) {
+                        const file = skripsiFiles.files[i];
+                        const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                        if (!allowedTypes.includes(fileExtension)) {
+                            showError(skripsiFiles, `File ${file.name} is not an allowed type. Allowed types: ${allowedTypes.join(', ')}`);
+                            return false;
+                        }
+                    }
+
+                    clearError(skripsiFiles);
+                    return true;
+                }
+            }
+
+            // Error display functions
+            function showError(element, message) {
+                // Remove any existing error message
+                clearError(element);
+
+                // Create error message element
+                const errorElement = document.createElement('div');
+                errorElement.className = 'text-red-500 text-sm mt-1 error-message';
+                errorElement.textContent = message;
+
+                // Insert error message after the element
+                element.parentNode.insertBefore(errorElement, element.nextSibling);
+
+                // Add error styling to the input
+                element.classList.add('border-red-500');
+            }
+
+            function clearError(element) {
+                // Remove error message
+                const existingError = element.parentNode.querySelector('.error-message');
+                if (existingError) {
+                    existingError.remove();
+                }
+
+                // Remove error styling
+                element.classList.remove('border-red-500');
+            }
+
+            // Add event listeners for real-time validation
+            namaMahasiswa.addEventListener('blur', validateNamaMahasiswa);
+            nim.addEventListener('blur', validateNIM);
+            email.addEventListener('blur', validateEmail);
+            judulSkripsi.addEventListener('blur', validateJudulSkripsi);
+            programStudi.addEventListener('blur', validateProgramStudi);
+            tahunPublikasi.addEventListener('blur', validateTahunPublikasi);
+            skripsiFiles.addEventListener('change', validateSkripsiFiles);
+
+            // Form submission validation
+            form.addEventListener('submit', function(e) {
+                // Validate all fields
+                const isNamaValid = validateNamaMahasiswa();
+                const isNIMValid = validateNIM();
+                const isEmailValid = validateEmail();
+                const isJudulValid = validateJudulSkripsi();
+                const isProgramStudiValid = validateProgramStudi();
+                const isTahunPublikasiValid = validateTahunPublikasi();
+                const isFilesValid = validateSkripsiFiles();
+
+                // If any validation fails, prevent form submission
+                if (!isNamaValid || !isNIMValid || !isEmailValid || !isJudulValid || !isProgramStudiValid || !isTahunPublikasiValid || !isFilesValid) {
+                    e.preventDefault();
+
+                    // Scroll to the first error
+                    const firstError = form.querySelector('.error-message');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
