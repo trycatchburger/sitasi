@@ -2,7 +2,7 @@
 <unggah>
 
 <section id="unggah" class="w-full bg-white rounded-xl shadow-md p-4 mt-4 text-center">
-  <h3 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-green-900 leading-tight my-2">
+  <h3 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-green-900 leading-tight my-2">
     Pilih Unggahan
   </h3>
 
