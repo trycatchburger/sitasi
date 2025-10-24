@@ -32,11 +32,37 @@
       </div>
     <?php endif; ?>
     
-    <div class="mb-6 flex items-center">
+    <div class="mb-6 flex flex-wrap items-center gap-4">
       <div class="flex items-center space-x-4">
         <span class="text-gray-700">Filter:</span>
         <button id="showAllBtn" class="btn btn-secondary btn-sm <?= (!empty($showAll)) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Semua Pengajuan</button>
         <button id="showPendingBtn" class="btn btn-primary btn-sm <?= (empty($showAll)) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Hanya yang Belum Diverifikasi (Default)</button>
+      </div>
+      
+      <!-- Search Form -->
+      <div class="flex items-center ml-auto">
+        <form method="GET" action="<?= url('admin/dashboard') ?>" class="flex">
+          <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'all' : 'pending') ?>">
+          <input type="hidden" name="page" value="1"> <!-- Reset to first page when searching -->
+          <input type="text"
+                 name="search"
+                 placeholder="Cari nama mahasiswa, judul skripsi, atau NIM..."
+                 value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>"
+                 class="border border-gray-300 rounded-l px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/200/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 014 0z"></path>
+            </svg>
+          </button>
+          <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
+            <a href="<?= url('admin/dashboard') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'show=all' : '') ?>&page=1"
+               class="ml-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </a>
+          <?php endif; ?>
+        </form>
       </div>
     </div>
     
@@ -66,8 +92,12 @@
           <tbody class="bg-white divide-y divide-gray-200">
             <?php if (empty($submissions)): ?>
               <tr>
-                <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
-                  Tidak ada pengajuan ditemukan
+                <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                  <?php if (isset($search) && !empty($search)): ?>
+                    Tidak ada pengajuan ditemukan untuk pencarian: "<strong><?= htmlspecialchars($search) ?></strong>"
+                  <?php else: ?>
+                    Tidak ada pengajuan ditemukan
+                  <?php endif; ?>
                 </td>
               </tr>
             <?php else: ?>
@@ -167,7 +197,7 @@
         <div class="mt-6 flex justify-center">
           <nav class="inline-flex rounded-md shadow">
             <?php if ($currentPage > 1): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Previous
               </a>
             <?php endif; ?>
@@ -176,7 +206,7 @@
               // Show first page
               if ($currentPage > 3):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($showAll) && $showAll ? '&show=all' : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 1
               </a>
               <?php if ($currentPage > 4): ?>
@@ -192,7 +222,7 @@
               $end = min($totalPages, $currentPage + 2);
               for ($i = $start; $i <= $end; $i++):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
                 <?= $i ?>
               </a>
             <?php endfor; ?>
@@ -206,13 +236,13 @@
                     ...
                   </span>
                 <?php endif; ?>
-                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                   <?= $totalPages ?>
                 </a>
               <?php endif; ?>
             
             <?php if ($currentPage < $totalPages): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage + 1 ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage + 1 ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Next
               </a>
             <?php endif; ?>
@@ -258,8 +288,8 @@ require __DIR__ . '/main.php';
 </style>
 
 <script>
-// Handle form submissions via AJAX
-document.querySelectorAll('form').forEach(form => {
+// Handle status update form submissions via AJAX
+document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').forEach(form => {
   form.addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -278,7 +308,16 @@ document.querySelectorAll('form').forEach(form => {
         'X-Requested-With': 'XMLHttpRequest'
       }
     })
-    .then(response => response.json())
+    .then(response => {
+       if (!response.ok) {
+         // Log the response status and text for debugging
+         return response.text().then(text => {
+           console.error('Server error response:', response.status, text);
+           throw new Error(`Network response was not ok: ${response.status} - ${text}`);
+         });
+       }
+       return response.json();
+     })
     .then(data => {
       if (data.success) {
         // Get the row for this submission
@@ -333,6 +372,21 @@ document.querySelectorAll('form').forEach(form => {
               serialField.value = serialInput.value;
             }
         }
+        
+        // After successful update, the page might need to be refreshed to reflect changes in the search results
+        // Only refresh if the modal is shown to indicate success and we're on a search results page
+        if (data && data.success && !document.getElementById('successModal').classList.contains('hidden')) {
+            // Add a small delay to allow the success message to be seen
+            setTimeout(() => {
+                // Check if we're on a search results page and refresh to update the display
+                if (window.location.search.includes('search=')) {
+                    window.location.reload();
+                } else if (window.location.search.includes('show=')) {
+                    // Also refresh if we're on a filtered view (show=all or show=pending)
+                    window.location.reload();
+                }
+            }, 500); // 0.5 second delay to allow user to see success message
+        }
       } else {
         // Handle error from server
         alert(data.message || 'An error occurred while updating the status.');
@@ -342,7 +396,7 @@ document.querySelectorAll('form').forEach(form => {
       console.error('Error:', error);
       // Check if this is a JSON parsing error or network error
       // In most cases, we still want to show a user-friendly message
-      alert('An error occurred while updating the status. The operation may have completed successfully. Please refresh the page to verify.');
+      alert('An error occurred while updating the status. Error details: ' + error.message + '. Please refresh the page to check the current status.');
     })
     .finally(() => {
       // Reset button state
@@ -368,6 +422,7 @@ document.getElementById('showAllBtn')?.addEventListener('click', function() {
   const url = new URL(window.location);
   url.searchParams.set('show', 'all');
   url.searchParams.delete('page'); // Reset to first page when changing filter
+ url.searchParams.delete('search'); // Also clear search when changing filter
   window.location.href = url.toString();
 });
 
@@ -376,6 +431,7 @@ document.getElementById('showPendingBtn')?.addEventListener('click', function() 
   const url = new URL(window.location);
   url.searchParams.delete('show');
   url.searchParams.delete('page'); // Reset to first page when changing filter
+ url.searchParams.delete('search'); // Also clear search when changing filter
   window.location.href = url.toString();
 });
 </script>

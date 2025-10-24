@@ -98,7 +98,7 @@ class SubmissionRepository extends BaseRepository
             $offset = ($page - 1) * $perPage;
             
             // First get pending submissions only with pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Pending' ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Pending' ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -156,7 +156,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // First get approved submissions only
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC";
             $result = $this->conn->query($sql);
             if ($result === false) {
                 throw new DatabaseException("Database query failed: " . $this->conn->error);
@@ -191,7 +191,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Get recent approved submissions with limit
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC LIMIT ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC LIMIT ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -228,7 +228,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Get submissions with status 'Diterima' or 'Pending'
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
             $result = $this->conn->query($sql);
             if ($result === false) {
                 throw new DatabaseException("Database query failed: " . $this->conn->error);
@@ -262,7 +262,7 @@ class SubmissionRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s WHERE s.id = ?");
+            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, (s.created_at != s.updated_at) as is_resubmission FROM submissions s WHERE s.id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -346,7 +346,7 @@ class SubmissionRepository extends BaseRepository
     public function getSubmissionWithEmail(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id = ?");
+            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -372,7 +372,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Search recent approved submissions with limit
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.admin_id IS NULL) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' AND (s.judul_skripsi LIKE ? OR s.nama_mahasiswa LIKE ?) ORDER BY s.created_at DESC LIMIT ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' AND (s.judul_skripsi LIKE ? OR s.nama_mahasiswa LIKE ?) ORDER BY s.created_at DESC LIMIT ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -399,6 +399,98 @@ class SubmissionRepository extends BaseRepository
             return $submissions;
         } catch (\Exception $e) {
             throw new DatabaseException("Error while searching recent approved submissions: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Search submissions by name, title, or NIM
+     * @param string $search Search term
+     * @param bool $showAll Whether to show all submissions or only pending ones
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @return array
+     * @throws DatabaseException
+     */
+    public function searchSubmissions(string $search, bool $showAll = false, int $page = 1, int $perPage = 10): array
+    {
+        try {
+            // Calculate offset for pagination
+            $offset = ($page - 1) * $perPage;
+            
+            // Build SQL query based on showAll parameter
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id ";
+            
+            // Add WHERE clause based on showAll parameter
+            if (!$showAll) {
+                $sql .= "WHERE s.status = 'Pending' AND (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?) ";
+            } else {
+                $sql .= "WHERE (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?) ";
+            }
+            
+            $sql .= "ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            
+            $searchTerm = '%' . $search . '%';
+            $stmt->bind_param("ssiii", $searchTerm, $searchTerm, $searchTerm, $perPage, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $submissions = $result->fetch_all(MYSQLI_ASSOC);
+            
+            // For each submission, get its files
+            foreach ($submissions as &$submission) {
+                $stmt_files = $this->conn->prepare("SELECT id, file_path, file_name FROM submission_files WHERE submission_id = ?");
+                if (!$stmt_files) {
+                    throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+                }
+                $stmt_files->bind_param("i", $submission['id']);
+                $stmt_files->execute();
+                $submission['files'] = $stmt_files->get_result()->fetch_all(MYSQLI_ASSOC);
+            }
+            
+            return $submissions;
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while searching submissions: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Count search results for pagination
+     * @param string $search Search term
+     * @param bool $showAll Whether to count all submissions or only pending ones
+     * @return int
+     * @throws DatabaseException
+     */
+    public function countSearchResults(string $search, bool $showAll = false): int
+    {
+        try {
+            $sql = "SELECT COUNT(*) as count FROM submissions s ";
+            
+            // Add WHERE clause based on showAll parameter
+            if (!$showAll) {
+                $sql .= "WHERE s.status = 'Pending' AND (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+            } else {
+                $sql .= "WHERE (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+            }
+            
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            
+            $searchTerm = '%' . $search . '%';
+            $stmt->bind_param("sss", $searchTerm, $searchTerm, $searchTerm);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $row = $result->fetch_assoc();
+            return (int) $row['count'];
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while counting search results: " . $e->getMessage());
         }
     }
 }

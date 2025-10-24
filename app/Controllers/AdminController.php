@@ -67,60 +67,62 @@ class AdminController extends Controller {
     }
 
     public function dashboard() {
-        try {
-            if (!$this->isLoggedIn()) {
-                header('Location: ' . url('admin/login'));
-                exit;
-            }
-            
-            $submissionModel = new Submission();
-            
-            // Check if we should show all submissions or only pending
-            $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
-            
-            // Get pagination parameters
-            $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-            $perPage = 10; // Number of items per page
-            
-            if ($showAll) {
-                // Get all submissions with pagination
-                $submissions = $submissionModel->findAll($page, $perPage);
-                
-                // Get total count for pagination
-                $totalSubmissions = $submissionModel->countAll();
-                $totalPages = ceil($totalSubmissions / $perPage);
-            } else {
-                // Get pending submissions with pagination (default behavior)
-                $submissions = $submissionModel->findPending(true, $page, $perPage);
-                
-                // Get total count for pagination
-                $totalSubmissions = $submissionModel->countPending();
-                $totalPages = ceil($totalSubmissions / $perPage);
-            }
-            
-            // Get query profiling stats if enabled
-            $queryStats = null;
-            if (class_exists('\App\Services\QueryProfiler')) {
-                $profiler = \App\Services\QueryProfiler::getInstance();
-                if ($profiler->isEnabled()) {
-                    $queryStats = $profiler->getStats();
-                }
-            }
-            
-            $this->render('dashboard', [
-                'submissions' => $submissions,
-                'currentPage' => $page,
-                'totalPages' => $totalPages,
-                'totalSubmissions' => $totalSubmissions,
-                'queryStats' => $queryStats,
-                'showAll' => $showAll
-            ]);
-        } catch (DatabaseException $e) {
-            $this->render('dashboard', ['error' => "Database error occurred while loading dashboard."]);
-        } catch (Exception $e) {
-            $this->render('dashboard', ['error' => "An error occurred: " . $e->getMessage()]);
-        }
-    }
+         try {
+             if (!$this->isLoggedIn()) {
+                 header('Location: ' . url('admin/login'));
+                 exit;
+             }
+             
+             $submissionModel = new Submission();
+             
+             // Get query parameters
+             $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
+             $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+             $perPage = 10; // Default items per page
+             
+             // Determine which method to use based on parameters
+             if (!empty($search)) {
+                 // Use search functionality
+                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $page, $perPage);
+                 $totalResults = $submissionModel->countSearchResults($search, $showAll);
+             } else if ($showAll) {
+                 // Show all submissions
+                 $submissions = $submissionModel->findAll($page, $perPage);
+                 $totalResults = $submissionModel->countAll();
+             } else {
+                 // Show only pending submissions (default)
+                 $submissions = $submissionModel->findPending(true, $page, $perPage);
+                 $totalResults = $submissionModel->countPending();
+             }
+             
+             // Calculate pagination values
+             $totalPages = ceil($totalResults / $perPage);
+             
+             // Get query profiling stats if enabled
+             $queryStats = null;
+             if (class_exists('\App\Services\QueryProfiler')) {
+                 $profiler = \App\Services\QueryProfiler::getInstance();
+                 if ($profiler->isEnabled()) {
+                     $queryStats = $profiler->getStats();
+                 }
+             }
+             
+             $this->render('dashboard', [
+                 'submissions' => $submissions,
+                 'showAll' => $showAll,
+                 'search' => $search,
+                 'currentPage' => $page,
+                 'totalPages' => $totalPages,
+                 'totalResults' => $totalResults,
+                 'queryStats' => $queryStats
+             ]);
+         } catch (DatabaseException $e) {
+             $this->render('dashboard', ['error' => "Database error occurred while loading dashboard."]);
+         } catch (Exception $e) {
+             $this->render('dashboard', ['error' => "An error occurred: " . $e->getMessage()]);
+         }
+     }
 
     public function logout() {
         session_destroy();
@@ -129,12 +131,25 @@ class AdminController extends Controller {
     }
 
     public function updateStatus() {
-        // Run authentication middleware
-        $this->runMiddleware(['auth']);
-        
-        try {
-
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+         try {
+             // Check if user is authenticated manually to handle AJAX requests properly
+             if (!$this->isLoggedIn()) {
+                 // Return JSON error for AJAX requests
+                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                     header('Content-Type: application/json');
+                     echo json_encode(['success' => false, 'message' => 'Authentication required.']);
+                     exit;
+                 } else {
+                     // Regular request - redirect to login
+                     header('Location: ' . url('admin/login'));
+                     exit;
+                 }
+             }
+             
+             // Run CSRF middleware for security
+             $this->runMiddleware(['csrf']);
+             
+             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $submissionId = (int)$_POST['submission_id'];
                 $status = $_POST['status'];
                 $reason = $_POST['reason'] ?? '';

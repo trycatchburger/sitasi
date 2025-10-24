@@ -623,4 +623,30 @@ class Submission
             $cacheService->delete('pending_submissions_page_' . $i . '_per_10');
         }
     }
+    
+    /**
+     * Search submissions by name, title, or NIM
+     * @param string $search Search term
+     * @param bool $showAll Whether to show all submissions or only pending ones
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @return array
+     * @throws DatabaseException
+     */
+    public function searchSubmissions(string $search, bool $showAll = false, int $page = 1, int $perPage = 10): array
+    {
+        return $this->repository->searchSubmissions($search, $showAll, $page, $perPage);
+    }
+    
+    /**
+     * Count search results for pagination
+     * @param string $search Search term
+     * @param bool $showAll Whether to count all submissions or only pending ones
+     * @return int
+     * @throws DatabaseException
+     */
+    public function countSearchResults(string $search, bool $showAll = false): int
+    {
+        return $this->repository->countSearchResults($search, $showAll);
+    }
 }
