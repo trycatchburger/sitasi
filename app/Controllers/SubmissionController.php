@@ -38,6 +38,15 @@ class SubmissionController extends Controller {
                 throw new ValidationException($errors, "There were issues with the information you provided. Please check your input and try again.");
             }
 
+            // NORMALISASI INPUT (huruf besar di awal kata)
+            $_POST['nama_mahasiswa'] = ucwords(strtolower($_POST['nama_mahasiswa']));
+            $_POST['judul_skripsi']  = ucwords(strtolower($_POST['judul_skripsi']));
+            $_POST['dosen1']         = ucwords(strtolower($_POST['dosen1']));
+            $_POST['dosen2']         = ucwords(strtolower($_POST['dosen2']));
+
+            // Jika kamu ingin semua input huruf kecil (opsional)
+            // $_POST['email'] = strtolower($_POST['email']);
+
             $submissionModel = new Submission();
             // Check if submission already exists for this NIM
             if ($submissionModel->submissionExists($_POST['nim'])) {
@@ -75,6 +84,15 @@ class SubmissionController extends Controller {
                 $errors = $validationService->getErrors();
                 throw new ValidationException($errors, "There were issues with the information you provided. Please check your input and try again.");
             }
+
+            // NORMALISASI INPUT (huruf besar di awal kata)
+            $_POST['nama_mahasiswa'] = ucwords(strtolower($_POST['nama_mahasiswa']));
+            $_POST['judul_skripsi']  = ucwords(strtolower($_POST['judul_skripsi']));
+            $_POST['dosen1']         = ucwords(strtolower($_POST['dosen1']));
+            $_POST['dosen2']         = ucwords(strtolower($_POST['dosen2']));
+
+            // Jika kamu ingin semua input huruf kecil (opsional)
+            // $_POST['email'] = strtolower($_POST['email']);
 
             $submissionModel = new Submission();
             // Check if submission already exists for this NIM
