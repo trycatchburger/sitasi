@@ -61,13 +61,26 @@ class SubmissionController extends Controller {
             header('Location: ' . url());
             exit;
         } catch (ValidationException $e) {
-            $this->render('unggah_skripsi', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
+            $this->render('unggah_skripsi', [
+                'error' => $e->getMessage(),
+                'errors' => $e->getErrors(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (FileUploadException $e) {
-            $this->render('unggah_skripsi', ['error' => $e->getMessage()]);
+            $this->render('unggah_skripsi', [
+                'error' => $e->getMessage(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (DatabaseException $e) {
-            $this->render('unggah_skripsi', ['error' => "Terjadi kesalahan database. Silakan coba lagi."]);
+            $this->render('unggah_skripsi', [
+                'error' => "Terjadi kesalahan database. Silakan coba lagi.",
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (Exception $e) {
-            $this->render('unggah_skripsi', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
+            $this->render('unggah_skripsi', [
+                'error' => "Terjadi kesalahan: " . $e->getMessage(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         }
     }
 
@@ -108,13 +121,26 @@ class SubmissionController extends Controller {
             header('Location: ' . url());
             exit;
         } catch (ValidationException $e) {
-            $this->render('unggah_tesis', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
+            $this->render('unggah_tesis', [
+                'error' => $e->getMessage(),
+                'errors' => $e->getErrors(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (FileUploadException $e) {
-            $this->render('unggah_tesis', ['error' => $e->getMessage()]);
+            $this->render('unggah_tesis', [
+                'error' => $e->getMessage(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (DatabaseException $e) {
-            $this->render('unggah_tesis', ['error' => "Terjadi kesalahan database. Silakan coba lagi."]);
+            $this->render('unggah_tesis', [
+                'error' => "Terjadi kesalahan database. Silakan coba lagi.",
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (Exception $e) {
-            $this->render('unggah_tesis', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
+            $this->render('unggah_tesis', [
+                'error' => "Terjadi kesalahan: " . $e->getMessage(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         }
     }
 
@@ -144,13 +170,26 @@ class SubmissionController extends Controller {
             header('Location: ' . url());
             exit;
         } catch (ValidationException $e) {
-            $this->render('unggah_skripsi', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
+            $this->render('unggah_skripsi', [
+                'error' => $e->getMessage(),
+                'errors' => $e->getErrors(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (FileUploadException $e) {
-            $this->render('unggah_skripsi', ['error' => $e->getMessage()]);
+            $this->render('unggah_skripsi', [
+                'error' => $e->getMessage(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (DatabaseException $e) {
-            $this->render('unggah_skripsi', ['error' => "Terjadi kesalahan database. Silakan coba lagi."]);
+            $this->render('unggah_skripsi', [
+                'error' => "Terjadi kesalahan database. Silakan coba lagi.",
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         } catch (Exception $e) {
-            $this->render('unggah_skripsi', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
+            $this->render('unggah_skripsi', [
+                'error' => "Terjadi kesalahan: " . $e->getMessage(),
+                'old_data' => $_POST // Pass the submitted data back to the form
+            ]);
         }
     }
 

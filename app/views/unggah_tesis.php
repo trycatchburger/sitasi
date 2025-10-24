@@ -53,7 +53,8 @@
                                         <div class="form-group">
                                             <label for="nama_mahasiswa" class="form-label">Nama Lengkap</label>
                                             <input type="text" id="nama_mahasiswa" name="nama_mahasiswa" required
-                                                class="form-control">
+                                                class="form-control"
+                                                value="<?= isset($old_data['nama_mahasiswa']) ? htmlspecialchars($old_data['nama_mahasiswa']) : '' ?>">
                                             <p class="text-xs text-gray-500 mt-1">Contoh: Iis Rahayu. Gunakan huruf kapital di awal kata.</p>
                                             
                                             <?php if (isset($errors['nama_mahasiswa'])): ?>
@@ -70,7 +71,8 @@
                                         <div class="form-group">
                                             <label for="nim" class="form-label">NIM</label>
                                             <input type="text" id="nim" name="nim" required
-                                                class="form-control">
+                                                class="form-control"
+                                                value="<?= isset($old_data['nim']) ? htmlspecialchars($old_data['nim']) : '' ?>">
                                             <?php if (isset($errors['nim'])): ?>
                                                 <div class="text-red-500 text-sm mt-1">
                                                     <?php foreach ($errors['nim'] as $error): ?>
@@ -85,7 +87,8 @@
                                 <div class="form-group">
                                     <label for="email" class="form-label">Email</label>
                                     <input type="email" id="email" name="email" required
-                                        class="form-control">
+                                        class="form-control"
+                                        value="<?= isset($old_data['email']) ? htmlspecialchars($old_data['email']) : '' ?>">
                                     <?php if (isset($errors['email'])): ?>
                                         <div class="text-red-500 text-sm mt-1">
                                             <?php foreach ($errors['email'] as $error): ?>
@@ -102,7 +105,8 @@
                                 
                                 <div class="form-group">
                                     <label for="judul_skripsi" class="form-label">Judul Tesis</label>
-                                    <input type="text" id="judul_skripsi" name="judul_skripsi" required class="form-control">
+                                    <input type="text" id="judul_skripsi" name="judul_skripsi" required class="form-control"
+                                           value="<?= isset($old_data['judul_skripsi']) ? htmlspecialchars($old_data['judul_skripsi']) : '' ?>">
                                     <p class="text-xs text-gray-500 mt-1">Contoh: Analisis Kinerja Sistem Informasi Manajemen. Gunakan huruf kapital di awal kata.</p>
                                     <?php if (isset($errors['judul_skripsi'])): ?>
                                         <div class="text-red-50 text-sm mt-1">
@@ -118,7 +122,8 @@
                                         <div class="form-group">
                                             <label for="dosen1" class="form-label">Dosen Pembimbing 1</label>
                                             <input type="text" id="dosen1" name="dosen1" required
-                                                class="form-control">
+                                                class="form-control"
+                                                value="<?= isset($old_data['dosen1']) ? htmlspecialchars($old_data['dosen1']) : '' ?>">
                                             <?php if (isset($errors['dosen1'])): ?>
                                                 <div class="text-red-500 text-sm mt-1">
                                                     <?php foreach ($errors['dosen1'] as $error): ?>
@@ -133,7 +138,8 @@
                                         <div class="form-group">
                                             <label for="dosen2" class="form-label">Dosen Pembimbing 2</label>
                                             <input type="text" id="dosen2" name="dosen2" required
-                                                class="form-control">
+                                                class="form-control"
+                                                value="<?= isset($old_data['dosen2']) ? htmlspecialchars($old_data['dosen2']) : '' ?>">
                                             <?php if (isset($errors['dosen2'])): ?>
                                                 <div class="text-red-500 text-sm mt-1">
                                                     <?php foreach ($errors['dosen2'] as $error): ?>
@@ -172,7 +178,10 @@
                                                 <?php
                                                 $currentYear = date('Y');
                                                 for ($year = $currentYear; $year >= $currentYear - 5; $year--): ?>
-                                                    <option value="<?= $year ?>"><?= $year ?></option>
+                                                    <option value="<?= $year ?>"
+                                                        <?= (isset($old_data['tahun_publikasi']) && $old_data['tahun_publikasi'] == $year) ? 'selected' : '' ?>>
+                                                        <?= $year ?>
+                                                    </option>
                                                 <?php endfor; ?>
                                             </select>
                                             <?php if (isset($errors['tahun_publikasi'])): ?>
@@ -195,7 +204,7 @@
                                     <div class="form-group">
                                         <label for="file_cover" class="form-label">Cover Tesis (.pdf)</label>
                                         <input type="file" id="file_cover" name="file_cover" required
-                                            class="form-control">
+                                            class="form-control" accept=".pdf">
                                         <div class="form-text">(Format Nama File: COVER_NIM_NAMA)</div>
                                         <?php if (isset($errors['file_cover'])): ?>
                                             <div class="text-red-500 text-sm mt-1">
@@ -209,7 +218,7 @@
                                     <div class="form-group">
                                         <label for="file_bab1" class="form-label">Cover s/d Bab I & Daftar Pustaka Tesis (.pdf)</label>
                                         <input type="file" id="file_bab1" name="file_bab1" required
-                                            class="form-control">
+                                            class="form-control" accept=".pdf">
                                         <div class="form-text">(Format Nama File: NIM_BAB1_DAFTAR PUSTAKA)</div>
                                         <?php if (isset($errors['file_bab1'])): ?>
                                             <div class="text-red-500 text-sm mt-1">
@@ -223,7 +232,7 @@
                                     <div class="form-group">
                                         <label for="file_bab2" class="form-label">Bab II s/d Bab Terakhir Tesis (.pdf)</label>
                                         <input type="file" id="file_bab2" name="file_bab2" required
-                                            class="form-control">
+                                            class="form-control" accept=".pdf">
                                         <div class="form-text">(Format Nama File: NIM_BAB II_SAMPAI BAB TERAKHIR)</div>
                                         <?php if (isset($errors['file_bab2'])): ?>
                                             <div class="text-red-500 text-sm mt-1">

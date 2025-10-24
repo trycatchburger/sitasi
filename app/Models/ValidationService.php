@@ -146,32 +146,43 @@ class ValidationService
      */
     public function validateSubmissionFiles(array $files): bool
     {
-        // Define required file fields for bachelor's degree
+        // Define required file fields for bachelor's degree with specific extensions
         $requiredFiles = [
-            'file_cover' => 'Cover Skripsi',
-            'file_bab1' => 'Bab I - Daftar Pustaka',
-            'file_bab2' => 'Bab II - Bab Terakhir',
-            'file_doc' => 'Dokumen Skripsi (.doc/.docx)'
+            'file_cover' => ['label' => 'Cover Skripsi', 'extensions' => ['pdf'], 'friendly_name' => 'Cover Skripsi'],
+            'file_bab1' => ['label' => 'Cover s/d Bab I & Daftar Pustaka', 'extensions' => ['pdf'], 'friendly_name' => 'Cover s/d Bab I & Daftar Pustaka'],
+            'file_bab2' => ['label' => 'Bab II s/d Bab Terakhir', 'extensions' => ['pdf'], 'friendly_name' => 'Bab II s/d Bab Terakhir'],
+            'file_doc' => ['label' => 'Dokumen Skripsi', 'extensions' => ['doc', 'docx'], 'friendly_name' => 'Dokumen Skripsi (Word)']
         ];
         
         // Check each required file
-        foreach ($requiredFiles as $field => $fieldName) {
+        foreach ($requiredFiles as $field => $fieldInfo) {
+            $fieldName = $fieldInfo['label'];
+            $friendlyName = $fieldInfo['friendly_name'];
+            $allowedExtensions = $fieldInfo['extensions'];
+            
             // Check if file field exists in $_FILES
             if (!isset($files[$field])) {
-                $this->addError($field, "The {$fieldName} file is required for submission.");
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan skripsi.");
                 continue;
             }
             
             // Check if file was uploaded without errors
             if (!isset($files[$field]['error']) || $files[$field]['error'] !== UPLOAD_ERR_OK) {
-                $this->addError($field, "The {$fieldName} file is required for submission.");
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan skripsi.");
                 continue;
             }
             
             // Check if file has a valid name
             if (empty($files[$field]['name'])) {
-                $this->addError($field, "The {$fieldName} file is required for submission.");
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan skripsi.");
                 continue;
+            }
+            
+            // Validate file extension for specific field requirements
+            $fileExtension = strtolower(pathinfo($files[$field]['name'], PATHINFO_EXTENSION));
+            if (!in_array($fileExtension, $allowedExtensions)) {
+                $allowedExtString = implode(', ', array_map(function($ext) { return '.' . $ext; }, $allowedExtensions));
+                $this->addError($field, "File {$friendlyName} harus berupa file dengan ekstensi: {$allowedExtString}");
             }
         }
         
@@ -180,19 +191,21 @@ class ValidationService
             return false;
         }
         
-        // Validate each file for size and type
+        // Validate each file for size
         $rules = [
-            'maxSize:' . $this->config['max_file_size'],
-            'mimes:pdf,doc,docx,txt'
+            'maxSize:' . $this->config['max_file_size']
         ];
         
-        foreach ($requiredFiles as $field => $fieldName) {
+        foreach ($requiredFiles as $field => $fieldInfo) {
+            $fieldName = $fieldInfo['label'];
+            $allowedExtensions = $fieldInfo['extensions'];
+            
             // Skip validation if file doesn't exist (already checked above)
             if (!isset($files[$field]) || $files[$field]['error'] !== UPLOAD_ERR_OK) {
                 continue;
             }
             
-            // Validate file size and type
+            // Validate file size
             $fileData = [
                 'name' => [$files[$field]['name']],
                 'size' => [$files[$field]['size']],
@@ -218,33 +231,43 @@ class ValidationService
      */
     public function validateMasterSubmissionFiles(array $files): bool
     {
-        // Define required file fields for master's degree thesis
-        // Based on the form in unggah_tesis.php, we need 4 files:
+        // Define required file fields for master's degree thesis with specific extensions
         $requiredFiles = [
-            'file_cover' => 'Cover Tesis (.pdf)',
-            'file_bab1' => 'Cover s/d Bab I & Daftar Pustaka Tesis (.pdf)',
-            'file_bab2' => 'Bab II s/d Bab Terakhir Tesis (.pdf)',
-            'file_doc' => 'Cover s/d Daftar Pustaka Tesis (.doc/.docx)'
+            'file_cover' => ['label' => 'Cover Tesis', 'extensions' => ['pdf'], 'friendly_name' => 'Cover Tesis'],
+            'file_bab1' => ['label' => 'Cover s/d Bab I & Daftar Pustaka Tesis', 'extensions' => ['pdf'], 'friendly_name' => 'Cover s/d Bab I & Daftar Pustaka Tesis'],
+            'file_bab2' => ['label' => 'Bab II s/d Bab Terakhir Tesis', 'extensions' => ['pdf'], 'friendly_name' => 'Bab II s/d Bab Terakhir Tesis'],
+            'file_doc' => ['label' => 'Cover s/d Daftar Pustaka Tesis', 'extensions' => ['doc', 'docx'], 'friendly_name' => 'Dokumen Tesis (Word)']
         ];
         
         // Check each required file
-        foreach ($requiredFiles as $field => $fieldName) {
+        foreach ($requiredFiles as $field => $fieldInfo) {
+            $fieldName = $fieldInfo['label'];
+            $friendlyName = $fieldInfo['friendly_name'];
+            $allowedExtensions = $fieldInfo['extensions'];
+            
             // Check if file field exists in $_FILES
             if (!isset($files[$field])) {
-                $this->addError($field, "The {$fieldName} file is required for submission.");
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan tesis.");
                 continue;
             }
             
             // Check if file was uploaded without errors
             if (!isset($files[$field]['error']) || $files[$field]['error'] !== UPLOAD_ERR_OK) {
-                $this->addError($field, "The {$fieldName} file is required for submission.");
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan tesis.");
                 continue;
             }
             
             // Check if file has a valid name
             if (empty($files[$field]['name'])) {
-                $this->addError($field, "The {$fieldName} file is required for submission.");
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan tesis.");
                 continue;
+            }
+            
+            // Validate file extension for specific field requirements
+            $fileExtension = strtolower(pathinfo($files[$field]['name'], PATHINFO_EXTENSION));
+            if (!in_array($fileExtension, $allowedExtensions)) {
+                $allowedExtString = implode(', ', array_map(function($ext) { return '.' . $ext; }, $allowedExtensions));
+                $this->addError($field, "File {$friendlyName} harus berupa file dengan ekstensi: {$allowedExtString}");
             }
         }
         
@@ -253,19 +276,21 @@ class ValidationService
             return false;
         }
         
-        // Validate each file for size and type
+        // Validate each file for size
         $rules = [
-            'maxSize:' . $this->config['max_file_size'],
-            'mimes:pdf,doc,docx,txt'
+            'maxSize:' . $this->config['max_file_size']
         ];
         
-        foreach ($requiredFiles as $field => $fieldName) {
+        foreach ($requiredFiles as $field => $fieldInfo) {
+            $fieldName = $fieldInfo['label'];
+            $allowedExtensions = $fieldInfo['extensions'];
+            
             // Skip validation if file doesn't exist (already checked above)
             if (!isset($files[$field]) || $files[$field]['error'] !== UPLOAD_ERR_OK) {
                 continue;
             }
             
-            // Validate file size and type
+            // Validate file size
             $fileData = [
                 'name' => [$files[$field]['name']],
                 'size' => [$files[$field]['size']],

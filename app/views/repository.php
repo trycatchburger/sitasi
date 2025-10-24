@@ -86,8 +86,9 @@
       <?php foreach ($submissions as $submission): ?>
         <?php
           $nameParts = explode(' ', htmlspecialchars($submission['nama_mahasiswa']));
-          $firstName = $nameParts[0];
-          $lastName = count($nameParts) > 1 ? end($nameParts) : $firstName;
+          $lastName = end($nameParts); // Get the last part as the last name
+          $firstNames = array_slice($nameParts, 0, -1); // Get all parts except the last
+          $firstName = implode(' ', $firstNames); // Join the first/middle names
           $formattedName = $lastName . ', ' . $firstName;
           $titleLink = '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-green-700 hover:text-green-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
         ?>
