@@ -39,7 +39,7 @@ class Submission
                 throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
             }
 
-            $stmt_submission->bind_param("sssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi']);
+            $stmt_submission->bind_param("sssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi']);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -73,7 +73,7 @@ class Submission
             }
 
             $submission_type = 'master';
-            $stmt_submission->bind_param("ssssssiis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
+            $stmt_submission->bind_param("ssssiis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -95,6 +95,40 @@ class Submission
         }
     }
     
+    public function createJournal(array $data, array $files): int
+    {
+        $this->conn->begin_transaction();
+
+        try {
+            $sql_submission = "INSERT INTO submissions (nama_mahasiswa, email, judul_skripsi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt_submission = $this->conn->prepare($sql_submission);
+            if (!$stmt_submission) {
+                throw new DatabaseException("Journal submission statement preparation failed: " . $this->conn->error);
+            }
+
+            $submission_type = 'journal';
+            $stmt_submission->bind_param("ssissi", $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
+
+            if (!$stmt_submission->execute()) {
+                throw new DatabaseException("Journal submission execution failed: " . $stmt_submission->error);
+            }
+
+            $submission_id = $this->conn->insert_id;
+
+            $this->handleJournalFileUploads($submission_id, $files, $data['nama_penulis']);
+
+            $this->conn->commit();
+            
+            // Clear cache after successful resubmission
+            $this->clearCache();
+            
+            return $submission_id;
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+
     /**
      * Check if a submission already exists for the given NIM.
      */
@@ -112,6 +146,26 @@ class Submission
             return $result->num_rows > 0;
         } catch (Exception $e) {
             throw new DatabaseException("Database error while checking submission existence: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if a journal submission already exists for the given author name.
+     */
+    public function journalSubmissionExists(string $author_name): bool
+    {
+        try {
+            $stmt_check = $this->database->prepareWithProfiling("SELECT id FROM submissions WHERE nama_mahasiswa = ? AND submission_type = 'journal'");
+            if (!$stmt_check) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt_check->bind_param("s", $author_name);
+            $stmt_check->execute();
+            $result = $stmt_check->get_result();
+            
+            return $result->num_rows > 0;
+        } catch (Exception $e) {
+            throw new DatabaseException("Database error while checking journal submission existence: " . $e->getMessage());
         }
     }
 
@@ -156,7 +210,7 @@ class Submission
                 $this->deleteExistingFiles($submission_id);
             } else {
                 // No existing submission, create new one
-                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi) VALUES (?, ?, ?, ?, ?, ?, ?)";
                 $stmt_submission = $this->conn->prepare($sql_submission);
                 if (!$stmt_submission) {
                     throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
@@ -186,6 +240,150 @@ class Submission
         }
     }
     
+    /**
+     * Handles resubmission of journal files.
+     * If a user resubmits, the previously uploaded files will be overwritten
+     * with new ones based on their unique ID (name and submission type).
+     */
+    public function resubmitJournal(array $data, array $files): int
+    {
+        $this->conn->begin_transaction();
+
+        try {
+            // Check if journal submission already exists for this author
+            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nama_mahasiswa = ? AND submission_type = 'journal'");
+            if (!$stmt_check) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt_check->bind_param("s", $data['nama_penulis']);
+            $stmt_check->execute();
+            $result = $stmt_check->get_result();
+            
+            if ($result->num_rows > 0) {
+                // Submission exists, update it
+                $existing_submission = $result->fetch_assoc();
+                $submission_id = $existing_submission['id'];
+                
+                // Update submission data and reset status and reason to initial state, also updated_at to mark as resubmitted
+                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, email = ?, judul_skripsi = ?, abstract = ?, tahun_publikasi = ?, submission_type = 'journal', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                $stmt_update = $this->conn->prepare($sql_update);
+                if (!$stmt_update) {
+                    throw new DatabaseException("Submission update statement preparation failed: " . $this->conn->error);
+                }
+                
+                $stmt_update->bind_param("ssissi", $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_id);
+                
+                if (!$stmt_update->execute()) {
+                    throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);
+                }
+                
+                // Delete old files
+                $this->deleteExistingFiles($submission_id);
+            } else {
+                // No existing submission, create new one
+                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, email, judul_skripsi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?)";
+                $stmt_submission = $this->conn->prepare($sql_submission);
+                if (!$stmt_submission) {
+                    throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
+                }
+
+                $submission_type = 'journal';
+                $stmt_submission->bind_param("ssissi", $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
+                
+                if (!$stmt_submission->execute()) {
+                    throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
+                }
+                
+                $submission_id = $this->conn->insert_id;
+            }
+            
+            // Handle file uploads (this will overwrite existing files)
+            $this->handleJournalFileUploads($submission_id, $files, $data['nama_penulis']);
+            
+            $this->conn->commit();
+
+            // Clear cache after successful submission
+            $this->clearCache();
+
+            return $submission_id;
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+
+    /**
+     * Handles resubmission of master's degree files.
+     * If a user resubmits, the previously uploaded files will be overwritten
+     * with new ones based on their unique ID (name and NIM).
+     */
+    public function resubmitMaster(array $data, array $files): int
+    {
+        $this->conn->begin_transaction();
+
+        try {
+            // Check if submission already exists for this NIM
+            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nim = ?");
+            if (!$stmt_check) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt_check->bind_param("s", $data['nim']);
+            $stmt_check->execute();
+            $result = $stmt_check->get_result();
+            
+            if ($result->num_rows > 0) {
+                // Submission exists, update it
+                $existing_submission = $result->fetch_assoc();
+                $submission_id = $existing_submission['id'];
+                
+                // Update submission data and reset status and reason to initial state, also updated_at to mark as resubmitted
+                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, nim = ?, email = ?, dosen1 = ?, dosen2 = ?, judul_skripsi = ?, program_studi = ?, tahun_publikasi = ?, submission_type = 'master', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                $stmt_update = $this->conn->prepare($sql_update);
+                if (!$stmt_update) {
+                    throw new DatabaseException("Submission update statement preparation failed: " . $this->conn->error);
+                }
+                
+                $stmt_update->bind_param("ssssssiis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_id);
+                
+                if (!$stmt_update->execute()) {
+                    throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);
+                }
+                
+                // Delete old files
+                $this->deleteExistingFiles($submission_id);
+            } else {
+                // No existing submission, create new one
+                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $stmt_submission = $this->conn->prepare($sql_submission);
+                if (!$stmt_submission) {
+                    throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
+                }
+                
+                $submission_type = 'master';
+                $stmt_submission->bind_param("ssiis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
+                
+                if (!$stmt_submission->execute()) {
+                    throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
+                }
+                
+                $submission_id = $this->conn->insert_id;
+            }
+            
+            // Handle file uploads (this will overwrite existing files)
+            $this->handleMasterFileUploads($submission_id, $files, $data['nama_mahasiswa'], $data['nim']);
+            
+            $this->conn->commit();
+
+            // Clear cache after successful submission
+            $this->clearCache();
+
+            return $submission_id;
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+
     /**
      * Deletes existing files for a submission.
      */
@@ -404,74 +602,89 @@ class Submission
         }
     }
 
-    /**
-     * Handles resubmission of master's degree files.
-     * If a user resubmits, the previously uploaded files will be overwritten
-     * with new ones based on their unique ID (name and NIM).
-     */
-    public function resubmitMaster(array $data, array $files): int
+    private function handleJournalFileUploads(int $submission_id, array $files, string $author_name): void
     {
-        $this->conn->begin_transaction();
-
         try {
-            // Check if submission already exists for this NIM
-            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nim = ?");
-            if (!$stmt_check) {
-                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            $upload_dir = __DIR__ . '/../../public/uploads/';
+            if (!is_dir($upload_dir)) {
+                if (!mkdir($upload_dir, 0755, true)) {
+                    throw new FileUploadException("Failed to create upload directory: " . $upload_dir);
+                }
             }
-            $stmt_check->bind_param("s", $data['nim']);
-            $stmt_check->execute();
-            $result = $stmt_check->get_result();
-            
-            if ($result->num_rows > 0) {
-                // Submission exists, update it
-                $existing_submission = $result->fetch_assoc();
-                $submission_id = $existing_submission['id'];
-                
-                // Update submission data and reset status and reason to initial state, also updated_at to mark as resubmitted
-                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, nim = ?, email = ?, dosen1 = ?, dosen2 = ?, judul_skripsi = ?, program_studi = ?, tahun_publikasi = ?, submission_type = 'master', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-                $stmt_update = $this->conn->prepare($sql_update);
-                if (!$stmt_update) {
-                    throw new DatabaseException("Submission update statement preparation failed: " . $this->conn->error);
-                }
-                
-                $stmt_update->bind_param("ssssssiis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_id);
-                
-                if (!$stmt_update->execute()) {
-                    throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);
-                }
-                
-                // Delete old files
-                $this->deleteExistingFiles($submission_id);
-            } else {
-                // No existing submission, create new one
-                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                $stmt_submission = $this->conn->prepare($sql_submission);
-                if (!$stmt_submission) {
-                    throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
-                }
-                
-                $submission_type = 'master';
-                $stmt_submission->bind_param("ssssiis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
-                
-                if (!$stmt_submission->execute()) {
-                    throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
-                }
-                
-                $submission_id = $this->conn->insert_id;
+
+            $sql_file = "INSERT INTO submission_files (submission_id, file_path, file_name) VALUES (?, ?, ?)";
+            $stmt_file = $this->conn->prepare($sql_file);
+            if (!$stmt_file) {
+                throw new DatabaseException("File statement preparation failed: " . $this->conn->error);
             }
-            
-            // Handle file uploads (this will overwrite existing files)
-            $this->handleMasterFileUploads($submission_id, $files, $data['nama_mahasiswa'], $data['nim']);
-            
-            $this->conn->commit();
 
-            // Clear cache after successful submission
-            $this->clearCache();
+            $file_keys = [
+                'cover_jurnal' => 'Cover_Jurnal',
+                'file_jurnal' => 'File_Jurnal'
+            ];
 
-            return $submission_id;
+            foreach ($file_keys as $key => $label) {
+                if (isset($files[$key]) && $files[$key]['error'] === UPLOAD_ERR_OK) {
+                    $original_name = $files[$key]['name'];
+                    $tmp_name = $files[$key]['tmp_name'];
+                    $file_size = $files[$key]['size'];
+
+                    // 1. File name sanitization
+                    $sanitized_name = $this->validationService->sanitizeFileName($original_name);
+                    
+                    // 2. File size validation
+                    $maxFileSize = $this->validationService->getMaxFileSize() * 1024; // Convert to bytes
+                    if ($file_size > $maxFileSize) {
+                        throw new FileUploadException("File {$sanitized_name} exceeds maximum allowed size of " . $this->validationService->getMaxFileSize() . "KB.");
+                    }
+                    
+                    // 3. File content validation
+                    if (!$this->validationService->validateFileContent($tmp_name, $sanitized_name)) {
+                        throw new FileUploadException("File {$sanitized_name} content does not match its extension or is not allowed.");
+                    }
+                    
+                    // 4. File type validation (extension check)
+                    $allowedTypes = $this->validationService->getAllowedMimeTypes();
+                    $file_extension = strtolower(pathinfo($sanitized_name, PATHINFO_EXTENSION));
+                    if (!array_key_exists($file_extension, $allowedTypes)) {
+                        throw new FileUploadException("File type {$file_extension} is not allowed.");
+                    }
+                    
+                    // 5. Antivirus scanning (if enabled)
+                    try {
+                        if (!$this->validationService->scanFileForVirus($tmp_name)) {
+                            throw new FileUploadException("File {$sanitized_name} failed virus scan and was rejected.");
+                        }
+                    } catch (Exception $e) {
+                        // Re-throw the exception with additional context
+                        throw new FileUploadException("Virus scan error: " . $e->getMessage());
+                    }
+
+                    // Create custom file name with author name
+                    $custom_name = $label . '.' . str_replace(' ', '_', $author_name) . '.' . $file_extension;
+                    // Sanitize the custom name
+                    $safe_custom_name = $this->validationService->sanitizeFileName($custom_name);
+                    
+                    $unique_filename = $submission_id . '_' . uniqid() . '_' . $safe_custom_name;
+                    $target_path = 'uploads/' . $unique_filename;
+                    
+                    // Final security check - ensure we're not overwriting existing files
+                    $full_target_path = $upload_dir . $unique_filename;
+                    if (file_exists($full_target_path)) {
+                        throw new FileUploadException("File {$safe_custom_name} already exists. Please try again.");
+                    }
+
+                    if (!move_uploaded_file($tmp_name, $full_target_path)) {
+                        throw new FileUploadException("Failed to upload file: " . htmlspecialchars($safe_custom_name));
+                    }
+
+                    $stmt_file->bind_param("iss", $submission_id, $target_path, $safe_custom_name);
+                    if (!$stmt_file->execute()) {
+                        throw new DatabaseException("File DB insert failed: " . $stmt_file->error);
+                    }
+                }
+            }
         } catch (Exception $e) {
-            $this->conn->rollback();
             throw $e;
         }
     }
@@ -535,6 +748,16 @@ class Submission
     public function findRecentApproved(int $limit = 6): array
     {
         return $this->repository->findRecentApproved($limit);
+    }
+
+    /**
+     * Find recent approved journal submissions for homepage preview
+     * @param int $limit Number of submissions to fetch
+     * @return array
+     */
+    public function findRecentApprovedJournals(int $limit = 6): array
+    {
+        return $this->repository->findRecentApprovedJournals($limit);
     }
 
     /**
@@ -648,5 +871,17 @@ class Submission
     public function countSearchResults(string $search, bool $showAll = false): int
     {
         return $this->repository->countSearchResults($search, $showAll);
+    }
+    
+    /**
+     * Search recent approved journal submissions for homepage preview
+     * @param string $search Search term
+     * @param int $limit Number of submissions to fetch
+     * @return array
+     * @throws DatabaseException
+     */
+    public function searchRecentApprovedJournals(string $search, int $limit = 6): array
+    {
+        return $this->repository->searchRecentApprovedJournals($search, $limit);
     }
 }

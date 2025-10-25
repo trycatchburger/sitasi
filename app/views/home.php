@@ -24,6 +24,15 @@ try {
 }
 ?>
 
+<?php
+// Fetch recent journal submissions for homepage preview
+try {
+    $recentJournals = $submissionModel->findRecentApprovedJournals(6);
+} catch (Exception $e) {
+    $recentJournals = [];
+}
+?>
+
 <?php include __DIR__ . '/hero.php'; ?>
 <?php include __DIR__ . '/alur.php'; ?>
 <?php include __DIR__ . '/unggah.php'; ?>
@@ -105,6 +114,47 @@ try {
     </div>
   <?php endif; ?>
 </section>
+
+ <!-- Recent Journals Section -->
+ <?php if (!empty($recentJournals)): ?>
+ <section class="w-full bg-white rounded-xl shadow-md p-6 mt-8">
+   <div class="mb-10 text-center">
+     <h2 class="text-3xl font-extrabold text-orange-900 mb-2">Jurnal Terbaru</h2>
+     <p class="text-gray-600 text-sm">Jelajahi koleksi jurnal ilmiah yang baru disetujui</p>
+   </div>
+
+   <!-- Journals List -->
+   <div class="border-t border-b border-gray-200 py-4">
+     <ul class="divide-y divide-gray-100">
+       <?php foreach ($recentJournals as $journal): ?>
+         <?php
+           $nameParts = explode(' ', htmlspecialchars($journal['nama_mahasiswa']));
+           $firstName = $nameParts[0];
+           $lastName = count($nameParts) > 1 ? end($nameParts) : $firstName;
+           $formattedName = $lastName . ', ' . $firstName;
+
+           $citation = $formattedName . '. (' . htmlspecialchars($journal['tahun_publikasi']) . '). ' .
+                       '<a href="' . url('submission/detail/' . $journal['id']) . '" class="text-orange-900 font-semibold hover:text-orange-600 hover:underline">' .
+                       htmlspecialchars($journal['judul_skripsi']) . '</a>' .
+                       '. Jurnal Ilmiah, STAIN Sultan Abdurrahman Kepulauan Riau.';
+         ?>
+         <li class="py-4">
+           <div class="text-gray-800 text-sm leading-relaxed">
+             <?= $citation ?>
+           </div>
+         </li>
+       <?php endforeach; ?>
+     </ul>
+   </div>
+
+   <!-- View More -->
+   <div class="mt-6 text-center">
+     <a href="<?= url('submission/journal_repository') ?>" class="inline-block px-5 py-2 border border-orange-900 text-orange-900 rounded-full hover:bg-orange-600 hover:text-white transition">
+       Lihat Semua Jurnal
+     </a>
+   </div>
+ </section>
+ <?php endif; ?>
 
   <!-- Features Section -->
   <section class="mt-20 w-full max-w-5xl">

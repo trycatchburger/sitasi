@@ -65,7 +65,7 @@ if (strpos($method_name, '_') !== false) {
 } else {
     // Handle lowercase method names that should be camelCase
     // Try to detect word boundaries based on common prefixes
-    $known_prefixes = ['new', 'skripsi', 'tesis', 'create', 'resubmit', 'repository', 'detail', 'comparison',
+    $known_prefixes = ['new', 'skripsi', 'tesis', 'journal', 'create', 'resubmit', 'repository', 'detail', 'comparison',
                       'login', 'dashboard', 'logout', 'update', 'unpublish', 'republish',
                       'admin', 'delete', 'show', 'edit', 'remove', 'view', 'download'];
     
@@ -84,7 +84,7 @@ if (strpos($method_name, '_') !== false) {
     if ($method_name === ($segments[1] ?? 'index') && !empty($segments[1])) {
         // If the method name hasn't changed, try a more general pattern
         // This handles cases like 'newmaster' -> 'newMaster', 'createmaster' -> 'createMaster', etc.
-        if (preg_match('/^(new|create|resubmit|repository|detail|comparison|login|dashboard|logout|update|unpublish|republish|admin|delete|show|edit|remove|view|downloadall)([a-z]+)/', $method_name, $matches)) {
+        if (preg_match('/^(new|create|resubmit|repository|detail|comparison|journal|login|dashboard|logout|update|unpublish|republish|admin|delete|show|edit|remove|view|downloadall)([a-z]+)/', $method_name, $matches)) {
             $prefix = $matches[1];
             $suffix = ucfirst($matches[2]);
             $method_name = $prefix . $suffix;

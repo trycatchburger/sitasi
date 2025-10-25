@@ -98,6 +98,25 @@ class ValidationService
     }
 
     /**
+     * Validate journal submission form data
+     * @param array $data Form data
+     * @return bool True if validation passes
+     * @throws ValidationException
+     */
+    public function validateJournalSubmissionForm(array $data): bool
+    {
+        $rules = [
+            'nama_penulis' => 'required|maxLength:100',
+            'email' => 'required|email|maxLength:100',
+            'judul_jurnal' => 'required|maxLength:500',
+            'abstrak' => 'required|maxLength:2000',
+            'tahun_publikasi' => 'required|year'
+        ];
+
+        return $this->validate($data, $rules);
+    }
+
+    /**
      * Validate admin login form data
      * @param array $data Form data
      * @return bool True if validation passes
@@ -260,6 +279,89 @@ class ValidationService
             // Check if file has a valid name
             if (empty($files[$field]['name'])) {
                 $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan tesis.");
+                continue;
+            }
+            
+            // Validate file extension for specific field requirements
+            $fileExtension = strtolower(pathinfo($files[$field]['name'], PATHINFO_EXTENSION));
+            if (!in_array($fileExtension, $allowedExtensions)) {
+                $allowedExtString = implode(', ', array_map(function($ext) { return '.' . $ext; }, $allowedExtensions));
+                $this->addError($field, "File {$friendlyName} harus berupa file dengan ekstensi: {$allowedExtString}");
+            }
+        }
+        
+        // If we have errors at this point, return false
+        if (!empty($this->errors)) {
+            return false;
+        }
+        
+        // Validate each file for size
+        $rules = [
+            'maxSize:' . $this->config['max_file_size']
+        ];
+        
+        foreach ($requiredFiles as $field => $fieldInfo) {
+            $fieldName = $fieldInfo['label'];
+            $allowedExtensions = $fieldInfo['extensions'];
+            
+            // Skip validation if file doesn't exist (already checked above)
+            if (!isset($files[$field]) || $files[$field]['error'] !== UPLOAD_ERR_OK) {
+                continue;
+            }
+            
+            // Validate file size
+            $fileData = [
+                'name' => [$files[$field]['name']],
+                'size' => [$files[$field]['size']],
+                'error' => [$files[$field]['error']]
+            ];
+            
+            foreach ($rules as $rule) {
+                $ruleParts = explode(':', $rule);
+                $ruleName = $ruleParts[0];
+                $ruleValue = $ruleParts[1] ?? null;
+                $this->applyFileRule($field, $ruleName, $ruleValue, 0, $fileData);
+            }
+        }
+        
+        return empty($this->errors);
+    }
+
+    /**
+     * Validate journal submission files
+     * @param array $files File data from $_FILES
+     * @return bool True if validation passes
+     * @throws FileUploadException
+     */
+    public function validateJournalSubmissionFiles(array $files): bool
+    {
+        // Define required file fields for journal with specific extensions
+        $requiredFiles = [
+            'cover_jurnal' => ['label' => 'Cover Jurnal', 'extensions' => ['jpg', 'jpeg'], 'friendly_name' => 'Cover Jurnal'],
+            'file_jurnal' => ['label' => 'File Jurnal', 'extensions' => ['pdf'], 'friendly_name' => 'File Jurnal']
+        ];
+        
+        // Check each required file
+        foreach ($requiredFiles as $field => $fieldInfo) {
+            $fieldName = $fieldInfo['label'];
+            $friendlyName = $fieldInfo['friendly_name'];
+            $allowedExtensions = $fieldInfo['extensions'];
+            
+            // Check if file field exists in $_FILES
+            if (!isset($files[$field])) {
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan jurnal.");
+                continue;
+            }
+            
+            // Check if file was uploaded without errors
+            if (!isset($files[$field]['error']) || $files[$field]['error'] !== UPLOAD_ERR_OK) {
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan jurnal.");
+                continue;
+            }
+            
+            // Check if file has a valid name
+            if (empty($files[$field]['name'])) {
+                $this->addError($field, "{$friendlyName} wajib diunggah untuk pengajuan jurnal.");
                 continue;
             }
             

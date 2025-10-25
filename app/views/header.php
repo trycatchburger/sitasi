@@ -19,7 +19,7 @@
       Layanan perpustakaan yang dirancang untuk memudahkan mahasiswa dalam penyerahan skripsi secara mandiri melalui proses yang terstruktur.
     </p>
     
-    <a href="#unggah" 
+    <a href="#unggah"
    class="inline-block bg-amber-600 text-white px-6 py-3 rounded shadow-lg hover:bg-amber-700 font-bold transition duration-300 ease-in-out transform hover:scale-105">
       AKSES UNGGAH MANDIRI
     </a>
@@ -27,6 +27,11 @@
     <a href="<?= url('submission/repository') ?>"
    class="inline-block bg-amber-600 text-white px-6 py-3 rounded shadow-lg hover:bg-amber-700 font-bold transition duration-300 ease-in-out transform hover:scale-105">
       LIHAT REPOSITORY
+    </a>
+
+    <a href="<?= url('submission/journal_repository') ?>"
+   class="inline-block bg-orange-600 text-white px-6 py-3 rounded shadow-lg hover:bg-orange-700 font-bold transition duration-300 ease-in-out transform hover:scale-105">
+      LIHAT JURNAL REPOSITORY
     </a>
 
   </div>

@@ -26,7 +26,7 @@
     </a>
 
     <!-- Kartu 3: Jurnal -->
-    <a href="<?= url('submission/skripsi') ?>" class="block">
+    <a href="<?= url('submission/jurnal') ?>" class="block">
       <div class="bg-orange-500 text-white rounded-xl shadow-md w-64 sm:w-60 h-auto p-6 flex flex-col items-center hover:bg-orange-600 transition">
         <div class="text-4xl mb-3">📄</div>
         <h3 class="text-base sm:text-lg font-bold">Unggah Jurnal</h3>
