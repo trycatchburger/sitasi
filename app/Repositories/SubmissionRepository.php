@@ -292,6 +292,69 @@ class SubmissionRepository extends BaseRepository
     }
 
     /**
+     * Find journal submissions with pagination
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @return array
+     * @throws DatabaseException
+     */
+    public function findJournalSubmissions(int $page = 1, int $perPage = 10): array
+    {
+        try {
+            // Calculate offset for pagination
+            $offset = ($page - 1) * $perPage;
+            
+            // Get journal submissions only with pagination
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.submission_type = 'journal' ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt->bind_param("ii", $perPage, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $submissions = $result->fetch_all(MYSQLI_ASSOC);
+            
+            // For each submission, get its files
+            foreach ($submissions as &$submission) {
+                $stmt_files = $this->conn->prepare("SELECT id, file_path, file_name FROM submission_files WHERE submission_id = ?");
+                if (!$stmt_files) {
+                    throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+                }
+                $stmt_files->bind_param("i", $submission['id']);
+                $stmt_files->execute();
+                $submission['files'] = $stmt_files->get_result()->fetch_all(MYSQLI_ASSOC);
+            }
+            
+            return $submissions;
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while fetching journal submissions: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get total count of journal submissions
+     * @return int
+     * @throws DatabaseException
+     */
+    public function countJournalSubmissions(): int
+    {
+        try {
+            $sql = "SELECT COUNT(*) as count FROM submissions WHERE submission_type = 'journal'";
+            $result = $this->conn->query($sql);
+            if ($result === false) {
+                throw new DatabaseException("Database query failed: " . $this->conn->error);
+            }
+            
+            $row = $result->fetch_assoc();
+            return (int) $row['count'];
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while counting journal submissions: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Find submission by ID
      * @param int $id Submission ID
      * @return array|null
@@ -449,31 +512,63 @@ class SubmissionRepository extends BaseRepository
      * @return array
      * @throws DatabaseException
      */
-    public function searchSubmissions(string $search, bool $showAll = false, int $page = 1, int $perPage = 10): array
+    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, int $page = 1, int $perPage = 10): array
     {
         try {
             // Calculate offset for pagination
             $offset = ($page - 1) * $perPage;
             
-            // Build SQL query based on showAll parameter
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id ";
+            // Build SQL query with all fields including abstract and submission_type
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id ";
             
-            // Add WHERE clause based on showAll parameter
-            if (!$showAll) {
-                $sql .= "WHERE s.status = 'Pending' AND (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?) ";
+            // Build WHERE clause based on parameters
+            $whereClause = "";
+            
+            if ($showJournal) {
+                $whereClause = "WHERE s.submission_type = 'journal'";
+            } else if (!$showAll) {
+                $whereClause = "WHERE s.status = 'Pending'";
             } else {
-                $sql .= "WHERE (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?) ";
+                $whereClause = "";
             }
             
-            $sql .= "ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            // Add search conditions if there's a search term
+            if (!empty($search)) {
+                $searchTerm = '%' . $search . '%';
+                
+                if (!empty($whereClause)) {
+                    $whereClause .= " AND (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+                } else {
+                    $whereClause = "WHERE (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+                }
+            }
+            
+            $sql .= $whereClause . " ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
             
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
             
-            $searchTerm = '%' . $search . '%';
-            $stmt->bind_param("ssiii", $searchTerm, $searchTerm, $searchTerm, $perPage, $offset);
+            // Add search parameters to the bind
+            $params = [];
+            $types = "";
+            
+            if (!empty($search)) {
+                $params = [$searchTerm, $searchTerm, $searchTerm, $perPage, $offset];
+                $types = "ssiii";
+                
+                // Create array of references for bind_param
+                $refs = [];
+                foreach ($params as $key => $value) {
+                    $refs[$key] = &$params[$key];
+                }
+                
+                $stmt->bind_param($types, ...$refs);
+            } else {
+                $stmt->bind_param("ii", $perPage, $offset);
+            }
+            
             $stmt->execute();
             $result = $stmt->get_result();
             
@@ -503,25 +598,57 @@ class SubmissionRepository extends BaseRepository
      * @return int
      * @throws DatabaseException
      */
-    public function countSearchResults(string $search, bool $showAll = false): int
+    public function countSearchResults(string $search, bool $showAll = false, bool $showJournal = false): int
     {
         try {
             $sql = "SELECT COUNT(*) as count FROM submissions s ";
             
-            // Add WHERE clause based on showAll parameter
-            if (!$showAll) {
-                $sql .= "WHERE s.status = 'Pending' AND (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+            // Build WHERE clause based on parameters
+            $whereClause = "";
+            
+            if ($showJournal) {
+                $whereClause = "WHERE s.submission_type = 'journal'";
+            } else if (!$showAll) {
+                $whereClause = "WHERE s.status = 'Pending'";
             } else {
-                $sql .= "WHERE (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+                $whereClause = "";
             }
+            
+            // Add search conditions if there's a search term
+            if (!empty($search)) {
+                $searchTerm = '%' . $search . '%';
+                
+                if (!empty($whereClause)) {
+                    $whereClause .= " AND (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+                } else {
+                    $whereClause = "WHERE (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+                }
+            }
+            
+            $sql .= $whereClause;
             
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
             
-            $searchTerm = '%' . $search . '%';
-            $stmt->bind_param("sss", $searchTerm, $searchTerm, $searchTerm);
+            // Add search parameters to the bind
+            $params = [];
+            $types = "";
+            
+            if (!empty($search)) {
+                $params = [$searchTerm, $searchTerm, $searchTerm];
+                $types = "sss";
+                
+                // Create array of references for bind_param
+                $refs = [];
+                foreach ($params as $key => $value) {
+                    $refs[$key] = &$params[$key];
+                }
+                
+                $stmt->bind_param($types, ...$refs);
+            }
+            
             $stmt->execute();
             $result = $stmt->get_result();
             

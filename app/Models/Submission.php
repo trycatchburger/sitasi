@@ -741,6 +741,26 @@ class Submission
     }
 
     /**
+     * Find journal submissions with pagination
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @return array
+     */
+    public function findJournalSubmissions(int $page = 1, int $perPage = 10): array
+    {
+        return $this->repository->findJournalSubmissions($page, $perPage);
+    }
+
+    /**
+     * Get total count of journal submissions
+     * @return int
+     */
+    public function countJournalSubmissions(): int
+    {
+        return $this->repository->countJournalSubmissions();
+    }
+
+    /**
      * Find recent approved submissions for homepage preview
      * @param int $limit Number of submissions to fetch
      * @return array
@@ -851,26 +871,28 @@ class Submission
      * Search submissions by name, title, or NIM
      * @param string $search Search term
      * @param bool $showAll Whether to show all submissions or only pending ones
+     * @param bool $showJournal Whether to show only journal submissions
      * @param int $page Page number
      * @param int $perPage Items per page
      * @return array
      * @throws DatabaseException
      */
-    public function searchSubmissions(string $search, bool $showAll = false, int $page = 1, int $perPage = 10): array
+    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, int $page = 1, int $perPage = 10): array
     {
-        return $this->repository->searchSubmissions($search, $showAll, $page, $perPage);
+        return $this->repository->searchSubmissions($search, $showAll, $showJournal, $page, $perPage);
     }
     
     /**
      * Count search results for pagination
      * @param string $search Search term
      * @param bool $showAll Whether to count all submissions or only pending ones
+     * @param bool $showJournal Whether to count only journal submissions
      * @return int
      * @throws DatabaseException
      */
-    public function countSearchResults(string $search, bool $showAll = false): int
+    public function countSearchResults(string $search, bool $showAll = false, bool $showJournal = false): int
     {
-        return $this->repository->countSearchResults($search, $showAll);
+        return $this->repository->countSearchResults($search, $showAll, $showJournal);
     }
     
     /**

@@ -35,14 +35,19 @@
     <div class="mb-6 flex flex-wrap items-center gap-4">
       <div class="flex items-center space-x-4">
         <span class="text-gray-700">Filter:</span>
-        <button id="showAllBtn" class="btn btn-secondary btn-sm <?= (!empty($showAll)) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Semua Pengajuan</button>
-        <button id="showPendingBtn" class="btn btn-primary btn-sm <?= (empty($showAll)) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Hanya yang Belum Diverifikasi (Default)</button>
+        <button id="showAllBtn" class="btn btn-secondary btn-sm <?= (!empty($showAll) && !isset($_GET['type'])) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Semua Pengajuan</button>
+        <button id="showPendingBtn" class="btn btn-secondary btn-sm <?= (empty($showAll) && !isset($_GET['type'])) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Hanya yang Belum Diverifikasi (Default)</button>
+        <button id="showJournalBtn" class="btn btn-secondary btn-sm <?= (isset($_GET['type']) && $_GET['type'] === 'journal') ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Pengajuan Jurnal Saja</button>
       </div>
       
       <!-- Search Form -->
       <div class="flex items-center ml-auto">
         <form method="GET" action="<?= url('admin/dashboard') ?>" class="flex">
-          <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'all' : 'pending') ?>">
+          <?php if (isset($_GET['type']) && $_GET['type'] === 'journal'): ?>
+            <input type="hidden" name="type" value="journal">
+          <?php else: ?>
+            <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'all' : 'pending') ?>">
+          <?php endif; ?>
           <input type="hidden" name="page" value="1"> <!-- Reset to first page when searching -->
           <input type="text"
                  name="search"
@@ -197,7 +202,7 @@
         <div class="mt-6 flex justify-center">
           <nav class="inline-flex rounded-md shadow">
             <?php if ($currentPage > 1): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Previous
               </a>
             <?php endif; ?>
@@ -206,7 +211,7 @@
               // Show first page
               if ($currentPage > 3):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 1
               </a>
               <?php if ($currentPage > 4): ?>
@@ -222,7 +227,7 @@
               $end = min($totalPages, $currentPage + 2);
               for ($i = $start; $i <= $end; $i++):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
                 <?= $i ?>
               </a>
             <?php endfor; ?>
@@ -236,13 +241,13 @@
                     ...
                   </span>
                 <?php endif; ?>
-                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                   <?= $totalPages ?>
                 </a>
               <?php endif; ?>
             
             <?php if ($currentPage < $totalPages): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage + 1 ?><?= isset($showAll) && $showAll ? '&show=all' : '' ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage + 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Next
               </a>
             <?php endif; ?>
@@ -381,8 +386,8 @@ document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').for
                 // Check if we're on a search results page and refresh to update the display
                 if (window.location.search.includes('search=')) {
                     window.location.reload();
-                } else if (window.location.search.includes('show=')) {
-                    // Also refresh if we're on a filtered view (show=all or show=pending)
+                } else if (window.location.search.includes('show=') || window.location.search.includes('type=')) {
+                    // Also refresh if we're on a filtered view (show=all, show=pending, or type=journal)
                     window.location.reload();
                 }
             }, 500); // 0.5 second delay to allow user to see success message
@@ -421,8 +426,9 @@ document.getElementById('showAllBtn')?.addEventListener('click', function() {
   // Redirect to the same page with show=all parameter
   const url = new URL(window.location);
   url.searchParams.set('show', 'all');
+  url.searchParams.delete('type'); // Remove type parameter when showing all
   url.searchParams.delete('page'); // Reset to first page when changing filter
- url.searchParams.delete('search'); // Also clear search when changing filter
+  url.searchParams.delete('search'); // Also clear search when changing filter
   window.location.href = url.toString();
 });
 
@@ -430,8 +436,20 @@ document.getElementById('showPendingBtn')?.addEventListener('click', function() 
   // Redirect to the same page without show parameter (default is pending only)
   const url = new URL(window.location);
   url.searchParams.delete('show');
+  url.searchParams.delete('type'); // Remove type parameter when showing pending
   url.searchParams.delete('page'); // Reset to first page when changing filter
- url.searchParams.delete('search'); // Also clear search when changing filter
+  url.searchParams.delete('search'); // Also clear search when changing filter
+  window.location.href = url.toString();
+});
+
+// Handle journal filter button
+document.getElementById('showJournalBtn')?.addEventListener('click', function() {
+  // Redirect to the same page with type=journal parameter
+  const url = new URL(window.location);
+  url.searchParams.set('type', 'journal');
+  url.searchParams.delete('show'); // Remove show parameter when showing journals
+  url.searchParams.delete('page'); // Reset to first page when changing filter
+  url.searchParams.delete('search'); // Also clear search when changing filter
   window.location.href = url.toString();
 });
 </script>

@@ -5,6 +5,9 @@ config.php
 public/uploads/
 public/letters/
 
+# Cache directory
+cache/
+
 # IDE files
 .vscode/
 .idea/

@@ -77,6 +77,7 @@ class AdminController extends Controller {
              
              // Get query parameters
              $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
+             $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
              $search = isset($_GET['search']) ? trim($_GET['search']) : '';
              $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
              $perPage = 10; // Default items per page
@@ -84,8 +85,12 @@ class AdminController extends Controller {
              // Determine which method to use based on parameters
              if (!empty($search)) {
                  // Use search functionality
-                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $page, $perPage);
-                 $totalResults = $submissionModel->countSearchResults($search, $showAll);
+                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $page, $perPage);
+                 $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal);
+             } else if ($showJournal) {
+                 // Show only journal submissions
+                 $submissions = $submissionModel->findJournalSubmissions($page, $perPage);
+                 $totalResults = $submissionModel->countJournalSubmissions();
              } else if ($showAll) {
                  // Show all submissions
                  $submissions = $submissionModel->findAll($page, $perPage);
