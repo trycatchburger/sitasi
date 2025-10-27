@@ -23,7 +23,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Build SQL query with optional pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id ORDER BY s.created_at DESC";
             
             // Add pagination if perPage is specified
             if ($perPage > 0) {
@@ -266,7 +266,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Get submissions with status 'Diterima' or 'Pending'
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
             $result = $this->conn->query($sql);
             if ($result === false) {
                 throw new DatabaseException("Database query failed: " . $this->conn->error);
@@ -447,7 +447,7 @@ class SubmissionRepository extends BaseRepository
     public function getSubmissionWithEmail(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id = ?");
+            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }

@@ -85,6 +85,7 @@
         <table class="w-full divide-y divide-gray-200 max-w-full">
           <thead class="bg-gray-50">
             <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Tipe</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mahasiswa</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul Skripsi</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Berkas</th>
@@ -108,6 +109,35 @@
             <?php else: ?>
               <?php foreach ($submissions as $submission): ?>
                 <tr class="hover:bg-gray-50 <?= isset($submission['is_resubmission']) && $submission['is_resubmission'] ? 'bg-green-50 border-l-4 border-l-green-40' : '' ?>">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <?php
+                      $submission_type = $submission['submission_type'] ?? 'bachelor'; // Default to bachelor if not set
+                      $type_label = '';
+                      $type_color = 'bg-gray-100 text-gray-800'; // Default color
+                      
+                      switch ($submission_type) {
+                        case 'bachelor':
+                          $type_label = 'Skripsi';
+                          $type_color = 'bg-blue-100 text-blue-800';
+                          break;
+                        case 'master':
+                          $type_label = 'Tesis';
+                          $type_color = 'bg-purple-100 text-purple-800';
+                          break;
+                        case 'journal':
+                          $type_label = 'Jurnal';
+                          $type_color = 'bg-green-100 text-green-800';
+                          break;
+                        default:
+                          $type_label = ucfirst($submission_type);
+                          $type_color = 'bg-gray-100 text-gray-800';
+                          break;
+                      }
+                    ?>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $type_color ?>">
+                      <?= $type_label ?>
+                    </span>
+                  </td>
                   <td class="px-6 py-4">
                     <div class="text-sm font-medium text-gray-900 flex items-center">
                       <?= htmlspecialchars($submission['nama_mahasiswa']) ?>
@@ -330,7 +360,7 @@ document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').for
         const row = this.closest('tr');
         
         // Update the status badge
-        const statusCell = row.querySelector('td:nth-child(4)'); // Status column
+        const statusCell = row.querySelector('td:nth-child(6)'); // Status column (now 6th column after adding type column at the beginning)
         const statusSelect = this.querySelector('select[name="status"]');
         const newStatus = statusSelect.value;
         
@@ -351,6 +381,9 @@ document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').for
           </span>
         `;
         
+        // Preserve the submission type column by getting the original value from the form or server response
+        // The submission type doesn't change, so we don't need to update it
+        
         // Get the input values from the form that was submitted
         const reasonInput = this.querySelector('textarea[name="reason"]');
         const serialInput = this.querySelector('input[name="serial_number"]');
@@ -366,7 +399,7 @@ document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').for
         }
         
         // Also update the values displayed in the form in the table cell
-        const reasonCell = this.querySelector('td:nth-child(6)'); // Reason column (6th column based on the table structure)
+        const reasonCell = this.querySelector('td:nth-child(8)'); // Reason column (8th column based on the table structure after adding type column at the beginning)
         if (reasonCell) {
             const reasonField = reasonCell.querySelector('textarea[name="reason"]');
             if (reasonField) {
