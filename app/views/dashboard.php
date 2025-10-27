@@ -161,6 +161,7 @@
                     <form action="<?= url('admin/updateStatus') ?>" method="POST" class="flex flex-col gap-1">
                       
                       <input type="hidden" name="submission_id" value="<?= $submission['id'] ?>">
+                      <?= csrf_field() ?>
                       <input type="text" name="serial_number" placeholder="No. Surat" class="border rounded px-1 py-1 text-xs" value="<?= htmlspecialchars($submission['serial_number'] ?? '') ?>">
                       <select name="status" class="border rounded px-1 py-1 text-xs">
                         <option value="Pending" <?= $status === 'Pending' ? 'selected' : '' ?>>Pending</option>

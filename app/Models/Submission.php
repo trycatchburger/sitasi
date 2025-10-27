@@ -39,7 +39,7 @@ class Submission
                 throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
             }
 
-            $stmt_submission->bind_param("sssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi']);
+            $stmt_submission->bind_param("sssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi']);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -73,7 +73,7 @@ class Submission
             }
 
             $submission_type = 'master';
-            $stmt_submission->bind_param("ssssiis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
+            $stmt_submission->bind_param("sssssssis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -360,7 +360,7 @@ class Submission
                 }
                 
                 $submission_type = 'master';
-                $stmt_submission->bind_param("ssiis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
+                $stmt_submission->bind_param("sssssssis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
                 
                 if (!$stmt_submission->execute()) {
                     throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
