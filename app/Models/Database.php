@@ -26,6 +26,9 @@ class Database
             
             // Set timezone to match application timezone (Asia/Jakarta UTC+7)
             $this->conn->query("SET time_zone = '+07:00'");
+            
+            // Set charset to UTF-8
+            $this->conn->set_charset("utf8mb4");
         } catch (\Exception $e) {
             throw new DatabaseException("Database connection error: " . $e->getMessage());
         }

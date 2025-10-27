@@ -4,6 +4,9 @@ namespace App\Models;
 
 use TCPDF;
 
+// Include helper functions
+require_once __DIR__ . '/../helpers/common.php';
+
 class PdfService
 {
     /**
@@ -19,6 +22,9 @@ class PdfService
         
         // Create new PDF document (A4 size)
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        
+        // Set default monospaced font for PDF
+        $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
         
         // Set document information
         $pdf->SetCreator('University Thesis Submission System');
@@ -43,7 +49,8 @@ class PdfService
         $pdf->AddPage();
         
         // Set font for content (header will be handled by image)
-        $pdf->SetFont('helvetica', '', 12);
+        // Set font to support UTF-8 characters - using default font which supports UTF-8
+        $pdf->SetFont('freeserif', '', 12);
 
         // Add letterhead image
         $letterheadPath = __DIR__ . '/../../public/images/letterhead.png';
@@ -56,7 +63,7 @@ class PdfService
             $pdf->SetY(45);
         } else {
             // Fallback to current header if letterhead image doesn't exist
-            $pdf->SetFont('helvetica', 'B', 14);
+            $pdf->SetFont('freeserif', 'B', 14);
             
             // Add university logo (if exists)
             $logoPath = __DIR__ . '/../../public/images/university-logo.png';
@@ -66,10 +73,10 @@ class PdfService
             
             // University header
             $pdf->SetXY(25, 20);
-            $pdf->SetFont('helvetica', 'B', 16);
+            $pdf->SetFont('freeserif', 'B', 16);
             $pdf->Cell(0, 8, 'Tanda Terima Unggah Karya Ilmiah', 0, 1, 'C');
             $pdf->Cell(0, 8, 'STAIN Sultran Abdurrahman', 0, 1, 'C');
-            $pdf->SetFont('helvetica', '', 12);
+            $pdf->SetFont('freeserif', '', 12);
             
             // Horizontal line
             $pdf->Line(25, 45, 185, 45);
@@ -80,19 +87,19 @@ class PdfService
         }
         
         // Add "SURAT BUKTI UNGGAH MANDIRI" text
-        $pdf->SetFont('helvetica', 'B', 14); // Bold font for the title
+        $pdf->SetFont('freeserif', 'B', 14); // Bold font for the title
         $pdf->Cell(0, 6, 'SURAT BUKTI UNGGAH MANDIRI', 0, 1, 'C');
         $pdf->Ln(10);
         
         // Serial Number
-        $pdf->SetFont('helvetica', '', 12);
+        $pdf->SetFont('freeserif', '', 12);
         $serialNumber = isset($submissionData['serial_number']) ? 'Nomor : ' . htmlspecialchars($submissionData['serial_number']) : 'Nomor : _______';
         $pdf->Cell(0, 6, $serialNumber, 0, 1, 'L'); // Left-aligned
         
         $pdf->Ln(5);
         
         // Body
-        $pdf->SetFont('helvetica', '', 12);
+        $pdf->SetFont('freeserif', '', 12);
         
         $bodyText = "Dengan ini menyatakan bahwa skripsi dengan rincian berikut:\n\n";
           
@@ -148,7 +155,7 @@ class PdfService
 
 
         // Add signature section at the bottom
-        $pdf->SetFont('helvetica', '', 12);
+        $pdf->SetFont('freeserif', '', 12);
 
         $x_pos = 130; 
 
@@ -185,7 +192,7 @@ class PdfService
         }
 
         // Name in bold
-        $pdf->SetFont('helvetica', 'B', 12);
+        $pdf->SetFont('freeserif', 'B', 12);
         $pdf->SetX($x_pos);
         $pdf->Cell(0, 6, 'Yuliana Safitri', 0, 1, 'L');
 

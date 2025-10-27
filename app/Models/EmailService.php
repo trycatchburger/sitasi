@@ -17,6 +17,7 @@ class EmailService
         $mailConfig = $this->config['mail'];
 
         $this->mailer = new PHPMailer(true);
+        
         // Server settings
         $this->mailer->isSMTP();
         $this->mailer->Host       = $mailConfig['host'];
@@ -28,6 +29,10 @@ class EmailService
 
         // Sender
         $this->mailer->setFrom($mailConfig['from_address'], $mailConfig['from_name']);
+        
+        // Set character encoding to UTF-8
+        $this->mailer->CharSet = 'UTF-8';
+        $this->mailer->Encoding = 'base64';
     }
 
     public function sendSuccessNotificationToStudent(array $submissionData, string $pdfPath)
@@ -42,7 +47,7 @@ class EmailService
             //Content
             $this->mailer->isHTML(true);
             $this->mailer->Subject = 'Konfirmasi Pengajuan Skripsi Berhasil';
-            $this->mailer->Body    = "Halo " . htmlspecialchars($submissionData['nama_mahasiswa']) . ",<br><br>Pengajuan skripsi Anda dengan judul '<strong>" . htmlspecialchars($submissionData['judul_skripsi']) . "</strong>' telah berhasil kami terima.<br><br>Terlampir adalah tanda terima pengajuan Anda.<br><br>Terima kasih.";
+            $this->mailer->Body    = "Halo " . htmlspecialchars($submissionData['nama_mahasiswa'], ENT_QUOTES, 'UTF-8') . ",<br><br>Pengajuan skripsi Anda dengan judul '<strong>" . htmlspecialchars($submissionData['judul_skripsi'], ENT_QUOTES, 'UTF-8') . "</strong>' telah berhasil kami terima.<br><br>Terlampir adalah tanda terima pengajuan Anda.<br><br>Terima kasih.";
             $this->mailer->AltBody = 'Pengajuan skripsi Anda telah berhasil kami terima. Tanda terima terlampir.';
             
             $this->mailer->send();
@@ -66,9 +71,9 @@ class EmailService
             $this->mailer->isHTML(true);
             $this->mailer->Subject = 'New Thesis Submission: ' . htmlspecialchars($submissionData['nama_mahasiswa']);
             $this->mailer->Body    = "A new thesis submission has been received.<br><br>" .
-                                     "<b>Student Name:</b> " . htmlspecialchars($submissionData['nama_mahasiswa']) . "<br>" .
-                                     "<b>NIM:</b> " . htmlspecialchars($submissionData['nim']) . "<br>" .
-                                     "<b>Title:</b> " . htmlspecialchars($submissionData['judul_skripsi']) . "<br><br>" .
+                                     "<b>Student Name:</b> " . htmlspecialchars($submissionData['nama_mahasiswa'], ENT_QUOTES, 'UTF-8') . "<br>" .
+                                     "<b>NIM:</b> " . htmlspecialchars($submissionData['nim'], ENT_QUOTES, 'UTF-8') . "<br>" .
+                                     "<b>Title:</b> " . htmlspecialchars($submissionData['judul_skripsi'], ENT_QUOTES, 'UTF-8') . "<br><br>" .
                                      "Please log in to the admin dashboard to review it.";
 
             $this->mailer->send();
@@ -87,7 +92,7 @@ class EmailService
 
             $this->mailer->isHTML(true);
             $this->mailer->Subject = 'Submission Failed';
-            $this->mailer->Body    = "Hello " . htmlspecialchars($name) . ",<br><br>We are sorry, but your thesis submission could not be processed due to an error: <br><i>" . htmlspecialchars($errorMessage) . "</i><br><br>Please try submitting again or contact support if the problem persists.";
+            $this->mailer->Body    = "Hello " . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ",<br><br>We are sorry, but your thesis submission could not be processed due to an error: <br><i>" . htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') . "</i><br><br>Please try submitting again or contact support if the problem persists.";
 
             $this->mailer->send();
         } catch (PHPMailerException $e) {
@@ -127,7 +132,7 @@ class EmailService
                 $surveyLink = "https://forms.gle/pMTA5BH3nckq6SRb6";
                 $this->mailer->Subject = 'Hasil Unggah Mandiri Skripsi';
                 $this->mailer->Body = "Hello " . htmlspecialchars($submissionData['nama_mahasiswa']) . ",<br><br>" .
-                                     "Hasil unggah mandiri skripsi Anda dengan judul '<strong>" . htmlspecialchars($submissionData['judul_skripsi']) . "</strong>' telah <strong>diterima</strong>.<br><br>" .
+                                     "Hasil unggah mandiri skripsi Anda dengan judul '<strong>" . htmlspecialchars($submissionData['judul_skripsi'], ENT_QUOTES, 'UTF-8') . "</strong>' telah <strong>diterima</strong>.<br><br>" .
                                      "Selamat!" . $attachmentText."<br><br>".
                                      "Untuk membantu kami meningkatkan layanan, mohon luangkan waktu Anda untuk mengisi survei singkat melalui link berikut:<br>" .
              "<a href='" . $surveyLink . "'>Survei Kepuasan Sistem Unggah Mandiri Skripsi</a><br><br>" .
@@ -147,7 +152,7 @@ class EmailService
                 
                 $reason = !empty($reason) ? $reason : 'Tidak ada alasan yang diberikan.';
                 $this->mailer->Body = "Kepada " . htmlspecialchars($submissionData['nama_mahasiswa']) . ",<br><br>" .
-                                     "Unggahan Skripsi Anda dengan judul '<strong>" . htmlspecialchars($submissionData['judul_skripsi']) . "</strong>' telah <strong>ditolak</strong>.<br><br>" .
+                                     "Unggahan Skripsi Anda dengan judul '<strong>" . htmlspecialchars($submissionData['judul_skripsi'], ENT_QUOTES, 'UTF-8') . "</strong>' telah <strong>ditolak</strong>.<br><br>" .
                                      "Alasan: " . $reason . "<br><br>" .
                                      "Dimohon untuk mengunggah kembali skripsi Anda sesuai dengan format yang telah disetujui.";
                 $this->mailer->AltBody = "Pengajuan skripsi Anda telah ditolak. Alasan: " . $reason;
