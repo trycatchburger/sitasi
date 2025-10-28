@@ -72,7 +72,7 @@ Berisi file-file tampilan (HTML) yang ditampilkan ke pengguna.
 - **unggah_tesis.php**: Formulir pengunggahan tesis
 - **unggah_jurnal.php**: Formulir pengunggahan jurnal
 - **repository.php**: Halaman daftar skripsi yang telah disetujui
-- **journal_repository.php**: Halaman daftar jurnal yang telah disetujui
+- **repository_journal.php**: Halaman daftar jurnal yang telah disetujui
 - **login.php**: Formulir login admin
 - **dashboard.php**: Dashboard admin
 

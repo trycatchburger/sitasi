@@ -367,7 +367,7 @@ class SubmissionController extends Controller {
     /**
      * Displays the journal repository page with all approved journal submissions.
      */
-    public function journalRepository() {
+    public function repositoryJournal() {
         try {
             $submissionModel = new Submission();
             
@@ -425,7 +425,7 @@ class SubmissionController extends Controller {
                 $submissions = array_slice($journalSubmissions, $offset, $perPage);
             }
             
-            $this->render('journal_repository', [
+            $this->render('repository_journal', [
                 'submissions' => $submissions,
                 'totalSubmissions' => $totalSubmissions,
                 'currentPage' => $page,
@@ -434,9 +434,9 @@ class SubmissionController extends Controller {
                 'year' => $year
             ]);
         } catch (DatabaseException $e) {
-            $this->render('journal_repository', ['error' => "Terjadi kesalahan database saat memuat repository jurnal."]);
+            $this->render('repository_journal', ['error' => "Terjadi kesalahan database saat memuat repository jurnal."]);
         } catch (Exception $e) {
-            $this->render('journal_repository', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
+            $this->render('repository_journal', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
         }
     }
 

@@ -100,7 +100,7 @@
                 <?php if (!isset($_SESSION['admin_id'])): ?>
                     <a href="<?= url('/') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Beranda</a>
                     <a href="<?= url('submission/repository') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Repository</a>
-                    <a href="<?= url('submission/journal_repository') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Jurnal Repository</a>
+                    <a href="<?= url('submission/repository_journal') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Jurnal Repository</a>
 
                     <!-- Dropdown Unggah Mandiri -->
                     <div class="relative group">

@@ -2,7 +2,7 @@
 <div class="container mx-auto px-1 py-1">
 
   <!-- Header with gradient -->
-  <div class="mb-4 text-center bg-gradient-to-r from-green-100 via-white to-blue-100 py-4 rounded-2xl shadow-md">
+  <div class="mb-4 text-center bg-gradient-to-r from-green-100 via-white to-blue-10 py-4 rounded-2xl shadow-md">
     <h1 class="text-4xl font-bold text-gray-900 mb-3">JOURNAL REPOSITORY</h1>
     <p class="text-sm text-gray-600 max-w-3xl mx-auto">Telusuri jurnal akademik yang telah disetujui dari STAIN Sultan Abdurrahman Kepulauan Riau. <br> Semua dokumen tersedia untuk keperluan penelitian dan pendidikan.</p>
   </div>
@@ -16,7 +16,7 @@
       Saring
     </h2>
 
-    <form method="GET" action="<?= url('submission/journal_repository') ?>" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+    <form method="GET" action="<?= url('submission/repository_journal') ?>" class="grid grid-cols-1 md:grid-cols-12 gap-4">
       <input type="hidden" name="page" value="1">
       
       <!-- Search -->
@@ -46,10 +46,10 @@
 
       <!-- Buttons -->
       <div class="md:col-span-12 flex justify-end gap-3 pt-2">
-        <button type="submit" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+        <button type="submit" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-70 transition">
           Filter
         </button>
-        <a href="<?= url('submission/journal_repository') ?>" class="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+        <a href="<?= url('submission/repository_journal') ?>" class="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
           Bersihkan
         </a>
       </div>
@@ -78,11 +78,11 @@
           $firstNames = array_slice($nameParts, 0, -1); // Get all parts except the last
           $firstName = implode(' ', $firstNames); // Join the first/middle names
           $formattedName = $lastName . ', ' . $firstName;
-          $titleLink = '<a href="' . url('submission/journal_detail/' . $submission['id']) . '" class="text-green-700 hover:text-green-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
+          $titleLink = '<a href="' . url('submission/journal_detail/' . $submission['id']) . '" class="text-green-70 hover:text-green-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
         ?>
         <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1">
           <div class="text-lg font-semibold text-gray-800"><?= $formattedName ?> (<?= htmlspecialchars($submission['tahun_publikasi']) ?>)</div>
-          <div class="mt-1 text-gray-700"><?= $titleLink ?></div>
+          <div class="mt-1 text-gray-70"><?= $titleLink ?></div>
           <div class="flex gap-3 mt-3 text-sm">
             <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
               Journal
@@ -104,7 +104,7 @@
     <div class="flex items-center justify-center space-x-2">
       <!-- Previous Button -->
       <?php if ($currentPage > 1): ?>
-        <a href="<?= url('submission/journal_repository?page=' . ($currentPage - 1) . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) ?>"
+        <a href="<?= url('submission/repository_journal?page=' . ($currentPage - 1) . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) ?>"
            class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
           <span class="flex items-center">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +131,7 @@
         
         // Show first page if not in range
         if ($startPage > 1) {
-          echo '<a href="' . url('submission/journal_repository?page=1' . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) . '" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">1</a>';
+          echo '<a href="' . url('submission/repository_journal?page=1' . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) . '" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">1</a>';
           if ($startPage > 2) {
             echo '<span class="px-4 py-2 text-gray-500">...</span>';
           }
@@ -142,7 +142,7 @@
           if ($i == $currentPage) {
             echo '<span class="px-4 py-2 bg-green-600 text-white border border-green-600 rounded-lg">' . $i . '</span>';
           } else {
-            echo '<a href="' . url('submission/journal_repository?page=' . $i . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) . '" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">' . $i . '</a>';
+            echo '<a href="' . url('submission/repository_journal?page=' . $i . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) . '" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">' . $i . '</a>';
           }
         }
         
@@ -151,13 +151,13 @@
           if ($endPage < $totalPages - 1) {
             echo '<span class="px-4 py-2 text-gray-500">...</span>';
           }
-          echo '<a href="' . url('submission/journal_repository?page=' . $totalPages . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) . '" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">' . $totalPages . '</a>';
+          echo '<a href="' . url('submission/repository_journal?page=' . $totalPages . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) . '" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">' . $totalPages . '</a>';
         }
       ?>
       
       <!-- Next Button -->
       <?php if ($currentPage < $totalPages): ?>
-        <a href="<?= url('submission/journal_repository?page=' . ($currentPage + 1) . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) ?>"
+        <a href="<?= url('submission/repository_journal?page=' . ($currentPage + 1) . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) ?>"
            class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
           <span class="flex items-center">
             Next

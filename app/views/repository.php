@@ -77,7 +77,7 @@
 
   <!-- Link to Journal Repository -->
   <div class="mb-6 text-center">
-    <a href="<?= url('submission/journal_repository') ?>" class="inline-block px-5 py-2 border border-orange-900 text-orange-900 rounded-full hover:bg-orange-600 hover:text-white transition">
+    <a href="<?= url('submission/repository_journal') ?>" class="inline-block px-5 py-2 border border-orange-900 text-orange-900 rounded-full hover:bg-orange-600 hover:text-white transition">
       Lihat Repository Jurnal
     </a>
   </div>

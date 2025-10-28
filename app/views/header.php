@@ -29,7 +29,7 @@
       LIHAT REPOSITORY
     </a>
 
-    <a href="<?= url('submission/journal_repository') ?>"
+    <a href="<?= url('submission/repository_journal') ?>"
    class="inline-block bg-orange-600 text-white px-6 py-3 rounded shadow-lg hover:bg-orange-700 font-bold transition duration-300 ease-in-out transform hover:scale-105">
       LIHAT JURNAL REPOSITORY
     </a>
