@@ -1,22 +1,28 @@
 <?php ob_start(); ?>
 <div class="container mx-auto px-1 py-1">
 
-  <header class="text-center py-10 bg-blue-100/70">
-    <h1 class="text-4xl font-extrabold text-blue-900 tracking-wide">REPOSITORY JURNAL</h1>
+<!-- Header -->
+  <header class="text-center py-10 bg-green-100/70">
+    <h1 class="text-4xl font-extrabold text-green-900 tracking-wide">REPOSITORY SKRIPSI</h1>
     <p class="mt-2 text-gray-700 max-w-2xl mx-auto">
-      Kumpulan artikel jurnal ilmiah dosen dan mahasiswa STAIN Sultan Abdurrahman Kepulauan Riau.
+      Telusuri koleksi skripsi sarjana STAIN Sultan Abdurrahman Kepulauan Riau.
+      Semua dokumen tersedia untuk keperluan penelitian dan pendidikan.
     </p>
 
+    <!-- Nav Tabs -->
     <div class="mt-6 flex justify-center gap-4">
-      <a href="repository-skripsi.html" class="px-5 py-2 bg-white border rounded-full hover:bg-blue-50">Skripsi</a>
-      <a href="repository-tesis.html" class="px-5 py-2 bg-white border rounded-full hover:bg-blue-50">Tesis</a>
-      <a href="repository-jurnal.html" class="px-5 py-2 bg-blue-600 text-white rounded-full shadow-md">Jurnal</a>
+      <a href="repository-skripsi.html" class="px-5 py-2 bg-green-600 text-white rounded-full shadow-md">Skripsi</a>
+      <a href="repository-tesis.html" class="px-5 py-2 bg-white border rounded-full hover:bg-green-50">Tesis</a>
+      <a href="repository-jurnal.html" class="px-5 py-2 bg-white border rounded-full hover:bg-green-50">Jurnal</a>
     </div>
   </header>
 
+  <!-- Statistik -->
   <section class="max-w-5xl mx-auto mt-8 text-center text-gray-600">
-    <p>📰 <strong>80 Jurnal</strong> terdaftar • Terbaru diunggah: <strong>Agustus 2025</strong></p>
+    <p>📚 <strong>512 Skripsi</strong> terdaftar • Terbaru diunggah: <strong>Oktober 2025</strong></p>
   </section>
+
+  
 
   <!-- Filter Box -->
   <div class="bg-white rounded-2xl shadow-lg p-4 mb-4 border border-gray-20">
@@ -27,7 +33,7 @@
       Saring
     </h2>
 
-    <form method="GET" action="<?= url('submission/repository_journal') ?>" class="grid grid-cols-1 md:grid-cols-12 gap-4">
+    <form method="GET" action="<?= url('submission/repository_skripsi') ?>" class="grid grid-cols-1 md:grid-cols-12 gap-4">
       <input type="hidden" name="page" value="1">
       
       <!-- Search -->
@@ -60,7 +66,7 @@
         <button type="submit" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-70 transition">
           Filter
         </button>
-        <a href="<?= url('submission/repository_journal') ?>" class="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+        <a href="<?= url('submission/repository_skripsi') ?>" class="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
           Bersihkan
         </a>
       </div>

@@ -332,6 +332,82 @@ class SubmissionController extends Controller {
     }
 
     /**
+     * Displays the thesis repository page with all approved submissions.
+     */
+    public function repository_skripsi() {
+        try {
+            $submissionModel = new Submission();
+            
+            // Get search and filter parameters
+            $search = $_GET['search'] ?? '';
+            $year = $_GET['year'] ?? '';
+            $program = $_GET['program'] ?? '';
+            $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+            $perPage = 10; // Number of items per page
+            
+            // Get all approved submissions
+            $allSubmissions = $submissionModel->findApproved();
+            
+            // If there are search/filter parameters, we need to filter the submissions
+            if (!empty($search) || !empty($year) || !empty($program)) {
+                $filteredSubmissions = [];
+                
+                foreach ($allSubmissions as $submission) {
+                    // Check search term (title or author)
+                    $matchesSearch = true;
+                    if (!empty($search)) {
+                        $matchesSearch = (stripos($submission['judul_skripsi'], $search) !== false) ||
+                                        (stripos($submission['nama_mahasiswa'], $search) !== false);
+                    }
+                    
+                    // Check year
+                    $matchesYear = true;
+                    if (!empty($year)) {
+                        $matchesYear = ($submission['tahun_publikasi'] == $year);
+                    }
+                    
+                    // Check program
+                    $matchesProgram = true;
+                    if (!empty($program)) {
+                        $matchesProgram = ($submission['program_studi'] == $program);
+                    }
+                    
+                    // If all conditions match, include in results
+                    if ($matchesSearch && $matchesYear && $matchesProgram) {
+                        $filteredSubmissions[] = $submission;
+                    }
+                }
+                
+                // Use filtered submissions for pagination
+                $totalSubmissions = count($filteredSubmissions);
+                $totalPages = ceil($totalSubmissions / $perPage);
+                $offset = ($page - 1) * $perPage;
+                $submissions = array_slice($filteredSubmissions, $offset, $perPage);
+            } else {
+                // No filters, paginate all approved submissions
+                $totalSubmissions = count($allSubmissions);
+                $totalPages = ceil($totalSubmissions / $perPage);
+                $offset = ($page - 1) * $perPage;
+                $submissions = array_slice($allSubmissions, $offset, $perPage);
+            }
+            
+            $this->render('repository_skripsi', [
+                'submissions' => $submissions,
+                'totalSubmissions' => $totalSubmissions,
+                'currentPage' => $page,
+                'totalPages' => $totalPages,
+                'search' => $search,
+                'year' => $year,
+                'program' => $program
+            ]);
+        } catch (DatabaseException $e) {
+            $this->render('repository_skripsi', ['error' => "Terjadi kesalahan database saat memuat repository Skripsi."]);
+        } catch (Exception $e) {
+            $this->render('repository_skripsi', ['error' => "Terjadi kesalahan: " . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Displays the detail page for a specific thesis.
      */
     public function detail($id) {

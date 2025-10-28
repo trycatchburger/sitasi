@@ -1,11 +1,77 @@
 <?php ob_start(); ?>
 <div class="container mx-auto px-1 py-1">
 
-  <!-- Header with gradient -->
-  <div class="mb-4 text-center bg-gradient-to-r from-green-100 via-white to-blue-100 py-4 rounded-2xl shadow-md">
-    <h1 class="text-4xl font-bold text-gray-900 mb-3">REPOSITORY</h1>
-    <p class="text-sm text-gray-600 max-w-3xl mx-auto">Telusuri skripsi sarjana yang telah disetujui dari STAIN Sultan Abdurrahman Kepulauan Riau. <br> Semua dokumen tersedia untuk keperluan penelitian dan pendidikan.</p>
-  </div>
+  <!-- Header -->
+  <header class="text-center py-10 bg-green-100/70 border-b">
+    <h1 class="text-4xl md:text-5xl font-extrabold text-green-900 tracking-wide">
+      REPOSITORY DIGITAL
+    </h1>
+    <p class="mt-3 text-gray-700 max-w-2xl mx-auto text-lg">
+      Akses koleksi karya ilmiah mahasiswa dan dosen STAIN Sultan Abdurrahman Kepulauan Riau.  
+      Skripsi, Tesis, dan Jurnal tersedia untuk penelitian dan pembelajaran.
+    </p>
+  </header>
+
+    <!-- Hero Section -->
+  <section class="text-center py-16 px-4">
+    <div class="max-w-3xl mx-auto">
+      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png" alt="Repository" class="mx-auto w-32 h-32 opacity-80 mb-6">
+      <h2 class="text-3xl font-semibold text-green-800 mb-3">Selamat Datang di Sistem Repository STAIN SAR Kepri</h2>
+      <p class="text-gray-600 mb-8">
+        Temukan karya ilmiah terbaik dari mahasiswa dan dosen kami.  
+        Mulai dari skripsi, tesis, hingga jurnal ilmiah — semua tersedia dalam format digital yang mudah diakses.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="<?= url('submission/repository_skripsi') ?>" class="px-6 py-3 bg-green-600 text-white rounded-full shadow hover:bg-green-700 transition">📘 Skripsi</a>
+        <a href="repository-tesis.html" class="px-6 py-3 bg-yellow-500 text-white rounded-full shadow hover:bg-yellow-600 transition">📗 Tesis</a>
+        <a href="<?= url('submission/repository_journal') ?>" class="px-6 py-3 bg-blue-600 text-white rounded-full shadow hover:bg-blue-700 transition">📙 Jurnal</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Statistik Ringkas -->
+  <section class="max-w-5xl mx-auto my-16 grid md:grid-cols-3 gap-6 text-center">
+    <div class="bg-white p-8 rounded-2xl shadow hover:shadow-lg transition">
+      <p class="text-4xl font-bold text-green-600">512</p>
+      <p class="text-gray-600 mt-2">Skripsi Terdaftar</p>
+    </div>
+    <div class="bg-white p-8 rounded-2xl shadow hover:shadow-lg transition">
+      <p class="text-4xl font-bold text-yellow-600">125</p>
+      <p class="text-gray-600 mt-2">Tesis Terpublikasi</p>
+    </div>
+    <div class="bg-white p-8 rounded-2xl shadow hover:shadow-lg transition">
+      <p class="text-4xl font-bold text-blue-600">80</p>
+      <p class="text-gray-600 mt-2">Jurnal Ilmiah</p>
+    </div>
+  </section>
+
+  <!-- Tentang Repository -->
+  <section class="bg-green-50 py-16">
+    <div class="max-w-5xl mx-auto text-center px-6">
+      <h2 class="text-2xl font-bold text-green-800 mb-4">Tentang Repository</h2>
+      <p class="text-gray-700 max-w-3xl mx-auto leading-relaxed">
+        Repository digital ini merupakan pusat penyimpanan karya ilmiah mahasiswa dan dosen 
+        STAIN Sultan Abdurrahman Kepulauan Riau.  
+        Tujuannya adalah untuk memfasilitasi diseminasi pengetahuan, meningkatkan aksesibilitas informasi, 
+        serta mendukung pengembangan akademik dan penelitian berbasis digital.
+      </p>
+    </div>
+  </section>
+
+  <!-- Kontak / Informasi -->
+  <section class="text-center py-12">
+    <h2 class="text-xl font-bold text-green-800 mb-3">Hubungi Kami</h2>
+    <p class="text-gray-600">
+      📍 Kampus STAIN SAR Kepri, Tanjungpinang<br>
+      📧 repository@stainsar.ac.id • ☎️ (0771) 123456
+    </p>
+  </section>
+
+  <!-- Footer -->
+  <footer class="mt-10 text-center text-sm text-gray-500 py-6 border-t">
+    © 2025 STAIN Sultan Abdurrahman Kepulauan Riau — Repository Sistem
+  </footer>
+
 
   <!-- Filter Box -->
   <div class="bg-white rounded-2xl shadow-lg p-4 mb-4 border border-gray-200">
