@@ -19,7 +19,7 @@
 
   <!-- Statistik -->
   <section class="max-w-5xl mx-auto mt-8 text-center text-gray-600">
-    <p>📚 <strong>512 Skripsi</strong> terdaftar • Terbaru diunggah: <strong>Oktober 2025</strong></p>
+    <p>📚 <strong><?= $totalSubmissions ?> Skripsi Sarjana</strong> terdaftar • Terbaru diunggah: <strong>Oktober 2025</strong></p>
   </section>
 
   
