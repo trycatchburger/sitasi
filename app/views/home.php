@@ -52,7 +52,7 @@ try {
   <div class="mb-10 text-center">
     
     <h2 class="text-3xl font-extrabold text-green-900 mb-2">Data Terbaru</h2>
-    <p class="text-gray-600 text-sm">Jelajahi koleksi skripsi sarjana yang baru disetujui</p>
+    <p class="text-gray-600 text-sm">Jelajahi koleksi tugas akhir dan karya ilmiah yang baru disetujui</p>
   </div>
 
   <!-- Search Form -->
