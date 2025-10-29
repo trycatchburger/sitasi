@@ -51,7 +51,7 @@ try {
   <section class="w-full bg-white rounded-xl shadow-md p-6 mt-4">
   <div class="mb-10 text-center">
     
-    <h2 class="text-3xl font-extrabold text-green-900 mb-2">Skripsi Terbaru</h2>
+    <h2 class="text-3xl font-extrabold text-green-900 mb-2">Data Terbaru</h2>
     <p class="text-gray-600 text-sm">Jelajahi koleksi skripsi sarjana yang baru disetujui</p>
   </div>
 
@@ -77,30 +77,55 @@ try {
     </form>
   </div>
 
-  <!-- Theses List -->
-  <?php if (!empty($recentSubmissions)): ?>
-    <div class="border-t border-b border-gray-200 py-4">
-      <ul class="divide-y divide-gray-100">
-        <?php foreach ($recentSubmissions as $submission): ?>
-          <?php
-            $nameParts = explode(' ', htmlspecialchars($submission['nama_mahasiswa']));
-            $firstName = $nameParts[0];
-            $lastName = count($nameParts) > 1 ? end($nameParts) : $firstName;
-            $formattedName = $lastName . ', ' . $firstName;
+  <!-- Recent List -->
+<?php if (!empty($recentSubmissions)): ?>
+  <div class="border-t border-b border-gray-200 py-4">
+    <ul class="divide-y divide-gray-100">
+      <?php foreach ($recentSubmissions as $submission): ?>
+        <?php
+          $nameParts = explode(' ', htmlspecialchars($submission['nama_mahasiswa']));
+          $firstName = $nameParts[0];
+          $lastName = count($nameParts) > 1 ? end($nameParts) : $firstName;
+          $formattedName = $lastName . ', ' . $firstName;
 
-            $citation = $formattedName . '. (' . htmlspecialchars($submission['tahun_publikasi']) . '). ' .
-                        '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-green-900 font-semibold hover:text-green-600 hover:underline">' .
-                        htmlspecialchars($submission['judul_skripsi']) . '</a>' .
-                        '. Skripsi, STAIN Sultan Abdurrahman Kepulauan Riau.';
-          ?>
-          <li class="py-4">
-            <div class="text-gray-800 text-sm leading-relaxed">
-              <?= $citation ?>
-            </div>
-          </li>
-        <?php endforeach; ?>
-      </ul>
-    </div>
+          // Ambil tipe (kolom submission_type)
+          $tipe = strtolower(trim($submission['submission_type'] ?? 'bachelor'));
+
+          // Tentukan teks tipe dan buat label tipe yang berwarna hanya untuk kata tipe
+          if ($tipe === 'bachelor') {
+            $typeLabel = '<span class="text-green-700 font-semibold">Skripsi</span>';
+            $jenisKarya = $typeLabel . ', STAIN Sultan Abdurrahman Kepulauan Riau.';
+          } elseif ($tipe === 'master') {
+            $typeLabel = '<span class="text-blue-700 font-semibold">Tesis</span>';
+            $jenisKarya = $typeLabel . ', STAIN Sultan Abdurrahman Kepulauan Riau.';
+          } elseif ($tipe === 'journal') {
+            $typeLabel = '<span class="text-orange-700 font-semibold">Jurnal Ilmiah</span>';
+            $jenisKarya = $typeLabel . ', STAIN Sultan Abdurrahman Kepulauan Riau.';
+          } else {
+            $typeLabel = '<span class="text-gray-700 font-semibold">Karya Ilmiah</span>';
+            $jenisKarya = $typeLabel . ', STAIN Sultan Abdurrahman Kepulauan Riau.';
+          }
+
+          // Bentuk sitasi (sama seperti sebelumnya)
+          $citation = $formattedName . '. (' . htmlspecialchars($submission['tahun_publikasi']) . '). ' .
+                      '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-green-900 font-semibold hover:text-green-600 hover:underline">' .
+                      htmlspecialchars($submission['judul_skripsi']) . '</a>. ' .
+                      $jenisKarya;
+        ?>
+        <li class="py-4">
+          <div class="text-gray-800 text-sm leading-relaxed">
+            <?= $citation ?>
+          </div>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+<?php endif; ?>
+
+
+
+  <!-- Theses List -->
+
 
     <!-- View More -->
     <div class="mt-6 text-center">
@@ -108,60 +133,8 @@ try {
         Lihat Semua
       </a>
     </div>
-  <?php else: ?>
-    <div class="py-8 text-center text-gray-500">
-      <p>No approved submissions found.</p>
-    </div>
-  <?php endif; ?>
+
 </section>
-
- <!-- Recent Journals Section -->
- <?php if (!empty($recentJournals)): ?>
- <section class="w-full bg-white rounded-xl shadow-md p-6 mt-8">
-   <div class="mb-10 text-center">
-     <h2 class="text-3xl font-extrabold text-orange-900 mb-2">Jurnal Terbaru</h2>
-     <p class="text-gray-600 text-sm">Jelajahi koleksi jurnal ilmiah yang baru disetujui</p>
-   </div>
-
-   <!-- Journals List -->
-   <div class="border-t border-b border-gray-200 py-4">
-     <ul class="divide-y divide-gray-100">
-       <?php foreach ($recentJournals as $journal): ?>
-         <?php
-           $nameParts = explode(' ', htmlspecialchars($journal['nama_mahasiswa']));
-           $firstName = $nameParts[0];
-           $lastName = count($nameParts) > 1 ? end($nameParts) : $firstName;
-           $formattedName = $lastName . ', ' . $firstName;
-
-           $citation = $formattedName . '. (' . htmlspecialchars($journal['tahun_publikasi']) . '). ' .
-                       '<a href="' . url('submission/detail/' . $journal['id']) . '" class="text-orange-900 font-semibold hover:text-orange-600 hover:underline">' .
-                       htmlspecialchars($journal['judul_skripsi']) . '</a>' .
-                       '. Jurnal Ilmiah, STAIN Sultan Abdurrahman Kepulauan Riau.';
-         ?>
-         <li class="py-4">
-           <div class="text-gray-800 text-sm leading-relaxed">
-             <?= $citation ?>
-           </div>
-         </li>
-       <?php endforeach; ?>
-     </ul>
-   </div>
-
-   <!-- View More -->
-   <div class="mt-6 text-center">
-     <a href="<?= url('submission/repository_journal') ?>" class="inline-block px-5 py-2 border border-orange-900 text-orange-900 rounded-full hover:bg-orange-600 hover:text-white transition">
-       Lihat Semua Jurnal
-     </a>
-   </div>
- </section>
- <?php endif; ?>
-
-  <!-- Features Section -->
-  <section class="mt-20 w-full max-w-5xl">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    </div>
-  </section>
-</div>
 
 <!-- Success Popup -->
 <?php if (isset($_SESSION['submission_success']) && $_SESSION['submission_success']): ?>
