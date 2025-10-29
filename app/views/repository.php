@@ -23,7 +23,7 @@
       </p>
       <div class="flex flex-wrap justify-center gap-4">
         <a href="<?= url('submission/repository_skripsi') ?>" class="px-6 py-3 bg-green-600 text-white rounded-full shadow hover:bg-green-700 transition">📘 Skripsi</a>
-        <a href="repository-tesis.html" class="px-6 py-3 bg-yellow-500 text-white rounded-full shadow hover:bg-yellow-600 transition">📗 Tesis</a>
+        <a href="<?= url('submission/repository_tesis') ?>" class="px-6 py-3 bg-yellow-500 text-white rounded-full shadow hover:bg-yellow-600 transition">📗 Tesis</a>
         <a href="<?= url('submission/repository_journal') ?>" class="px-6 py-3 bg-blue-600 text-white rounded-full shadow hover:bg-blue-700 transition">📙 Jurnal</a>
       </div>
     </div>
@@ -139,13 +139,6 @@
         </a>
       </div>
     </form>
-  </div>
-
-  <!-- Link to Journal Repository -->
-  <div class="mb-6 text-center">
-    <a href="<?= url('submission/repository_journal') ?>" class="inline-block px-5 py-2 border border-orange-900 text-orange-900 rounded-full hover:bg-orange-600 hover:text-white transition">
-      Lihat Repository Jurnal
-    </a>
   </div>
 
   <!-- Theses List -->

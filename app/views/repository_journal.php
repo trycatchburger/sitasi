@@ -8,18 +8,14 @@
     </p>
 
     <div class="mt-6 flex justify-center gap-4">
-      <a href="repository-skripsi.html" class="px-5 py-2 bg-white border rounded-full hover:bg-blue-50">Skripsi</a>
-      <a href="repository-tesis.html" class="px-5 py-2 bg-white border rounded-full hover:bg-blue-50">Tesis</a>
-      <a href="repository-jurnal.html" class="px-5 py-2 bg-blue-600 text-white rounded-full shadow-md">Jurnal</a>
+      <a href="<?= url('submission/repository_skripsi') ?>" class="px-5 py-2 bg-white border rounded-full hover:bg-blue-50">Skripsi</a>
+      <a href="<?= url('submission/repository_tesis') ?>" class="px-5 py-2 bg-white border rounded-full hover:bg-blue-50">Tesis</a>
+      <a href="<?= url('submission/repository_journal') ?>" class="px-5 py-2 bg-blue-600 text-white rounded-full shadow-md">Jurnal</a>
     </div>
   </header>
 
-  <section class="max-w-5xl mx-auto mt-8 text-center text-gray-600">
-    <p>📰 <strong>80 Jurnal</strong> terdaftar • Terbaru diunggah: <strong>Agustus 2025</strong></p>
-  </section>
-
   <!-- Filter Box -->
-  <div class="bg-white rounded-2xl shadow-lg p-4 mb-4 border border-gray-20">
+  <div class="bg-white shadow-lg p-4 mb-4 border border-gray-20">
     <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
       <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
@@ -65,13 +61,6 @@
         </a>
       </div>
     </form>
-  </div>
-
-  <!-- Link to Main Repository -->
-  <div class="mb-6 text-center">
-    <a href="<?= url('submission/repository') ?>" class="inline-block px-5 py-2 border border-green-900 text-green-900 rounded-full hover:bg-green-600 hover:text-white transition">
-      Lihat Repository Utama
-    </a>
   </div>
 
   <!-- Journals List -->
