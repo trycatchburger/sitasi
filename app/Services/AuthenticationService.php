@@ -69,4 +69,61 @@ class AuthenticationService
             }
         }
     }
+
+    /**
+     * Check if user is logged in
+     * @return bool True if user is logged in, false otherwise
+     */
+    public function isUserLoggedIn(): bool
+    {
+        return isset($_SESSION['user_id']);
+    }
+
+    /**
+     * Require user authentication for protected routes
+     * @param bool $redirect Whether to redirect to login page or return JSON error for AJAX requests
+     * @return void
+     */
+    public function requireUserAuth(bool $redirect = true): void
+    {
+        if (!$this->isUserLoggedIn()) {
+            if ($redirect) {
+                // For regular requests, redirect to login page
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    // For AJAX requests, return JSON error
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
+                    exit;
+                } else {
+                    // For regular requests, redirect to user login
+                    header('Location: ' . url('user/login'));
+                    exit;
+                }
+            } else {
+                // Return JSON error for API endpoints
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
+                exit;
+            }
+        }
+    }
+
+    /**
+     * Get user information from session
+     * @return array|null User information or null if not logged in
+     */
+    public function getUserInfo(): ?array
+    {
+        if (!$this->isUserLoggedIn()) {
+            return null;
+        }
+        
+        return [
+            'id' => $_SESSION['user_id'],
+            'library_card_number' => $_SESSION['user_library_card_number'],
+            'name' => $_SESSION['user_name']
+        ];
+    }
 }

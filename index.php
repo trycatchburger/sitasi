@@ -7,6 +7,9 @@ require_once __DIR__ . '/vendor/autoload.php';
 $config = require_once __DIR__ . '/config.php';
 $basePath = $config['base_path'] ?? '';
 
+// Configure session security BEFORE starting the session
+\App\Config\SessionConfig::configure();
+
 // Start the session on all requests
 session_start();
 
@@ -44,9 +47,10 @@ if (strpos($method_name, '_') !== false) {
 } else {
     // Handle lowercase method names that should be camelCase
     // Try to detect word boundaries based on common prefixes
-    $known_prefixes = ['new', 'skripsi', 'tesis', 'create', 'resubmit', 'repository', 'detail', 'comparison',
+    $known_prefixes = ['new', 'skripsi', 'tesis', 'journal', 'create', 'resubmit', 'repository', 'detail', 'comparison',
                       'login', 'dashboard', 'logout', 'update', 'unpublish', 'republish',
-                      'admin', 'delete', 'show', 'edit', 'remove', 'view', 'download'];
+                      'admin', 'delete', 'show', 'edit', 'remove', 'view', 'download',
+                      'user']; // Add user prefix
     
     foreach ($known_prefixes as $prefix) {
         if (strpos($method_name, $prefix) === 0 && strlen($method_name) > strlen($prefix)) {
@@ -82,6 +86,22 @@ if (class_exists($controller_class)) {
     } else {
         http_response_code(404);
         require_once __DIR__ . '/app/views/errors/404.php';
+    }
+} else if ($controller_name === 'user') {
+    // Add route handling for user routes
+    $controller = new \App\Controllers\UserController();
+    // Map user-specific methods
+    switch ($method_name) {
+        case 'login':
+        case 'dashboard':
+        case 'logout':
+        case 'confirmSubmissionAssociation':
+            call_user_func_array([$controller, $method_name], array_slice($segments, 2));
+            break;
+        default:
+            http_response_code(404);
+            require_once __DIR__ . '/app/views/errors/404.php';
+            break;
     }
 } else {
     http_response_code(404);

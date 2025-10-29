@@ -902,8 +902,39 @@ class Submission
      * @return array
      * @throws DatabaseException
      */
-    public function searchRecentApprovedJournals(string $search, int $limit = 6): array
-    {
-        return $this->repository->searchRecentApprovedJournals($search, $limit);
-    }
-}
+     public function searchRecentApprovedJournals(string $search, int $limit = 6): array
+     {
+         return $this->repository->searchRecentApprovedJournals($search, $limit);
+     }
+ 
+     public function findByUserId(int $userId): array
+     {
+         return $this->repository->findByUserId($userId);
+     }
+ 
+     public function associateSubmissionToUser(int $submissionId, int $userId): bool
+     {
+         try {
+             $stmt = $this->conn->prepare("UPDATE submissions SET user_id = ? WHERE id = ?");
+             if (!$stmt) {
+                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+             }
+             $stmt->bind_param("ii", $userId, $submissionId);
+             $result = $stmt->execute();
+             
+             if (!$result) {
+                 throw new DatabaseException("Statement execution failed: " . $stmt->error);
+             }
+             
+             $stmt->close();
+             return $result;
+         } catch (\Exception $e) {
+             throw new DatabaseException("Error while associating submission to user: " . $e->getMessage());
+         }
+     }
+ 
+     public function findUnassociatedSubmissionsByUserDetails(string $name, string $email, string $nim = null): array
+     {
+         return $this->repository->findUnassociatedSubmissionsByUserDetails($name, $email, $nim);
+     }
+ }

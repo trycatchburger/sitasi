@@ -699,4 +699,60 @@ class SubmissionRepository extends BaseRepository
             throw new DatabaseException("Error while searching recent approved journal submissions: " . $e->getMessage());
         }
     }
+
+    public function findByUserId(int $userId): array
+    {
+        try {
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.user_id = ? ORDER BY s.created_at DESC";
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $submissions = [];
+            while ($row = $result->fetch_assoc()) {
+                $submissions[] = $row;
+            }
+            
+            return $submissions;
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while fetching submissions by user ID: " . $e->getMessage());
+        }
+    }
+
+    public function findUnassociatedSubmissionsByUserDetails(string $name, string $email, string $nim = null): array
+    {
+        try {
+            if ($nim) {
+                $sql = "SELECT * FROM submissions WHERE user_id IS NULL AND nama_mahasiswa = ? AND email = ? AND nim = ?";
+                $stmt = $this->conn->prepare($sql);
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+                }
+                $stmt->bind_param("sss", $name, $email, $nim);
+            } else {
+                $sql = "SELECT * FROM submissions WHERE user_id IS NULL AND nama_mahasiswa = ? AND email = ?";
+                $stmt = $this->conn->prepare($sql);
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+                }
+                $stmt->bind_param("ss", $name, $email);
+            }
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $submissions = [];
+            while ($row = $result->fetch_assoc()) {
+                $submissions[] = $row;
+            }
+            
+            return $submissions;
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while finding unassociated submissions: " . $e->getMessage());
+        }
+    }
 }

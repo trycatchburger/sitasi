@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\Admin;
 use App\Models\Submission;
 use App\Models\ValidationService;
+use App\Services\SessionManager;
 use App\Exceptions\AuthenticationException;
 use App\Exceptions\ValidationException;
 use App\Exceptions\DatabaseException;
@@ -18,7 +19,7 @@ class AdminController extends Controller {
 
 
     public function login() {
-        if ($this->isLoggedIn()) {
+        if (SessionManager::isAdminLoggedIn()) {
             header('Location: ' . url('admin/dashboard'));
             exit;
         }
@@ -41,9 +42,7 @@ class AdminController extends Controller {
                 if ($admin && isset($admin['password_hash']) && $admin['password_hash'] &&
                     password_verify($_POST['password'], $admin['password_hash'])) {
                     // Regenerate session ID after successful login
-                    session_regenerate_id(true);
-                    $_SESSION['admin_id'] = $admin['id'];
-                    $_SESSION['admin_username'] = $admin['username'];
+                    SessionManager::setAdminSession($admin['id'], $admin['username']);
                     header('Location: ' . url('admin/dashboard'));
                     exit;
                 } else {
@@ -53,8 +52,6 @@ class AdminController extends Controller {
                 $this->render('login', ['error' => $e->getMessage()]);
             } catch (ValidationException $e) {
                 $this->render('login', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
-            } catch (AuthenticationException $e) {
-                $this->render('login', ['error' => $e->getMessage()]);
             } catch (DatabaseException $e) {
                 $this->render('login', ['error' => "Database error occurred. Please try again."]);
             } catch (Exception $e) {
@@ -68,7 +65,7 @@ class AdminController extends Controller {
 
     public function dashboard() {
          try {
-             if (!$this->isLoggedIn()) {
+             if (!$this->isAdminLoggedIn()) {
                  header('Location: ' . url('admin/login'));
                  exit;
              }
@@ -130,7 +127,7 @@ class AdminController extends Controller {
      }
 
     public function logout() {
-        session_destroy();
+        SessionManager::logout();
         header('Location: ' . url('admin/login'));
         exit;
     }
@@ -138,7 +135,7 @@ class AdminController extends Controller {
     public function updateStatus() {
          try {
              // Check if user is authenticated manually to handle AJAX requests properly
-             if (!$this->isLoggedIn()) {
+             if (!$this->isAdminLoggedIn()) {
                  // Return JSON error for AJAX requests
                  if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                      header('Content-Type: application/json');
@@ -235,6 +232,7 @@ class AdminController extends Controller {
                 echo json_encode(['success' => false, 'message' => $error_message]);
                 exit;
             } else {
+                // Regular form submission
                 $_SESSION['error_message'] = $error_message;
                 header('Location: ' . url('admin/dashboard'));
                 exit;
@@ -247,6 +245,7 @@ class AdminController extends Controller {
                 echo json_encode(['success' => false, 'message' => $error_message]);
                 exit;
             } else {
+                // Regular form submission
                 $_SESSION['error_message'] = $error_message;
                 header('Location: ' . url('admin/dashboard'));
                 exit;
@@ -259,6 +258,7 @@ class AdminController extends Controller {
                 echo json_encode(['success' => false, 'message' => $error_message]);
                 exit;
             } else {
+                // Regular form submission
                 $_SESSION['error_message'] = $error_message;
                 header('Location: ' . url('admin/dashboard'));
                 exit;
@@ -535,6 +535,139 @@ class AdminController extends Controller {
         } catch (Exception $e) {
             $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
             header('Location: ' . url('admin/adminManagement'));
+            exit;
+        }
+    }
+
+    public function userManagement()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            $userModel = new \App\Models\User();
+            $users = $userModel->getAll();
+            
+            $this->render('admin/user_management', ['users' => $users]);
+        } catch (DatabaseException $e) {
+            $this->render('admin/user_management', ['error' => "Database error occurred while loading user management."]);
+        } catch (Exception $e) {
+            $this->render('admin/user_management', ['error' => "An error occurred: " . $e->getMessage()]);
+        }
+    }
+
+    public function createUser()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Run CSRF middleware
+                $this->runMiddleware(['csrf']);
+                
+                try {
+                    // Use ValidationService for detailed validation
+                    $validationService = new ValidationService();
+                    
+                    // Validate form data
+                    if (!$validationService->validateCreateUserForm($_POST)) {
+                        $errors = $validationService->getErrors();
+                        throw new ValidationException($errors, "There were issues with the information you provided. Please check your input and try again.");
+                    }
+                    
+                    $libraryCardNumber = trim($_POST['library_card_number'] ?? '');
+                    $name = trim($_POST['name'] ?? '');
+                    $email = trim($_POST['email'] ?? '');
+                    $password = $_POST['password'] ?? '';
+                    $confirmPassword = $_POST['confirm_password'] ?? '';
+                    
+                    // Check if library card number already exists
+                    $userModel = new \App\Models\User();
+                    $existingUser = $userModel->findByLibraryCardNumber($libraryCardNumber);
+                    if ($existingUser) {
+                        throw new ValidationException(['library_card_number' => "Library card number already exists."]);
+                    }
+                    
+                    // Create new user
+                    $result = $userModel->create($libraryCardNumber, $name, $email, $password);
+                    if ($result) {
+                        $_SESSION['success_message'] = 'User account created successfully!';
+                        header('Location: ' . url('admin/userManagement'));
+                        exit;
+                    } else {
+                        throw new DatabaseException("Failed to create user account.");
+                    }
+                } catch (ValidationException $e) {
+                    $this->render('admin/create_user', [
+                        'error' => $e->getMessage(),
+                        'errors' => $e->getErrors(),
+                        'csrf_token' => $this->generateCsrfToken()
+                    ]);
+                } catch (DatabaseException $e) {
+                    $this->render('admin/create_user', [
+                        'error' => "Database error occurred while creating user account.",
+                        'csrf_token' => $this->generateCsrfToken()
+                    ]);
+                } catch (Exception $e) {
+                    $this->render('admin/create_user', [
+                        'error' => "An error occurred: " . $e->getMessage(),
+                        'csrf_token' => $this->generateCsrfToken()
+                    ]);
+                }
+            } else {
+                // Render the create user form for GET requests
+                $this->render('admin/create_user', ['csrf_token' => $this->generateCsrfToken()]);
+            }
+        } catch (AuthenticationException $e) {
+            $this->render('admin/create_user', ['error' => $e->getMessage()]);
+        } catch (ValidationException $e) {
+            $this->render('admin/create_user', [
+                'error' => $e->getMessage(),
+                'errors' => $e->getErrors(),
+                'csrf_token' => $this->generateCsrfToken()
+            ]);
+        } catch (DatabaseException $e) {
+            $this->render('admin/create_user', [
+                'error' => "Database error occurred while creating user account.",
+                'csrf_token' => $this->generateCsrfToken()
+            ]);
+        } catch (Exception $e) {
+            $this->render('admin/create_user', [
+                'error' => "An error occurred: " . $e->getMessage(),
+                'csrf_token' => $this->generateCsrfToken()
+            ]);
+        }
+    }
+
+    public function deleteUser()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $userId = (int)$_POST['user_id'];
+                
+                $userModel = new \App\Models\User();
+                $result = $userModel->deleteById($userId);
+                
+                if ($result) {
+                    $_SESSION['success_message'] = 'User account deleted successfully!';
+                } else {
+                    $_SESSION['error_message'] = "Failed to delete user account.";
+                }
+            }
+            
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred while deleting user account.";
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/userManagement'));
             exit;
         }
     }
