@@ -348,10 +348,10 @@ class SubmissionController extends Controller {
             // Get all approved submissions
             $allSubmissions = $submissionModel->findApproved();
 
-            // Filter for journal submissions only
+            // Filter for skripsi submissions only
             $skripsiSubmissions = [];
             foreach ($allSubmissions as $submission) {
-                if ($submission['submission_type'] === 'journal') {
+                if ($submission['submission_type'] === 'bachelor') {
                     $skripsiSubmissions[] = $submission;
                 }
             }
@@ -360,7 +360,7 @@ class SubmissionController extends Controller {
             if (!empty($search) || !empty($year) || !empty($program)) {
                 $filteredSubmissions = [];
                 
-                foreach ($allSubmissions as $submission) {
+                foreach ($skripsiSubmissions as $submission) {
                     // Check search term (title or author)
                     $matchesSearch = true;
                     if (!empty($search)) {
@@ -392,11 +392,11 @@ class SubmissionController extends Controller {
                 $offset = ($page - 1) * $perPage;
                 $submissions = array_slice($filteredSubmissions, $offset, $perPage);
             } else {
-                // No filters, paginate all approved submissions
-                $totalSubmissions = count($allSubmissions);
+                // No filters, paginate all skripsi submissions
+                $totalSubmissions = count($skripsiSubmissions);
                 $totalPages = ceil($totalSubmissions / $perPage);
                 $offset = ($page - 1) * $perPage;
-                $submissions = array_slice($allSubmissions, $offset, $perPage);
+                $submissions = array_slice($skripsiSubmissions, $offset, $perPage);
             }
             
             $this->render('repository_skripsi', [
@@ -432,11 +432,19 @@ class SubmissionController extends Controller {
             // Get all approved submissions
             $allSubmissions = $submissionModel->findApproved();
             
+            // Filter for tesis submissions only
+            $tesisSubmissions = [];
+            foreach ($allSubmissions as $submission) {
+                if ($submission['submission_type'] === 'master') {
+                    $tesisSubmissions[] = $submission;
+                }
+            }
+            
             // If there are search/filter parameters, we need to filter the submissions
             if (!empty($search) || !empty($year) || !empty($program)) {
                 $filteredSubmissions = [];
                 
-                foreach ($allSubmissions as $submission) {
+                foreach ($tesisSubmissions as $submission) {
                     // Check search term (title or author)
                     $matchesSearch = true;
                     if (!empty($search)) {
@@ -468,11 +476,11 @@ class SubmissionController extends Controller {
                 $offset = ($page - 1) * $perPage;
                 $submissions = array_slice($filteredSubmissions, $offset, $perPage);
             } else {
-                // No filters, paginate all approved submissions
-                $totalSubmissions = count($allSubmissions);
+                // No filters, paginate all tesis submissions
+                $totalSubmissions = count($tesisSubmissions);
                 $totalPages = ceil($totalSubmissions / $perPage);
                 $offset = ($page - 1) * $perPage;
-                $submissions = array_slice($allSubmissions, $offset, $perPage);
+                $submissions = array_slice($tesisSubmissions, $offset, $perPage);
             }
             
             $this->render('repository_tesis', [

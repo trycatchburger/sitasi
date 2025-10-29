@@ -82,6 +82,20 @@
                                         </div>
                                     <?php endif; ?>
                                 </div>
+                                
+                                <div class="form-group">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" id="email" name="email" required class="form-control"
+                                           value="<?= isset($old_data['email']) ? htmlspecialchars($old_data['email']) : '' ?>">
+                                    <p class="text-xs text-gray-500 mt-1">Contoh: penulis@example.com</p>
+                                    <?php if (isset($errors['email'])): ?>
+                                        <div class="text-red-500 text-sm mt-1">
+                                            <?php foreach ($errors['email'] as $error): ?>
+                                                <div><?= htmlspecialchars($error) ?></div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
 
                                 <div class="row">
                                     <div class="col md:col-6">

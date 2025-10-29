@@ -76,6 +76,14 @@
 
 
 
+  <!-- Link to Main Repository -->
+  <div class="mb-6 text-center">
+    <a href="<?= url('submission/repository') ?>" class="inline-block px-5 py-2 border border-green-900 text-green-900 rounded-full hover:bg-green-600 hover:text-white transition">
+      Lihat Repository Utama
+    </a>
+  </div>
+
+
   <!-- Journals List -->
 <div class="flex justify-between items-center mb-6">
   <h2 class="text-xl font-semibold text-gray-800">Daftar Jurnal</h2>
@@ -104,13 +112,13 @@
         $firstName = implode(' ', $firstNames);
         $formattedName = $lastName . ', ' . $firstName;
 
-        $titleLink = '<a href="' . url('submission/journal_detail/' . $submission['id']) . '" class="text-blue-700 hover:text-blue-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
+        $titleLink = '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-blue-70 hover:text-blue-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
       ?>
 
       <div class="submission-item bg-white rounded-xl shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 overflow-hidden">
         <div class="p-5">
           <div class="text-lg font-semibold text-gray-800"><?= $formattedName ?> (<?= htmlspecialchars($submission['tahun_publikasi']) ?>)</div>
-          <div class="mt-1 text-gray-700"><?= $titleLink ?></div>
+          <div class="mt-1 text-gray-70"><?= $titleLink ?></div>
           <div class="flex gap-3 mt-3 text-sm">
             <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
               Journal

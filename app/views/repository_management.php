@@ -3,7 +3,7 @@
 <div class="px-4 py-4">
   <div class="mb-8">
     <h1 class="text-2xl font-bold text-gray-800">Manajemen Repository</h1>
-    <p class="text-gray-600 mt-1">Halaman ini menampilkan skripsi yang dapat diakses oleh publik melalui repository</p>
+    <p class="text-gray-600 mt-1">Halaman ini menampilkan skripsi, tesis, dan jurnal yang dapat diakses oleh publik melalui repository</p>
   </div>
   
   <div class="mb-6 flex flex-wrap gap-2">
@@ -21,7 +21,8 @@
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mahasiswa</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul Skripsi</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Berkas</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Repository</th>
@@ -32,7 +33,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <?php if (empty($submissions)): ?>
             <tr>
-              <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+              <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">
                 No approved submissions found.
               </td>
             </tr>
@@ -41,10 +42,35 @@
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4">
                   <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($submission['nama_mahasiswa']) ?></div>
+                  <?php if ($submission['submission_type'] !== 'journal'): ?>
                   <div class="text-sm text-gray-500"><?= htmlspecialchars($submission['nim']) ?></div>
+                  <?php else: ?>
+                  <div class="text-sm text-gray-500">N/A (Journal)</div>
+                  <?php endif; ?>
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm text-gray-900 max-w-xs truncate"><?= htmlspecialchars($submission['judul_skripsi']) ?></div>
+                  <?php if ($submission['submission_type'] === 'journal' && !empty($submission['abstract'])): ?>
+                  <div class="text-xs text-gray-500 mt-1 truncate" title="<?= htmlspecialchars($submission['abstract']) ?>">Abstract: <?= htmlspecialchars(substr($submission['abstract'], 0, 100)) . (strlen($submission['abstract']) > 100 ? '...' : '') ?></div>
+                  <?php endif; ?>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <?php
+                    $submissionType = $submission['submission_type'] ?? 'bachelor';
+                    $typeLabel = 'Skripsi';
+                    $typeColor = 'bg-blue-100 text-blue-800';
+                    
+                    if ($submissionType === 'master') {
+                        $typeLabel = 'Tesis';
+                        $typeColor = 'bg-purple-100 text-purple-800';
+                    } elseif ($submissionType === 'journal') {
+                        $typeLabel = 'Jurnal';
+                        $typeColor = 'bg-green-100 text-green-800';
+                    }
+                  ?>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $typeColor ?>">
+                    <?= $typeLabel ?>
+                  </span>
                 </td>
                 <td class="px-6 py-4">
                   <?php if (!empty($submission['files'])): ?>
@@ -103,11 +129,11 @@
                       Lihat
                     </a>
                     <?php if ($submission['status'] === 'Diterima'): ?>
-                      <!-- Unpublish form for published theses -->
+                      <!-- Unpublish form for published submissions -->
                       <form action="<?= url('admin/unpublishFromRepository') ?>" method="POST" class="mt-1 unpublish-form">
                         
                         <input type="hidden" name="submission_id" value="<?= $submission['id'] ?>">
-                          <button type="submit" class="btn btn-danger btn-sm text-white flex items-center" onclick="return confirm('Are you sure you want to unpublish this thesis from the repository?')">
+                          <button type="submit" class="btn btn-danger btn-sm text-white flex items-center" onclick="return confirm('Are you sure you want to unpublish this submission from the repository?')">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                               <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>
@@ -116,15 +142,15 @@
 
                       </form>
                     <?php else: ?>
-                      <!-- Republish form for unpublished theses -->
+                      <!-- Republish form for unpublished submissions -->
                       <form action="<?= url('admin/republishToRepository') ?>" method="POST" class="mt-1 republish-form">
                         
                         <input type="hidden" name="submission_id" value="<?= $submission['id'] ?>">
-                         <button type="submit" class="btn btn-primary btn-sm text-white flex items-center" onclick="return confirm('Are you sure you want to republish this thesis to the repository?')" aria-label="Republish thesis">
-                          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                          </svg>Publikasikan
-                        </button>
+                         <button type="submit" class="btn btn-primary btn-sm text-white flex items-center" onclick="return confirm('Are you sure you want to republish this submission to the repository?')" aria-label="Republish submission">
+                           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                             <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                           </svg>Publikasikan
+                         </button>
 
                       </form>
                     <?php endif; ?>
@@ -154,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = form.closest('tr');
             
             // Show confirmation dialog
-            if (!confirm('Are you sure you want to unpublish this thesis from the repository?')) {
+            if (!confirm('Are you sure you want to unpublish this submission from the repository?')) {
                 return;
             }
             
@@ -176,13 +202,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     showMessage(data.message, 'success');
                     
                     // Update the repository status column to show "Unpublished"
-                    const statusCell = row.querySelector('td:nth-child(5)'); // Repository Status column
+                    const statusCell = row.querySelector('td:nth-child(6)'); // Repository Status column (shifted by 1 due to new Tipe column)
                     if (statusCell) {
                         statusCell.innerHTML = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Unpublished</span>';
                     }
                     
                     // Replace the unpublish form with republish form
-                    const actionCell = row.querySelector('td:nth-child(7)'); // Actions column
+                    const actionCell = row.querySelector('td:nth-child(8)'); // Actions column (shifted by 1 due to new Tipe column)
                     if (actionCell) {
                         actionCell.innerHTML = `
                           <div class="flex flex-col gap-2">
@@ -196,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <form action="<?= url('admin/republishToRepository') ?>" method="POST" class="mt-1 republish-form">
                               
                               <input type="hidden" name="submission_id" value="${submissionId}">
-                              <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Are you sure you want to republish this thesis to the repository?')">
+                              <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Are you sure you want to republish this submission to the repository?')">
                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                 </svg>
@@ -242,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = form.closest('tr');
         
         // Show confirmation dialog
-        if (!confirm('Are you sure you want to republish this thesis to the repository?')) {
+        if (!confirm('Are you sure you want to republish this submission to the repository?')) {
             return;
         }
         
@@ -264,13 +290,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 showMessage(data.message, 'success');
                 
                 // Update the repository status column to show "Published"
-                const statusCell = row.querySelector('td:nth-child(5)'); // Repository Status column
+                const statusCell = row.querySelector('td:nth-child(6)'); // Repository Status column (shifted by 1 due to new Tipe column)
                 if (statusCell) {
                     statusCell.innerHTML = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Published</span>';
                 }
                 
                 // Replace the republish form with unpublish form
-                const actionCell = row.querySelector('td:nth-child(7)'); // Actions column
+                const actionCell = row.querySelector('td:nth-child(8)'); // Actions column (shifted by 1 due to new Tipe column)
                 if (actionCell) {
                     actionCell.innerHTML = `
                       <div class="flex flex-col gap-2">
@@ -284,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <form action="<?= url('admin/unpublishFromRepository') ?>" method="POST" class="mt-1 unpublish-form">
                           
                           <input type="hidden" name="submission_id" value="${submissionId}">
-                          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to unpublish this thesis from the repository?')">
+                          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to unpublish this submission from the repository?')">
                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>

@@ -265,7 +265,7 @@ class SubmissionRepository extends BaseRepository
     public function findForRepositoryManagement(): array
     {
         try {
-            // Get submissions with status 'Diterima' or 'Pending'
+            // Get submissions with status 'Diterima' or 'Pending' - includes all submission types
             $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
             $result = $this->conn->query($sql);
             if ($result === false) {

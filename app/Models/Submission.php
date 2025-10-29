@@ -33,13 +33,14 @@ class Submission
         $this->conn->begin_transaction();
 
         try {
-            $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_submission = $this->conn->prepare($sql_submission);
             if (!$stmt_submission) {
                 throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
             }
 
-            $stmt_submission->bind_param("sssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi']);
+            $submission_type = 'bachelor';
+            $stmt_submission->bind_param("sssssii", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -100,14 +101,16 @@ class Submission
         $this->conn->begin_transaction();
 
         try {
-            $sql_submission = "INSERT INTO submissions (nama_mahasiswa, email, judul_skripsi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?)";
+            $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_submission = $this->conn->prepare($sql_submission);
             if (!$stmt_submission) {
                 throw new DatabaseException("Journal submission statement preparation failed: " . $this->conn->error);
             }
 
             $submission_type = 'journal';
-            $stmt_submission->bind_param("ssissi", $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
+            // For journal submissions, we'll use empty values for fields that don't apply
+            $empty_value = '';
+            $stmt_submission->bind_param("sssssissis", $data['nama_penulis'], $empty_value, $data['email'], $empty_value, $empty_value, $data['judul_jurnal'], $empty_value, $data['abstrak'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Journal submission execution failed: " . $stmt_submission->error);
@@ -210,13 +213,14 @@ class Submission
                 $this->deleteExistingFiles($submission_id);
             } else {
                 // No existing submission, create new one
-                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt_submission = $this->conn->prepare($sql_submission);
                 if (!$stmt_submission) {
                     throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
                 }
                 
-                $stmt_submission->bind_param("sssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi']);
+                $submission_type = 'bachelor';
+                $stmt_submission->bind_param("sssssis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
                 
                 if (!$stmt_submission->execute()) {
                     throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -265,13 +269,16 @@ class Submission
                 $submission_id = $existing_submission['id'];
                 
                 // Update submission data and reset status and reason to initial state, also updated_at to mark as resubmitted
-                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, email = ?, judul_skripsi = ?, abstract = ?, tahun_publikasi = ?, submission_type = 'journal', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, nim = ?, email = ?, dosen1 = ?, dosen2 = ?, judul_skripsi = ?, program_studi = ?, abstract = ?, tahun_publikasi = ?, submission_type = ?, status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
                 $stmt_update = $this->conn->prepare($sql_update);
                 if (!$stmt_update) {
                     throw new DatabaseException("Submission update statement preparation failed: " . $this->conn->error);
                 }
                 
-                $stmt_update->bind_param("ssissi", $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_id);
+                // For journal submissions, we'll use empty values for fields that don't apply
+                $empty_value = '';
+                $submission_type = 'journal';
+                $stmt_update->bind_param("ssssssisii", $data['nama_penulis'], $empty_value, $data['email'], $empty_value, $empty_value, $data['judul_jurnal'], $empty_value, $data['abstrak'], $data['tahun_publikasi'], $submission_type, $submission_id);
                 
                 if (!$stmt_update->execute()) {
                     throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);
@@ -281,14 +288,16 @@ class Submission
                 $this->deleteExistingFiles($submission_id);
             } else {
                 // No existing submission, create new one
-                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, email, judul_skripsi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?)";
+                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt_submission = $this->conn->prepare($sql_submission);
                 if (!$stmt_submission) {
                     throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
                 }
 
                 $submission_type = 'journal';
-                $stmt_submission->bind_param("ssissi", $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
+                // For journal submissions, we'll use empty values for fields that don't apply
+                $empty_value = '';
+                $stmt_submission->bind_param("ssssssssis", $data['nama_penulis'], $empty_value, $data['email'], $empty_value, $empty_value, $data['judul_jurnal'], $empty_value, $data['abstrak'], $data['tahun_publikasi'], $submission_type);
                 
                 if (!$stmt_submission->execute()) {
                     throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
