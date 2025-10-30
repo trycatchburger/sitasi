@@ -40,6 +40,20 @@
         /* Efek halus hover */
         a {
         transition: all 0.3s ease;
+        /* pop up menu */
+        @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out;
+    }
         }
     </style>
     <link href="<?php echo url('css/style.css'); ?>" rel="stylesheet">
@@ -173,13 +187,10 @@
                          </div>
                      </div>
                 <?php else: ?>
-                    <a href="<?= url('user/login') ?>"
-                       class="ml-2 bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition font-semibold shadow-sm text-sm block text-center md:inline-block">
-                        User Login
-                    </a>
-                    <a href="<?= url('admin/login') ?>"
-                       class="ml-4 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition font-semibold shadow-sm text-sm block text-center md:inline-block">
-                        Admin Login
+                    <button id="open-login"
+        class="bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition">
+        Login
+      </button>
                     </a>
                 <?php endif; ?>
             </nav>
@@ -362,5 +373,103 @@
             });
         });
     </script>
+
+    <!-- Login Popup -->
+  <div id="login-popup"
+    class="fixed inset-0 bg-black/40 hidden z-50 backdrop-blur-sm flex justify-center items-center">
+    <div class="bg-white rounded-2xl shadow-xl w-80 sm:w-96 p-6 relative animate-fadeIn">
+
+      <!-- Tombol Tutup -->
+      <button id="close-login" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Header -->
+      <div class="flex flex-col items-center mb-4">
+        <img src="<?= url('public/images/logoperpus_landcape.png') ?>"  alt="Logo"
+          class="h-12 w-auto mb-2">
+        <h2 class="text-lg font-bold text-gray-800">Masuk ke SITASI</h2>
+        <p class="text-sm text-gray-500">Pilih tipe akun Anda</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex mb-4 border-b border-gray-200">
+        <button id="tab-user"
+          class="flex-1 text-center py-2 text-sm font-medium border-b-2 border-green-600 text-green-700 transition">
+          User
+        </button>
+        <button id="tab-admin"
+          class="flex-1 text-center py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-green-700 transition">
+          Admin
+        </button>
+      </div>
+
+      <!-- Form User -->
+      <form id="form-user" action="user/login.php" method="POST" class="space-y-4">
+        <input type="text" name="username" placeholder="Username"
+          class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+        <input type="password" name="password" placeholder="Password"
+          class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+        <button type="submit"
+          class="w-full bg-green-700 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition">
+          Login
+        </button>
+      </form>
+
+      <!-- Form Admin -->
+      <form id="form-admin" action="login.php" method="POST" class="space-y-4 hidden">
+        <input type="text" name="username" placeholder="Admin Username"
+          class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+        <input type="password" name="password" placeholder="Password"
+          class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+        <button type="submit"
+          class="w-full bg-green-800 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-900 transition">
+          Login Admin
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Script -->
+<script>
+  const popup = document.getElementById('login-popup');
+  const openBtn = document.getElementById('open-login');
+  const closeBtn = document.getElementById('close-login');
+  const tabUser = document.getElementById('tab-user');
+  const tabAdmin = document.getElementById('tab-admin');
+  const formUser = document.getElementById('form-user');
+  const formAdmin = document.getElementById('form-admin');
+
+  // Buka popup
+  openBtn.addEventListener('click', () => popup.classList.remove('hidden'));
+
+  // Tutup popup
+  closeBtn.addEventListener('click', () => popup.classList.add('hidden'));
+  popup.addEventListener('click', (e) => { if (e.target === popup) popup.classList.add('hidden'); });
+
+  // Fungsi aktifkan tab
+  function activateTab(activeTab, inactiveTab, showForm, hideForm) {
+    activeTab.classList.add('border-green-600', 'text-green-700');
+    activeTab.classList.remove('border-transparent', 'text-gray-500');
+    inactiveTab.classList.add('border-transparent', 'text-gray-500');
+    inactiveTab.classList.remove('border-green-600', 'text-green-700');
+    showForm.classList.remove('hidden');
+    hideForm.classList.add('hidden');
+  }
+
+  // Event tab
+  tabUser.addEventListener('click', () => {
+    activateTab(tabUser, tabAdmin, formUser, formAdmin);
+  });
+
+  tabAdmin.addEventListener('click', () => {
+    activateTab(tabAdmin, tabUser, formAdmin, formUser);
+  });
+</script>
+
 </body>
 </html>
