@@ -398,6 +398,17 @@ class SubmissionController extends Controller {
                 $offset = ($page - 1) * $perPage;
                 $submissions = array_slice($skripsiSubmissions, $offset, $perPage);
             }
+
+            // --- Tambahan: Ambil last update otomatis ---
+            $lastUpload = null;
+            foreach ($skripsiSubmissions as $submission) {
+                if ($lastUpload === null || strtotime($submission['updated_at']) > strtotime($lastUpload)) {
+                    $lastUpload = $submission['updated_at'];
+                }
+            }
+
+            // Format: "Oktober 2025"
+            $formattedLastUpload = $lastUpload ? date('F Y', strtotime($lastUpload)) : '-';
             
             $this->render('repository_skripsi', [
                 'submissions' => $submissions,
@@ -406,8 +417,10 @@ class SubmissionController extends Controller {
                 'totalPages' => $totalPages,
                 'search' => $search,
                 'year' => $year,
-                'program' => $program
+                'program' => $program,
+                'lastUpload' => $formattedLastUpload
             ]);
+
         } catch (DatabaseException $e) {
             $this->render('repository_skripsi', ['error' => "Terjadi kesalahan database saat memuat repository Skripsi."]);
         } catch (Exception $e) {
@@ -482,6 +495,18 @@ class SubmissionController extends Controller {
                 $offset = ($page - 1) * $perPage;
                 $submissions = array_slice($tesisSubmissions, $offset, $perPage);
             }
+
+            // --- Tambahan: Ambil last update otomatis ---
+            $lastUpload = null;
+            foreach ($tesisSubmissions as $submission) {
+                if ($lastUpload === null || strtotime($submission['updated_at']) > strtotime($lastUpload)) {
+                    $lastUpload = $submission['updated_at'];
+                }
+            }
+
+            // Format: "Oktober 2025"
+            $formattedLastUpload = $lastUpload ? date('F Y', strtotime($lastUpload)) : '-';
+
             
             $this->render('repository_tesis', [
                 'submissions' => $submissions,
@@ -490,8 +515,10 @@ class SubmissionController extends Controller {
                 'totalPages' => $totalPages,
                 'search' => $search,
                 'year' => $year,
-                'program' => $program
+                'program' => $program,
+                'lastUpload' => $formattedLastUpload
             ]);
+
         } catch (DatabaseException $e) {
             $this->render('repository_tesis', ['error' => "Terjadi kesalahan database saat memuat repository Tesis."]);
         } catch (Exception $e) {
@@ -593,13 +620,26 @@ class SubmissionController extends Controller {
                 $submissions = array_slice($journalSubmissions, $offset, $perPage);
             }
             
+            // --- Tambahan: Ambil last update otomatis ---
+            $lastUpload = null;
+            foreach ($journalSubmissions as $submission) {
+                if ($lastUpload === null || strtotime($submission['updated_at']) > strtotime($lastUpload)) {
+                    $lastUpload = $submission['updated_at'];
+                }
+            }
+
+            // Format: "Oktober 2025"
+            $formattedLastUpload = $lastUpload ? date('F Y', strtotime($lastUpload)) : '-';
+
+
             $this->render('repository_journal', [
                 'submissions' => $submissions,
                 'totalSubmissions' => $totalSubmissions,
                 'currentPage' => $page,
                 'totalPages' => $totalPages,
                 'search' => $search,
-                'year' => $year
+                'year' => $year,
+                'lastUpload' => $formattedLastUpload
             ]);
         } catch (DatabaseException $e) {
             $this->render('repository_journal', ['error' => "Terjadi kesalahan database saat memuat repository jurnal."]);

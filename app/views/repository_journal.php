@@ -14,6 +14,12 @@
     </div>
   </header>
 
+  
+  <!-- Statistik -->
+  <section class="max-w-5xl mx-auto mt-8 text-center text-gray-600">
+    <p>📚 <strong><?= $totalSubmissions ?> Artikel Ilmiah</strong> terdaftar • Terbaru diunggah: <strong><?= $lastUpload ?></strong></p>
+  </section>
+  
   <!-- Filter Box -->
 <!-- Filter Box -->
 <div class="bg-white shadow-md border border-gray-100 rounded-2xl p-6 mt-6 mb-6"> <!-- tambahkan mb-6 -->
@@ -72,17 +78,6 @@
     </div>
   </form>
 </div>
-
-
-
-
-  <!-- Link to Main Repository -->
-  <div class="mb-6 text-center">
-    <a href="<?= url('submission/repository') ?>" class="inline-block px-5 py-2 border border-green-900 text-green-900 rounded-full hover:bg-green-600 hover:text-white transition">
-      Lihat Repository Utama
-    </a>
-  </div>
-
 
   <!-- Journals List -->
 <div class="flex justify-between items-center mb-6">
