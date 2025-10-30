@@ -408,19 +408,19 @@
       </div>
 
       <!-- Form User -->
-      <form id="form-user" action="user/login.php" method="POST" class="space-y-4">
-        <input type="text" name="username" placeholder="Username"
-          class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
-        <input type="password" name="password" placeholder="Password"
-          class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
-        <button type="submit"
-          class="w-full bg-green-700 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition">
-          Login
-        </button>
+      <form id="form-user" action="user/login" method="POST" class="space-y-4">
+              <input type="text" name="library_card_number" placeholder="Library Card Number"
+                class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+              <input type="password" name="password" placeholder="Password"
+                class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+              <button type="submit"
+                class="w-full bg-green-700 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition">
+                Login
+              </button>
       </form>
 
       <!-- Form Admin -->
-      <form id="form-admin" action="login.php" method="POST" class="space-y-4 hidden">
+      <form id="form-admin" action="admin/login" method="POST" class="space-y-4 hidden">
         <input type="text" name="username" placeholder="Admin Username"
           class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
         <input type="password" name="password" placeholder="Password"
