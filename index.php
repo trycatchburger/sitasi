@@ -96,6 +96,7 @@ if (class_exists($controller_class)) {
         case 'dashboard':
         case 'logout':
         case 'confirmSubmissionAssociation':
+        case 'register':
             call_user_func_array([$controller, $method_name], array_slice($segments, 2));
             break;
         default:

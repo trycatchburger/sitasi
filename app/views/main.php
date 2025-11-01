@@ -211,44 +211,77 @@
 
     <!-- Success Message Popup -->
     <?php if (isset($_SESSION['success_message'])): ?>
-    <div id="popup-overlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 transition-opacity z-50 hidden"></div>
-    <div id="success-popup" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4">
-            <div class="flex items-center mb-4">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+        <?php if (isset($_SESSION['registration_success']) && $_SESSION['registration_success']): ?>
+        <!-- Registration Success Popup with automatic redirect -->
+        <div id="registration-popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div id="registration-success-popup" class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4 relative">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-medium text-gray-900">Registration Successful!</h3>
+                    </div>
                 </div>
-                <div class="ml-3">
-                    <h3 class="text-lg font-medium text-gray-900">Success!</h3>
+                <div class="mt-2">
+                    <p class="text-sm text-gray-500"><?= htmlspecialchars($_SESSION['success_message']) ?></p>
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="redirect-progress" class="bg-green-600 h-2 rounded-full transition-all duration-1000 ease-linear" style="width: 0%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-center">Redirecting to login page in <span id="redirect-timer">5</span> seconds...</p>
+                    </div>
+                <div class="mt-4">
+                    <button id="close-registration-popup" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm">
+                        Go to Login Now
+                    </button>
                 </div>
-            </div>
-            <div class="mt-2">
-                <p class="text-sm text-gray-500"><?= htmlspecialchars($_SESSION['success_message']) ?></p>
-            </div>
-            <div class="mt-4">
-                <button id="close-popup" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm">
-                    Close
-                </button>
             </div>
         </div>
+        <?php unset($_SESSION['registration_success']); ?>
+        <?php else: ?>
+        <!-- Regular Success Popup -->
+        <div id="popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div id="success-popup" class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4 relative">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        <svg class="h-8 w-8 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-lg font-medium text-gray-900">Success!</h3>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <p class="text-sm text-gray-500"><?= htmlspecialchars($_SESSION['success_message']) ?></p>
+                </div>
+                <div class="mt-4">
+                    <button id="close-popup" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     <?php unset($_SESSION['success_message']); ?>
     <?php endif; ?>
     <!-- Error Message Popup -->
     <?php if (isset($_SESSION['error_message'])): ?>
-    <div id="error-popup-overlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 transition-opacity z-50 hidden"></div>
-    <div id="error-popup" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4">
+    <div id="error-popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div id="error-popup" class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4 relative">
             <div class="flex items-center mb-4">
                 <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-8 w-8 text-red-50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
                 <div class="ml-3">
                     <h3 class="text-lg font-medium text-gray-900">Error!</h3>
                 </div>
+            </div>
             <div class="mt-2">
                 <p class="text-sm text-gray-500"><?= htmlspecialchars($_SESSION['error_message']) ?></p>
             </div>
@@ -272,64 +305,121 @@
     <script>
         // Handle popups
         document.addEventListener('DOMContentLoaded', function() {
-            // Handle success popup
-            const popup = document.getElementById('success-popup');
-            if (popup) {
-                const overlay = document.getElementById('popup-overlay');
-                const closeBtn = document.getElementById('close-popup');
+            // Handle registration success popup (with auto redirect)
+            const registrationPopup = document.getElementById('registration-success-popup');
+            if (registrationPopup) {
+                const registrationOverlay = document.getElementById('registration-popup-overlay');
+                const closeRegistrationBtn = document.getElementById('close-registration-popup');
+                const redirectTimer = document.getElementById('redirect-timer');
+                const redirectProgress = document.getElementById('redirect-progress');
                 
-                // Show popup
-                popup.classList.remove('hidden');
+                // Timer for redirect
+                let timeLeft = 5;
+                let timerInterval = null;
+                
+                // Update the timer and progress bar
+                function updateTimer() {
+                    if (redirectTimer) {
+                        redirectTimer.textContent = timeLeft;
+                    }
+                    if (redirectProgress) {
+                        const progressPercent = ((5 - timeLeft) / 5) * 100;
+                        redirectProgress.style.width = progressPercent + '%';
+                    }
+                }
+                
+                // Start the countdown
+                timerInterval = setInterval(function() {
+                    timeLeft--;
+                    updateTimer();
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        // Redirect to login page
+                        window.location.href = '<?= url('user/login') ?>';
+                    }
+                }, 1000);
+                
+                // Update the timer initially
+                updateTimer();
+                
+                // Close registration popup and cancel redirect when close button is clicked
+                if (closeRegistrationBtn) {
+                    closeRegistrationBtn.addEventListener('click', function() {
+                        if (timerInterval) {
+                            clearInterval(timerInterval);
+                        }
+                        window.location.href = '<?= url('user/login') ?>';
+                    });
+                }
+                
+                // Close popup when overlay is clicked
+                if (registrationOverlay) {
+                    registrationOverlay.addEventListener('click', function() {
+                        if (timerInterval) {
+                            clearInterval(timerInterval);
+                        }
+                        window.location.href = '<?= url('user/login') ?>';
+                    });
+                }
+            }
+            
+            // Handle regular success popup
+            const popup = document.getElementById('success-popup');
+            if (popup && !popup.classList.contains('hidden')) {  // Only process if popup exists and is not hidden
+                const overlay = popup.parentElement; // The overlay is the parent element
+                const closeBtn = document.getElementById('close-popup');
                 
                 // Close popup when close button is clicked
                 if (closeBtn) {
                     closeBtn.addEventListener('click', function() {
-                        popup.classList.add('hidden');
+                        if (overlay) overlay.classList.add('hidden');
                     });
                 }
                 
                 // Close popup when overlay is clicked
                 if (overlay) {
-                    overlay.addEventListener('click', function() {
-                        popup.classList.add('hidden');
+                    overlay.addEventListener('click', function(e) {
+                        if (e.target === overlay) { // Only close if the overlay itself is clicked, not the popup content
+                            overlay.classList.add('hidden');
+                        }
                     });
                 }
                 
                 // Auto close popup after 5 seconds
                 setTimeout(function() {
                     if (popup && !popup.classList.contains('hidden')) {
-                        popup.classList.add('hidden');
+                        if (overlay) overlay.classList.add('hidden');
                     }
                 }, 5000);
             }
             
             // Handle error popup
             const errorPopup = document.getElementById('error-popup');
-            if (errorPopup) {
-                const errorOverlay = document.getElementById('error-popup-overlay');
+            if (errorPopup && !errorPopup.classList.contains('hidden')) { // Only process if popup exists and is not hidden
+                const errorOverlay = errorPopup.parentElement; // The overlay is the parent element
                 const closeErrorBtn = document.getElementById('close-error-popup');
-                
-                // Show popup
-                errorPopup.classList.remove('hidden');
                 
                 // Close popup when close button is clicked
                 if (closeErrorBtn) {
                     closeErrorBtn.addEventListener('click', function() {
-                        errorPopup.classList.add('hidden');
+                        if (errorOverlay) errorOverlay.classList.add('hidden');
                     });
                 }
                 
                 // Close popup when overlay is clicked
                 if (errorOverlay) {
-                    errorOverlay.addEventListener('click', function() {
-                        errorPopup.classList.add('hidden');
+                    errorOverlay.addEventListener('click', function(e) {
+                        if (e.target === errorOverlay) { // Only close if the overlay itself is clicked, not the popup content
+                            errorOverlay.classList.add('hidden');
+                        }
                     });
                 }
                 
                 // Auto close popup after 5 seconds
                 setTimeout(function() {
                     if (errorPopup && !errorPopup.classList.contains('hidden')) {
-                        errorPopup.classList.add('hidden');
+                        if (errorOverlay) errorOverlay.classList.add('hidden');
                     }
                 }, 5000);
             }
@@ -410,19 +500,21 @@
       </div>
 
       <!-- Form User -->
-      <form id="form-user" action="user/login" method="POST" class="space-y-4">
+      <form id="form-user" action="<?= url('user/login') ?>" method="POST" class="space-y-4">
               <input type="text" name="library_card_number" placeholder="Library Card Number"
                 class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
               <input type="password" name="password" placeholder="Password"
                 class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
               <button type="submit"
-                class="w-full bg-green-700 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition">
+                class="w-full bg-green-700 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-80 transition">
                 Login
               </button>
+              <p class="text-sm text-gray-500 text-center">Belum punya akun? <a href="<?= url('user/register') ?>" class="text-green-700 font-medium">Daftar Disini</a></p>
       </form>
+      
 
       <!-- Form Admin -->
-      <form id="form-admin" action="admin/login" method="POST" class="space-y-4 hidden">
+      <form id="form-admin" action="<?= url('admin/login') ?>" method="POST" class="space-y-4 hidden">
         <input type="text" name="username" placeholder="Admin Username"
           class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
         <input type="password" name="password" placeholder="Password"

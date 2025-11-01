@@ -112,6 +112,7 @@ if (class_exists($controller_class)) {
     // Map user-specific methods
     switch ($method_name) {
         case 'login':
+        case 'register':
         case 'dashboard':
         case 'logout':
         case 'confirmSubmissionAssociation':
