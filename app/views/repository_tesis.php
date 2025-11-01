@@ -3,7 +3,7 @@
 
 <!-- Header -->
   <header class="text-center py-10 bg-yellow-100/70">
-    <h1 class="text-4xl font-extrabold text-yellow-900 tracking-wide">REPOSITORY TESIS</h1>
+    <h1 class="text-4xl font-extrabold text-yellow-900 tracking-wide">REPOSITORY THESIS</h1>
     <p class="mt-2 text-gray-700 max-w-2xl mx-auto">
       Telusuri koleksi tesis sarjana STAIN Sultan Abdurrahman Kepulauan Riau.
       Semua dokumen tersedia untuk keperluan penelitian dan pendidikan.
@@ -19,90 +19,107 @@
 
   <!-- Statistik -->
   <section class="max-w-5xl mx-auto mt-8 text-center text-gray-600">
-    <p>📚 <strong>512 Tesis</strong> terdaftar • Terbaru diunggah: <strong>Oktober 2025</strong></p>
+    <p>📚 <strong><?= $totalSubmissions ?> Tesis</strong> terdaftar • Terbaru diunggah: <strong><?= $lastUpload ?></strong></p>
   </section>
 
   
 
-  <!-- Filter Box -->
-  <div class="bg-white rounded-2xl shadow-lg p-4 mb-4 border border-gray-20">
-    <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center">
-      <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+<!-- Filter Box -->
+<div class="bg-white shadow-md border border-gray-100 rounded-2xl p-6 mt-6 mb-6"> <!-- tambahkan mb-6 -->
+  <div class="flex items-center mb-4">
+    <div class="w-9 h-9 flex items-center justify-center bg-yellow-100 text-yellow-700 rounded-full mr-3">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2l-6 7v5l-6 3v-8L3 6V4z" />
       </svg>
-      Saring
-    </h2>
-
-    <form method="GET" action="<?= url('submission/repository_tesis') ?>" class="grid grid-cols-1 md:grid-cols-12 gap-4">
-      <input type="hidden" name="page" value="1">
-      
-      <!-- Search -->
-      <div class="md:col-span-5">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Cari</label>
-        <input type="text" name="search" value="<?= htmlspecialchars($search ?? $_GET['search'] ?? '') ?>" placeholder="Search by title, author, or keywords..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-      </div>
-
-      <!-- Year -->
-      <div class="md:col-span-3">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Tahun</label>
-        <select name="year" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-          <option value="">Semua Tahun</option>
-          <?php
-            $years = [];
-            foreach ($submissions as $s) {
-              $years[] = $s['tahun_publikasi'];
-            }
-            $years = array_unique($years);
-            rsort($years);
-            foreach ($years as $y):
-          ?>
-          <option value="<?= $y ?>" <?= ($y == ($_GET['year'] ?? '')) ? 'selected' : '' ?>><?= $y ?></option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-
-      <!-- Buttons -->
-      <div class="md:col-span-12 flex justify-end gap-3 pt-2">
-        <button type="submit" class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-70 transition">
-          Filter
-        </button>
-        <a href="<?= url('submission/repository_tesis') ?>" class="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
-          Bersihkan
-        </a>
-      </div>
-    </form>
-  </div>
-
-  <!-- Link to Main Repository -->
-  <div class="mb-6 text-center">
-    <a href="<?= url('submission/repository') ?>" class="inline-block px-5 py-2 border border-green-900 text-green-900 rounded-full hover:bg-green-600 hover:text-white transition">
-      Lihat Repository Utama
-    </a>
-  </div>
-
-  <!-- Tesis List -->
-  <?php if (empty($submissions)): ?>
-    <div class="bg-white rounded-xl shadow p-10 text-center">
-      <img src="https://www.svgrepo.com/show/327408/no-data.svg" alt="No Data" class="w-24 h-24 mx-auto mb-4 opacity-50">
-      <p class="text-gray-500">Data Tidak Ditemukan</p>
     </div>
-  <?php else: ?>
-    <div class="grid grid-cols-1 gap-6">
-      <?php foreach ($submissions as $submission): ?>
+    <h2 class="text-lg font-semibold text-gray-800 tracking-wide">Filter Pencarian</h2>
+  </div>
+
+  <form method="GET" action="<?= url('submission/repository_journal') ?>"
+  
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4">
+    <input type="hidden" name="page" value="1">
+
+    <!-- Search -->
+    <div class="md:col-span-6 sm:col-span-2 col-span-1">
+      <label class="block text-sm font-medium text-gray-600 mb-1">Cari</label>
+      <input type="text" 
+             name="search" 
+             value="<?= htmlspecialchars($search ?? $_GET['search'] ?? '') ?>" 
+             placeholder="🔍 Cari berdasarkan judul, penulis, atau kata kunci..." 
+             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition duration-150">
+    </div>
+
+    <!-- Year -->
+    <div class="md:col-span-3 sm:col-span-1 col-span-1">
+      <label class="block text-sm font-medium text-gray-600 mb-1">Tahun</label>
+      <select name="year" 
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition duration-150">
+        <option value="">Semua Tahun</option>
         <?php
-          $nameParts = explode(' ', htmlspecialchars($submission['nama_mahasiswa']));
-          $lastName = end($nameParts); // Get the last part as the last name
-          $firstNames = array_slice($nameParts, 0, -1); // Get all parts except the last
-          $firstName = implode(' ', $firstNames); // Join the first/middle names
-          $formattedName = $lastName . ', ' . $firstName;
-          $titleLink = '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-green-70 hover:text-green-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
+          $years = [];
+          foreach ($submissions as $s) $years[] = $s['tahun_publikasi'];
+          $years = array_unique($years);
+          rsort($years);
+          foreach ($years as $y):
         ?>
-        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1">
+        <option value="<?= $y ?>" <?= ($y == ($_GET['year'] ?? '')) ? 'selected' : '' ?>><?= $y ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+
+    <!-- Buttons -->
+    <div class="md:col-span-3 sm:col-span-2 col-span-1 flex flex-col sm:flex-row md:justify-end items-stretch sm:items-end gap-3 pt-2">
+      <button type="submit" 
+              class="w-full sm:w-auto px-6 py-2.5 bg-yellow-600 text-white font-medium rounded-xl shadow hover:bg-yellow-700 transition transform hover:-translate-y-0.5 duration-200">
+        Filter
+      </button>
+      <a href="<?= url('submission/repository_journal') ?>" 
+         class="w-full sm:w-auto px-6 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">
+        Bersihkan
+      </a>
+    </div>
+  </form>
+</div>
+
+  <!-- Journals List -->
+<div class="flex justify-between items-center mb-6">
+  <h2 class="text-xl font-semibold text-gray-800">Daftar Thesis</h2>
+
+  <!-- Tombol Pilihan Tampilan -->
+  <div class="flex gap-2">
+    <button id="gridBtn" class="px-3 py-1.5 rounded-md bg-yellow-600 text-white text-sm font-medium hover:bg-yellow-700 active">🟦 Grid</button>
+    <button id="listBtn" class="px-3 py-1.5 rounded-md bg-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-300">📃 List</button>
+  </div>
+</div>
+
+<?php if (empty($submissions)): ?>
+  <div class="bg-white rounded-xl shadow p-10 text-center">
+    <img src="https://www.svgrepo.com/show/327408/no-data.svg" alt="No Data" class="w-24 h-24 mx-auto mb-4 opacity-50">
+    <p class="text-gray-500">Data Tidak Ditemukan</p>
+  </div>
+<?php else: ?>
+  <!-- Container utama -->
+  <div id="submissionContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-300">
+
+    <?php foreach ($submissions as $submission): ?>
+      <?php
+        $nameParts = explode(' ', htmlspecialchars($submission['nama_mahasiswa']));
+        $lastName = end($nameParts);
+        $firstNames = array_slice($nameParts, 0, -1);
+        $firstName = implode(' ', $firstNames);
+        $formattedName = $lastName . ', ' . $firstName;
+
+        $titleLink = '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-yellow-70 hover:text-yellow-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
+      ?>
+
+      <div class="submission-item bg-white rounded-xl shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 overflow-hidden">
+        <div class="p-5">
           <div class="text-lg font-semibold text-gray-800"><?= $formattedName ?> (<?= htmlspecialchars($submission['tahun_publikasi']) ?>)</div>
           <div class="mt-1 text-gray-70"><?= $titleLink ?></div>
           <div class="flex gap-3 mt-3 text-sm">
-            <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
-              Tesis
+            <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
+              Journal
             </span>
           </div>
           <?php if (!empty($submission['abstract'])): ?>
@@ -111,9 +128,54 @@
             </div>
           <?php endif; ?>
         </div>
-      <?php endforeach; ?>
-    </div>
-  <?php endif; ?>
+      </div>
+
+    <?php endforeach; ?>
+  </div>
+<?php endif; ?>
+
+<script>
+  const gridBtn = document.getElementById('gridBtn');
+  const listBtn = document.getElementById('listBtn');
+  const container = document.getElementById('submissionContainer');
+
+  gridBtn.addEventListener('click', () => {
+    container.classList.remove('list-view');
+    container.classList.add('grid', 'md:grid-cols-2', 'lg:grid-cols-3');
+    gridBtn.classList.add('bg-yellow-600', 'text-white');
+    gridBtn.classList.remove('bg-gray-200', 'text-gray-700');
+    listBtn.classList.add('bg-gray-200', 'text-gray-700');
+    listBtn.classList.remove('bg-yellow-600', 'text-white');
+  });
+
+  listBtn.addEventListener('click', () => {
+    container.classList.add('list-view');
+    container.classList.remove('grid', 'md:grid-cols-2', 'lg:grid-cols-3');
+    gridBtn.classList.add('bg-gray-200', 'text-gray-700');
+    gridBtn.classList.remove('bg-yellow-600', 'text-white');
+    listBtn.classList.add('bg-yellow-600', 'text-white');
+    listBtn.classList.remove('bg-gray-200', 'text-gray-700');
+  });
+</script>
+
+<style>
+  /* Tampilan list: susun horizontal */
+  .list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .list-view .submission-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .list-view .submission-item .p-5 {
+    flex: 1;
+  }
+</style>
   
   <!-- Pagination Controls -->
   <?php if (!empty($submissions) && $totalPages > 1): ?>
@@ -212,7 +274,7 @@
 
 
 <?php
-$title = 'Journal Repository | Portal Unggah Jurnal Mandiri';
+$title = 'Repository Thesis | Portal Unggah Mandiri';
 $content = ob_get_clean();
 require __DIR__ . '/main.php';
 ?>

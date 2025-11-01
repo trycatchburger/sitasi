@@ -14,13 +14,6 @@ class SubmissionController extends Controller {
      * Displays the new submission form.
      */
     public function skripsi() {
-        // Check if user is logged in
-        if (!$this->isUserLoggedIn()) {
-            // Redirect to login or show an error
-            $_SESSION['error_message'] = "Please log in to submit your thesis.";
-            header('Location: ' . url('user/login'));
-            exit;
-        }
         $this->render('unggah_skripsi');
     }
     
@@ -28,13 +21,6 @@ class SubmissionController extends Controller {
      * Displays the new master's degree submission form.
      */
     public function tesis() {
-        // Check if user is logged in
-        if (!$this->isUserLoggedIn()) {
-            // Redirect to login or show an error
-            $_SESSION['error_message'] = "Please log in to submit your thesis.";
-            header('Location: ' . url('user/login'));
-            exit;
-        }
         $this->render('unggah_tesis');
     }
 
@@ -42,25 +28,10 @@ class SubmissionController extends Controller {
      * Displays the new journal submission form.
      */
     public function jurnal() {
-        // Check if user is logged in
-        if (!$this->isUserLoggedIn()) {
-            // Redirect to login or show an error
-            $_SESSION['error_message'] = "Please log in to submit your journal.";
-            header('Location: ' . url('user/login'));
-            exit;
-        }
         $this->render('unggah_jurnal');
     }
 
     public function create() {
-        // Check if user is logged in
-        if (!$this->isUserLoggedIn()) {
-            // Redirect to login or show an error
-            $_SESSION['error_message'] = "Please log in to submit your thesis.";
-            header('Location: ' . url('user/login'));
-            exit;
-        }
-
         try {
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
@@ -84,27 +55,13 @@ class SubmissionController extends Controller {
             // $_POST['email'] = strtolower($_POST['email']);
 
             $submissionModel = new Submission();
-            
-            // Add user ID to submission data
-            $data = [
-                'user_id' => $_SESSION['user_id'], // Link to logged-in user
-                'nama_mahasiswa' => trim($_POST['nama_mahasiswa']),
-                'nim' => trim($_POST['nim']),
-                'email' => trim($_POST['email']),
-                'dosen1' => trim($_POST['dosen1']),
-                'dosen2' => trim($_POST['dosen2']),
-                'judul_skripsi' => trim($_POST['judul_skripsi']),
-                'program_studi' => trim($_POST['program_studi']),
-                'tahun_publikasi' => (int)$_POST['tahun_publikasi']
-            ];
-            
             // Check if submission already exists for this NIM
             if ($submissionModel->submissionExists($_POST['nim'])) {
                 // If submission exists, update it (resubmit)
-                $submissionModel->resubmit($data, $_FILES);
+                $submissionModel->resubmit($_POST, $_FILES);
             } else {
                 // If no existing submission, create new one
-                $submissionModel->create($data, $_FILES);
+                $submissionModel->create($_POST, $_FILES);
             }
             // Set a session variable to show the popup on the homepage
             $_SESSION['submission_success'] = true;
@@ -135,14 +92,6 @@ class SubmissionController extends Controller {
     }
 
     public function createMaster() {
-        // Check if user is logged in
-        if (!$this->isUserLoggedIn()) {
-            // Redirect to login or show an error
-            $_SESSION['error_message'] = "Please log in to submit your thesis.";
-            header('Location: ' . url('user/login'));
-            exit;
-        }
-
         try {
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
@@ -166,27 +115,13 @@ class SubmissionController extends Controller {
             // $_POST['email'] = strtolower($_POST['email']);
 
             $submissionModel = new Submission();
-            
-            // Add user ID to submission data
-            $data = [
-                'user_id' => $_SESSION['user_id'], // Link to logged-in user
-                'nama_mahasiswa' => trim($_POST['nama_mahasiswa']),
-                'nim' => trim($_POST['nim']),
-                'email' => trim($_POST['email']),
-                'dosen1' => trim($_POST['dosen1']),
-                'dosen2' => trim($_POST['dosen2']),
-                'judul_skripsi' => trim($_POST['judul_skripsi']),
-                'program_studi' => trim($_POST['program_studi']),
-                'tahun_publikasi' => (int)$_POST['tahun_publikasi']
-            ];
-            
             // Check if submission already exists for this NIM
             if ($submissionModel->submissionExists($_POST['nim'])) {
                 // If submission exists, update it (resubmit)
-                $submissionModel->resubmitMaster($data, $_FILES);
+                $submissionModel->resubmitMaster($_POST, $_FILES);
             } else {
                 // If no existing submission, create new one
-                $submissionModel->createMaster($data, $_FILES);
+                $submissionModel->createMaster($_POST, $_FILES);
             }
             // Set a session variable to show the popup on the homepage
             $_SESSION['submission_success'] = true;
@@ -217,14 +152,6 @@ class SubmissionController extends Controller {
     }
 
     public function createJournal() {
-        // Check if user is logged in
-        if (!$this->isUserLoggedIn()) {
-            // Redirect to login or show an error
-            $_SESSION['error_message'] = "Please log in to submit your journal.";
-            header('Location: ' . url('user/login'));
-            exit;
-        }
-
         try {
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
@@ -243,24 +170,13 @@ class SubmissionController extends Controller {
             $_POST['judul_jurnal']  = ucwords(strtolower($_POST['judul_jurnal']));
 
             $submissionModel = new Submission();
-            
-            // Add user ID to submission data
-            $data = [
-                'user_id' => $_SESSION['user_id'], // Link to logged-in user
-                'nama_penulis' => trim($_POST['nama_penulis']),
-                'email' => trim($_POST['email']),
-                'judul_jurnal' => trim($_POST['judul_jurnal']),
-                'abstrak' => trim($_POST['abstrak']),
-                'tahun_publikasi' => (int)$_POST['tahun_publikasi']
-            ];
-            
             // Check if submission already exists for this author (using name as identifier)
             if ($submissionModel->journalSubmissionExists($_POST['nama_penulis'])) {
                 // If submission exists, update it (resubmit)
-                $submissionModel->resubmitJournal($data, $_FILES);
+                $submissionModel->resubmitJournal($_POST, $_FILES);
             } else {
                 // If no existing submission, create new one
-                $submissionModel->createJournal($data, $_FILES);
+                $submissionModel->createJournal($_POST, $_FILES);
             }
             // Set a session variable to show the popup on the homepage
             $_SESSION['submission_success'] = true;
@@ -296,28 +212,6 @@ class SubmissionController extends Controller {
      * with new ones based on their unique ID (name and NIM).
      */
     public function resubmit() {
-        if (!$this->isUserLoggedIn()) {
-            $_SESSION['error_message'] = "Please log in to resubmit your thesis.";
-            header('Location: ' . url('user/login'));
-            exit;
-        }
-
-        $submissionId = (int)($_POST['id'] ?? 0); // Get submission ID from POST data or URL parameter
-        if ($submissionId <= 0) {
-            // If no submission ID is provided in POST, try to get it from URL parameters (if passed via GET route)
-            $submissionId = (int)($_GET['id'] ?? 0);
-        }
-
-        $submissionModel = new Submission();
-        $submission = $submissionModel->findById($submissionId);
-        
-        // Verify that the submission belongs to the logged-in user
-        if (!$submission || $submission['user_id'] != $_SESSION['user_id']) {
-            $_SESSION['error_message'] = "You don't have permission to resubmit this thesis.";
-            header('Location: ' . url('user/dashboard'));
-            exit;
-        }
-
         try {
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
@@ -331,20 +225,8 @@ class SubmissionController extends Controller {
                 throw new ValidationException($errors, "There were issues with the information you provided. Please check your input and try again.");
             }
 
-            // Add user ID to submission data
-            $data = [
-                'user_id' => $_SESSION['user_id'], // Ensure it's linked to the current user
-                'nama_mahasiswa' => trim($_POST['nama_mahasiswa']),
-                'nim' => trim($_POST['nim']),
-                'email' => trim($_POST['email']),
-                'dosen1' => trim($_POST['dosen1']),
-                'dosen2' => trim($_POST['dosen2']),
-                'judul_skripsi' => trim($_POST['judul_skripsi']),
-                'program_studi' => trim($_POST['program_studi']),
-                'tahun_publikasi' => (int)$_POST['tahun_publikasi']
-            ];
-
-            $submissionModel->resubmit($data, $_FILES);
+            $submissionModel = new Submission();
+            $submissionModel->resubmit($_POST, $_FILES);
             // Set a session variable to show the popup on the homepage
             $_SESSION['submission_success'] = true;
             header('Location: ' . url());
@@ -466,7 +348,7 @@ class SubmissionController extends Controller {
             // Get all approved submissions
             $allSubmissions = $submissionModel->findApproved();
 
-            // Filter for journal submissions only
+            // Filter for skripsi submissions only
             $skripsiSubmissions = [];
             foreach ($allSubmissions as $submission) {
                 if ($submission['submission_type'] === 'bachelor') {
@@ -510,12 +392,23 @@ class SubmissionController extends Controller {
                 $offset = ($page - 1) * $perPage;
                 $submissions = array_slice($filteredSubmissions, $offset, $perPage);
             } else {
-                // No filters, paginate all approved skripsi submissions
+                // No filters, paginate all skripsi submissions
                 $totalSubmissions = count($skripsiSubmissions);
                 $totalPages = ceil($totalSubmissions / $perPage);
                 $offset = ($page - 1) * $perPage;
                 $submissions = array_slice($skripsiSubmissions, $offset, $perPage);
             }
+
+            // --- Tambahan: Ambil last update otomatis ---
+            $lastUpload = null;
+            foreach ($skripsiSubmissions as $submission) {
+                if ($lastUpload === null || strtotime($submission['updated_at']) > strtotime($lastUpload)) {
+                    $lastUpload = $submission['updated_at'];
+                }
+            }
+
+            // Format: "Oktober 2025"
+            $formattedLastUpload = $lastUpload ? date('F Y', strtotime($lastUpload)) : '-';
             
             $this->render('repository_skripsi', [
                 'submissions' => $submissions,
@@ -524,8 +417,10 @@ class SubmissionController extends Controller {
                 'totalPages' => $totalPages,
                 'search' => $search,
                 'year' => $year,
-                'program' => $program
+                'program' => $program,
+                'lastUpload' => $formattedLastUpload
             ]);
+
         } catch (DatabaseException $e) {
             $this->render('repository_skripsi', ['error' => "Terjadi kesalahan database saat memuat repository Skripsi."]);
         } catch (Exception $e) {
@@ -550,11 +445,11 @@ class SubmissionController extends Controller {
             // Get all approved submissions
             $allSubmissions = $submissionModel->findApproved();
             
-            // Filter for master's submissions only
-            $thesisSubmissions = [];
+            // Filter for tesis submissions only
+            $tesisSubmissions = [];
             foreach ($allSubmissions as $submission) {
                 if ($submission['submission_type'] === 'master') {
-                    $thesisSubmissions[] = $submission;
+                    $tesisSubmissions[] = $submission;
                 }
             }
             
@@ -562,7 +457,7 @@ class SubmissionController extends Controller {
             if (!empty($search) || !empty($year) || !empty($program)) {
                 $filteredSubmissions = [];
                 
-                foreach ($thesisSubmissions as $submission) {
+                foreach ($tesisSubmissions as $submission) {
                     // Check search term (title or author)
                     $matchesSearch = true;
                     if (!empty($search)) {
@@ -594,12 +489,24 @@ class SubmissionController extends Controller {
                 $offset = ($page - 1) * $perPage;
                 $submissions = array_slice($filteredSubmissions, $offset, $perPage);
             } else {
-                // No filters, paginate all approved thesis submissions
-                $totalSubmissions = count($thesisSubmissions);
+                // No filters, paginate all tesis submissions
+                $totalSubmissions = count($tesisSubmissions);
                 $totalPages = ceil($totalSubmissions / $perPage);
                 $offset = ($page - 1) * $perPage;
-                $submissions = array_slice($thesisSubmissions, $offset, $perPage);
+                $submissions = array_slice($tesisSubmissions, $offset, $perPage);
             }
+
+            // --- Tambahan: Ambil last update otomatis ---
+            $lastUpload = null;
+            foreach ($tesisSubmissions as $submission) {
+                if ($lastUpload === null || strtotime($submission['updated_at']) > strtotime($lastUpload)) {
+                    $lastUpload = $submission['updated_at'];
+                }
+            }
+
+            // Format: "Oktober 2025"
+            $formattedLastUpload = $lastUpload ? date('F Y', strtotime($lastUpload)) : '-';
+
             
             $this->render('repository_tesis', [
                 'submissions' => $submissions,
@@ -608,8 +515,10 @@ class SubmissionController extends Controller {
                 'totalPages' => $totalPages,
                 'search' => $search,
                 'year' => $year,
-                'program' => $program
+                'program' => $program,
+                'lastUpload' => $formattedLastUpload
             ]);
+
         } catch (DatabaseException $e) {
             $this->render('repository_tesis', ['error' => "Terjadi kesalahan database saat memuat repository Tesis."]);
         } catch (Exception $e) {
@@ -638,16 +547,6 @@ class SubmissionController extends Controller {
                 http_response_code(404);
                 require_once __DIR__ . '/../views/errors/404.php';
                 return;
-            }
-            
-            // Check if the submission is published (status = 'Diterima') or if the current user is the owner
-            if ($submission['status'] !== 'Diterima' && (!$this->isUserLoggedIn() || $submission['user_id'] != $_SESSION['user_id'])) {
-                // Only show published submissions to non-owners
-                if ($submission['status'] !== 'Diterima') {
-                    http_response_code(404);
-                    require_once __DIR__ . '/../views/errors/404.php';
-                    return;
-                }
             }
             
             $this->render('detail', ['submission' => $submission]);
@@ -721,13 +620,26 @@ class SubmissionController extends Controller {
                 $submissions = array_slice($journalSubmissions, $offset, $perPage);
             }
             
+            // --- Tambahan: Ambil last update otomatis ---
+            $lastUpload = null;
+            foreach ($journalSubmissions as $submission) {
+                if ($lastUpload === null || strtotime($submission['updated_at']) > strtotime($lastUpload)) {
+                    $lastUpload = $submission['updated_at'];
+                }
+            }
+
+            // Format: "Oktober 2025"
+            $formattedLastUpload = $lastUpload ? date('F Y', strtotime($lastUpload)) : '-';
+
+
             $this->render('repository_journal', [
                 'submissions' => $submissions,
                 'totalSubmissions' => $totalSubmissions,
                 'currentPage' => $page,
                 'totalPages' => $totalPages,
                 'search' => $search,
-                'year' => $year
+                'year' => $year,
+                'lastUpload' => $formattedLastUpload
             ]);
         } catch (DatabaseException $e) {
             $this->render('repository_journal', ['error' => "Terjadi kesalahan database saat memuat repository jurnal."]);
@@ -757,16 +669,6 @@ class SubmissionController extends Controller {
                 http_response_code(404);
                 require_once __DIR__ . '/../views/errors/404.php';
                 return;
-            }
-            
-            // Check if the submission is published (status = 'Diterima') or if the current user is the owner
-            if ($submission['status'] !== 'Diterima' && (!$this->isUserLoggedIn() || $submission['user_id'] != $_SESSION['user_id'])) {
-                // Only show published submissions to non-owners
-                if ($submission['status'] !== 'Diterima') {
-                    http_response_code(404);
-                    require_once __DIR__ . '/../views/errors/404.php';
-                    return;
-                }
             }
             
             $this->render('journal_detail', ['submission' => $submission]);
