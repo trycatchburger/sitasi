@@ -128,7 +128,7 @@ class AdminController extends Controller {
 
     public function logout() {
         SessionManager::logout();
-        header('Location: ' . url('admin/login'));
+        header('Location: ' . url());
         exit;
     }
 
