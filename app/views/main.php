@@ -209,73 +209,144 @@
     });
 </script>
 
-    <!-- Success Message Popup -->
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <?php if (isset($_SESSION['registration_success']) && $_SESSION['registration_success']): ?>
+<!-- Success Message Popup -->
+<?php if (isset($_SESSION['success_message'])): ?>
+    <?php if (!empty($_SESSION['registration_success'])): ?>
         <!-- Registration Success Popup with automatic redirect -->
-        <div id="registration-popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div id="registration-success-popup" class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4 relative">
-                <div class="flex items-center mb-4">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 0 0118 0z" />
+        <div id="registration-popup-overlay" 
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+            <div id="registration-success-popup" 
+                class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 max-w-sm w-full mx-4 relative animate-scaleUp">
+                
+                <!-- Icon + Title -->
+                <div class="flex flex-col items-center text-center">
+                    <div class="bg-green-100 p-3 rounded-full mb-3">
+                        <svg class="h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <div class="ml-3">
-                        <h3 class="text-lg font-medium text-gray-900">Registration Successful!</h3>
-                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800">Registration Successful!</h3>
+                    <p class="text-gray-600 text-sm mt-2"><?= htmlspecialchars($_SESSION['success_message']) ?></p>
                 </div>
-                <div class="mt-2">
-                    <p class="text-sm text-gray-500"><?= htmlspecialchars($_SESSION['success_message']) ?></p>
-                    <div class="mt-4">
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div id="redirect-progress" class="bg-green-600 h-2 rounded-full transition-all duration-1000 ease-linear" style="width: 0%"></div>
+
+                <!-- Progress bar & Timer -->
+                <div class="mt-6">
+                    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div id="redirect-progress" 
+                             class="bg-green-600 h-2 rounded-full transition-all duration-1000 ease-linear" 
+                             style="width: 0%">
                         </div>
-                        <p class="text-xs text-gray-500 mt-2 text-center">Redirecting to login page in <span id="redirect-timer">5</span> seconds...</p>
                     </div>
-                <div class="mt-4">
-                    <button id="close-registration-popup" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm">
+                    <p class="text-xs text-gray-500 mt-3 text-center">
+                        Redirecting to login page in 
+                        <span id="redirect-timer">5</span> seconds...
+                    </p>
+                </div>
+
+                <!-- Action Button -->
+                <div class="mt-6">
+                    <button id="close-registration-popup"
+                        class="w-full inline-flex justify-center rounded-xl px-4 py-2 bg-green-600 text-white font-medium hover:bg-green-700 transition focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Go to Login Now
                     </button>
                 </div>
             </div>
         </div>
+
+        <script>
+        // --- Registration Success Logic ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const progress = document.getElementById("redirect-progress");
+            const timer = document.getElementById("redirect-timer");
+            const btn = document.getElementById("close-registration-popup");
+            let seconds = 5;
+
+            const interval = setInterval(() => {
+                seconds--;
+                progress.style.width = `${(5 - seconds) * 20}%`;
+                timer.textContent = seconds;
+
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    window.location.href = "login.php";
+                }
+            }, 1000);
+
+            btn.addEventListener("click", () => {
+                clearInterval(interval);
+                window.location.href = "login.php";
+            });
+        });
+        </script>
+
         <?php unset($_SESSION['registration_success']); ?>
-        <?php else: ?>
+    <?php else: ?>
         <!-- Regular Success Popup -->
-        <div id="popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div id="success-popup" class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4 relative">
-                <div class="flex items-center mb-4">
-                    <div class="flex-shrink-0">
-                        <svg class="h-8 w-8 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <div id="popup-overlay" 
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+            <div id="success-popup" 
+                class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 max-w-sm w-full mx-4 relative animate-scaleUp">
+                
+                <div class="flex flex-col items-center text-center">
+                    <div class="bg-green-100 p-3 rounded-full mb-3">
+                        <svg class="h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <div class="ml-3">
-                        <h3 class="text-lg font-medium text-gray-900">Success!</h3>
-                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800">Success!</h3>
+                    <p class="text-gray-600 text-sm mt-2"><?= htmlspecialchars($_SESSION['success_message']) ?></p>
                 </div>
-                <div class="mt-2">
-                    <p class="text-sm text-gray-500"><?= htmlspecialchars($_SESSION['success_message']) ?></p>
-                </div>
-                <div class="mt-4">
-                    <button id="close-popup" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm">
+
+                <div class="mt-6">
+                    <button id="close-popup"
+                        class="w-full inline-flex justify-center rounded-xl px-4 py-2 bg-green-600 text-white font-medium hover:bg-green-700 transition focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Close
                     </button>
                 </div>
             </div>
         </div>
-        <?php endif; ?>
-    <?php unset($_SESSION['success_message']); ?>
+
+        <script>
+        // --- Regular Success Popup Logic ---
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("close-popup").addEventListener("click", () => {
+                document.getElementById("popup-overlay").classList.add("hidden");
+            });
+        });
+        </script>
     <?php endif; ?>
+    <?php unset($_SESSION['success_message']); ?>
+<?php endif; ?>
+
+<!-- Animation Styles -->
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.animate-scaleUp { animation: scaleUp 0.3s ease-out; }
+</style>
+
     <!-- Error Message Popup -->
     <?php if (isset($_SESSION['error_message'])): ?>
-    <div id="error-popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div id="error-popup" class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4 relative">
+    <div id="error-popup-overlay"
+         class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div id="error-popup"
+             class="bg-white rounded-lg shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4 relative">
             <div class="flex items-center mb-4">
                 <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-red-50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg class="h-8 w-8 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
                 <div class="ml-3">
@@ -286,13 +357,16 @@
                 <p class="text-sm text-gray-500"><?= htmlspecialchars($_SESSION['error_message']) ?></p>
             </div>
             <div class="mt-4">
-                <button id="close-error-popup" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm">
+                <button id="close-error-popup"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm">
                     Close
                 </button>
             </div>
         </div>
+    </div> <!-- ✅ penutup overlay -->
     <?php unset($_SESSION['error_message']); ?>
-    <?php endif; ?>
+<?php endif; ?>
+
     
     <main class="flex-grow w-full">
         <div class="container mx-auto px-4 my-8">

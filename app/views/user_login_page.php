@@ -1,3 +1,11 @@
+<?php
+if (isset($_SESSION['error_message'])) {
+    $error = $_SESSION['error_message'];
+    unset($_SESSION['error_message']); // biar tidak tampil terus
+}
+?>
+
+
 <?php ob_start(); ?>
 
 <div class="max-w-md mx-auto">
