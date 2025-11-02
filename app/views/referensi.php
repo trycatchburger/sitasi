@@ -56,11 +56,33 @@
               </div>
 
               <div class="flex space-x-3">
-                <a href="<?= url('submission/' . ($reference['submission_type'] === 'journal' ? 'journalDetail' : 'detail') . '/' . $reference['id']) ?>" 
+                <?php
+                // Find the DOC file for this submission
+                $docFile = null;
+                if (isset($reference['files']) && is_array($reference['files'])) {
+                    foreach ($reference['files'] as $file) {
+                        $fileName = $file['file_name'];
+                        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                        if ($fileExtension === 'doc' || $fileExtension === 'docx') {
+                            $docFile = $file;
+                            break;
+                        }
+                    }
+                }
+                ?>
+                <?php if ($docFile): ?>
+                <a href="<?= url('file/viewAsPdf/' . $docFile['id']) ?>"
+                   target="_blank"
+                   class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition text-sm font-medium">
+                  View
+                </a>
+                <?php else: ?>
+                <a href="<?= url('submission/' . ($reference['submission_type'] === 'journal' ? 'journalDetail' : 'detail') . '/' . $reference['id']) ?>"
                    class="flex-1 text-center bg-white border border-gray-30 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
                   Detail
                 </a>
-                <button id="removeReferenceBtn_<?= $reference['id'] ?>" 
+                <?php endif; ?>
+                <button id="removeReferenceBtn_<?= $reference['id'] ?>"
                         class="flex-1 text-center bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition text-sm font-medium"
                         data-submission-id="<?= $reference['id'] ?>">
                   Hapus

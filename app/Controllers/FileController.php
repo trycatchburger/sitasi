@@ -70,13 +70,14 @@ class FileController extends Controller {
             $file = $result->fetch_assoc();
             $stmt->close();
             
-            // Get the full file path
+            // Get the full file path - file_path is always relative to the public directory
+            // __DIR__ is c:/xampp/htdocs/sitasi/app/Controllers, so we need to go up 2 levels to reach root, then into public/
             $fullPath = __DIR__ . '/../../public/' . $file['file_path'];
             
             // Check if file exists
             if (!file_exists($fullPath)) {
                 http_response_code(404);
-                echo "File not found on server.";
+                echo "File not found on server at path: " . $fullPath . " (original path: " . $file['file_path'] . ")";
                 return;
             }
             
@@ -182,7 +183,9 @@ class FileController extends Controller {
             
             // Add files to ZIP
             foreach ($files as $file) {
+                // Get the full file path - file_path is always relative to the public directory
                 $fullPath = __DIR__ . '/../../public/' . $file['file_path'];
+                
                 if (file_exists($fullPath)) {
                     $zip->addFile($fullPath, $file['file_name']);
                 }
@@ -317,7 +320,9 @@ class FileController extends Controller {
             
             // Add files to ZIP with organized folder structure
             foreach ($organizedFiles as $file) {
+                // Get the full file path - file_path is always relative to the public directory
                 $fullPath = __DIR__ . '/../../public/' . $file['file_path'];
+                
                 if (file_exists($fullPath)) {
                     // Use the file name as stored in the database
                     $fileName = $file['file_name'];
@@ -360,6 +365,88 @@ class FileController extends Controller {
         } catch (Exception $e) {
             http_response_code(500);
             echo "An error occurred while creating the ZIP archive: " . $e->getMessage();
+        }
+    }
+
+    /**
+     * Convert DOC/DOCX file to PDF and view in browser (no download option)
+     * @param int $fileId The ID of the file to convert and view
+     */
+    public function viewAsPdf(int $fileId): void {
+        try {
+            // Fetch file information from database
+            $stmt = $this->conn->prepare("SELECT file_path, file_name FROM submission_files WHERE id = ?");
+            $stmt->bind_param("i", $fileId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo "File not found.";
+                return;
+            }
+            
+            $file = $result->fetch_assoc();
+            $stmt->close();
+            
+            // Get the full file path - file_path is always relative to the public directory
+            // __DIR__ is c:/xampp/htdocs/sitasi/app/Controllers, so we need to go up 3 levels to reach root, then into public/
+            $fullPath = __DIR__ . '/../../public/' . $file['file_path'];
+            
+            // Check if file exists
+            if (!file_exists($fullPath)) {
+                http_response_code(404);
+                echo "File not found on server at path: " . $fullPath . " (original path: " . $file['file_path'] . ")";
+                return;
+            }
+            
+            // Get file extension to determine if it's a DOC/DOCX file
+            $extension = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+            
+            if (!in_array($extension, ['doc', 'docx'])) {
+                http_response_code(400);
+                echo "File type not supported for PDF conversion. Only DOC and DOCX files are supported.";
+                return;
+            }
+            
+            // Load the PHPWord library and configure PDF renderer
+            require_once __DIR__ . '/../../vendor/autoload.php';
+            \PhpOffice\PhpWord\Settings::setPdfRendererName(\PhpOffice\PhpWord\Settings::PDF_RENDERER_TCPDF);
+            \PhpOffice\PhpWord\Settings::setPdfRendererPath(__DIR__ . '/../../vendor/tecnickcom/tcpdf');
+
+            // Create a new PHPWord instance and load the document
+            $phpWord = \PhpOffice\PhpWord\IOFactory::load($fullPath);
+            
+            // Create a temporary PDF file
+            $tempPdfPath = tempnam(sys_get_temp_dir(), 'converted_') . '.pdf';
+            
+            // Save as PDF using the PDF writer
+            $pdfWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
+            $pdfWriter->save($tempPdfPath);
+            
+            // Set headers to display PDF in browser (inline) without download option
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: inline; filename="' . pathinfo($file['file_name'], PATHINFO_FILENAME) . '.pdf"');
+            header('Content-Length: ' . filesize($tempPdfPath));
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            header('Cache-Control: private', false);
+            header('Pragma: no-cache'); // Prevent caching
+            header('Expires: 0'); // Expire immediately
+            
+            // Output the PDF content
+            readfile($tempPdfPath);
+            
+            // Delete the temporary file after output
+            if (file_exists($tempPdfPath)) {
+                unlink($tempPdfPath);
+            }
+            
+        } catch (\PhpOffice\PhpWord\Exception\Exception $e) {
+            http_response_code(500);
+            echo "An error occurred while processing the document: " . $e->getMessage();
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo "An error occurred while converting the file to PDF: " . $e->getMessage();
         }
     }
 }
