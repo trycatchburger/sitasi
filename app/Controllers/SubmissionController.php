@@ -507,7 +507,7 @@ class SubmissionController extends Controller {
             // Format: "Oktober 2025"
             $formattedLastUpload = $lastUpload ? date('F Y', strtotime($lastUpload)) : '-';
 
-            
+
             $this->render('repository_tesis', [
                 'submissions' => $submissions,
                 'totalSubmissions' => $totalSubmissions,
@@ -549,7 +549,14 @@ class SubmissionController extends Controller {
                 return;
             }
             
-            $this->render('detail', ['submission' => $submission]);
+            // Check if user is logged in and if submission is in their references
+            $isReference = false;
+            if (isset($_SESSION['user_id'])) {
+                $userReferenceModel = new \App\Models\UserReference();
+                $isReference = $userReferenceModel->isReference($_SESSION['user_id'], (int)$id);
+            }
+            
+            $this->render('detail', ['submission' => $submission, 'isReference' => $isReference]);
         } catch (DatabaseException $e) {
             http_response_code(500);
             require_once __DIR__ . '/../views/errors/500.php';
@@ -671,7 +678,14 @@ class SubmissionController extends Controller {
                 return;
             }
             
-            $this->render('journal_detail', ['submission' => $submission]);
+            // Check if user is logged in and if submission is in their references
+            $isReference = false;
+            if (isset($_SESSION['user_id'])) {
+                $userReferenceModel = new \App\Models\UserReference();
+                $isReference = $userReferenceModel->isReference($_SESSION['user_id'], (int)$id);
+            }
+            
+            $this->render('journal_detail', ['submission' => $submission, 'isReference' => $isReference]);
         } catch (DatabaseException $e) {
             http_response_code(500);
             require_once __DIR__ . '/../views/errors/500.php';
@@ -682,17 +696,134 @@ class SubmissionController extends Controller {
     }
     
     /**
-     * Search recent approved journal submissions for homepage preview
-     * @param string $search Search term
-     * @param int $limit Number of submissions to fetch
-     * @return array
-     * @throws DatabaseException
+     * Toggle a submission in user's references (add/remove)
      */
-    public function searchRecentApprovedJournals(string $search, int $limit = 6): array
-    {
-        return $this->repository->searchRecentApprovedJournals($search, $limit);
+    public function toggleReference() {
+        // Check if user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'User not authenticated']);
+            return;
+        }
+        
+        // Check if request method is valid (POST for adding, DELETE for removing)
+        $method = $_SERVER['REQUEST_METHOD'];
+        if ($method !== 'POST' && $method !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+        
+        // Get the submission ID from the request body
+        $input = json_decode(file_get_contents('php://input'), true);
+        $submissionId = $input['submission_id'] ?? null;
+        
+        if (!$submissionId || !is_numeric($submissionId)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid submission ID']);
+            return;
+        }
+        
+        
+        try {
+            // Initialize the UserReference model
+            $userReferenceModel = new \App\Models\UserReference();
+            $userId = $_SESSION['user_id'];
+            
+            if ($method === 'POST') {
+                // Add to references
+                $result = $userReferenceModel->addReference($userId, (int)$submissionId);
+                if ($result['success']) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Submission added to references successfully'
+                    ]);
+                } else {
+                    // Check if it's a duplicate entry
+                    if (isset($result['error']) && $result['error'] === 'already_exists') {
+                        http_response_code(400);
+                        echo json_encode([
+                            'success' => false,
+                            'message' => 'Submission already exists in references'
+                        ]);
+                    } else {
+                        http_response_code(400);
+                        echo json_encode([
+                            'success' => false,
+                            'message' => 'Failed to add submission to references: ' . ($result['error'] ?? 'Unknown error')
+                        ]);
+                    }
+                }
+            } elseif ($method === 'DELETE') {
+                // Remove from references
+                $result = $userReferenceModel->removeReference($userId, (int)$submissionId);
+                if ($result['success']) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Submission removed from references successfully'
+                    ]);
+                } else {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Failed to remove submission from references: ' . ($result['error'] ?? 'Unknown error')
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ]);
+        }
     }
     
+    /**
+     * Get user's references
+     */
+    public function getReferences() {
+        // Check if user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            $this->render('errors/401', ['message' => 'Silakan login untuk mengakses referensi']);
+            return;
+        }
+        
+        try {
+            $userReferenceModel = new \App\Models\UserReference();
+            $userId = $_SESSION['user_id'];
+            
+            $references = $userReferenceModel->getReferencesByUser($userId);
+            
+            $this->render('referensi', ['references' => $references]);
+        } catch (\Exception $e) {
+            $this->render('referensi', ['error' => 'Terjadi kesalahan saat memuat referensi: ' . $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Check if a submission is in user's references
+     */
+    public function checkReference($submissionId) {
+        // Check if user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['is_reference' => false]);
+            return;
+        }
+        
+        try {
+            $userReferenceModel = new \App\Models\UserReference();
+            $userId = $_SESSION['user_id'];
+            
+            $isReference = $userReferenceModel->isReference($userId, (int)$submissionId);
+            
+            echo json_encode(['is_reference' => $isReference]);
+        } catch (\Exception $e) {
+            echo json_encode(['is_reference' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     /**
      * Displays the repository comparison page to show the difference between current and improved layouts.
      */
@@ -713,4 +844,4 @@ class SubmissionController extends Controller {
         }
     }
     
-    }
+}
