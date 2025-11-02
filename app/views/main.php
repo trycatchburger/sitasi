@@ -137,7 +137,7 @@
                     <a href="<?= url('admin/dashboard') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/dashboard') ? 'font-bold text-green-700' : '' ?>">Dashboard</a>
                     <a href="<?= url('admin/repositoryManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/repositoryManagement') ? 'font-bold text-green-700' : '' ?>">Repository</a>
                     <a href="<?= url('admin/adminManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/adminManagement') ? 'font-bold text-green-700' : '' ?>">Admin Management</a>
-                    <a href="<?= url('admin/userManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/adminManagement') ? 'font-bold text-green-700' : '' ?>">User Management</a>
+                    <a href="<?= url('admin/userManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/userManagement') ? 'font-bold text-green-700' : '' ?>">User Management</a>
                     
 
                     <!-- Dropdown Admin -->

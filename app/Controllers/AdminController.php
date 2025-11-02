@@ -545,98 +545,30 @@ class AdminController extends Controller {
         $this->runMiddleware(['auth']);
         
         try {
-            $userModel = new \App\Models\User();
-            $users = $userModel->getAll();
+            // Fetch users from users_login table and match with anggota table
+            $db = \App\Models\Database::getInstance();
+            
+            // Join users_login with anggota table to get complete user information
+            $sql = "SELECT ul.id, ul.id_member as library_card_number, a.nama as name, a.email, ul.created_at
+                    FROM users_login ul
+                    LEFT JOIN anggota a ON ul.id_member = a.id_member
+                    ORDER BY ul.created_at DESC";
+            
+            $result = $db->getConnection()->query($sql);
+            if (!$result) {
+                throw new DatabaseException("Query failed: " . $db->getConnection()->error);
+            }
+
+            $users = [];
+            while ($row = $result->fetch_assoc()) {
+                $users[] = $row;
+            }
             
             $this->render('admin/user_management', ['users' => $users]);
         } catch (DatabaseException $e) {
             $this->render('admin/user_management', ['error' => "Database error occurred while loading user management."]);
         } catch (Exception $e) {
             $this->render('admin/user_management', ['error' => "An error occurred: " . $e->getMessage()]);
-        }
-    }
-
-    public function createUser()
-    {
-        // Run authentication middleware
-        $this->runMiddleware(['auth']);
-        
-        try {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                // Run CSRF middleware
-                $this->runMiddleware(['csrf']);
-                
-                try {
-                    // Use ValidationService for detailed validation
-                    $validationService = new ValidationService();
-                    
-                    // Validate form data
-                    if (!$validationService->validateCreateUserForm($_POST)) {
-                        $errors = $validationService->getErrors();
-                        throw new ValidationException($errors, "There were issues with the information you provided. Please check your input and try again.");
-                    }
-                    
-                    $libraryCardNumber = trim($_POST['library_card_number'] ?? '');
-                    $name = trim($_POST['name'] ?? '');
-                    $email = trim($_POST['email'] ?? '');
-                    $password = $_POST['password'] ?? '';
-                    $confirmPassword = $_POST['confirm_password'] ?? '';
-                    
-                    // Check if library card number already exists
-                    $userModel = new \App\Models\User();
-                    $existingUser = $userModel->findByLibraryCardNumber($libraryCardNumber);
-                    if ($existingUser) {
-                        throw new ValidationException(['library_card_number' => "Library card number already exists."]);
-                    }
-                    
-                    // Create new user
-                    $result = $userModel->create($libraryCardNumber, $name, $email, $password);
-                    if ($result) {
-                        $_SESSION['success_message'] = 'User account created successfully!';
-                        header('Location: ' . url('admin/userManagement'));
-                        exit;
-                    } else {
-                        throw new DatabaseException("Failed to create user account.");
-                    }
-                } catch (ValidationException $e) {
-                    $this->render('admin/create_user', [
-                        'error' => $e->getMessage(),
-                        'errors' => $e->getErrors(),
-                        'csrf_token' => $this->generateCsrfToken()
-                    ]);
-                } catch (DatabaseException $e) {
-                    $this->render('admin/create_user', [
-                        'error' => "Database error occurred while creating user account.",
-                        'csrf_token' => $this->generateCsrfToken()
-                    ]);
-                } catch (Exception $e) {
-                    $this->render('admin/create_user', [
-                        'error' => "An error occurred: " . $e->getMessage(),
-                        'csrf_token' => $this->generateCsrfToken()
-                    ]);
-                }
-            } else {
-                // Render the create user form for GET requests
-                $this->render('admin/create_user', ['csrf_token' => $this->generateCsrfToken()]);
-            }
-        } catch (AuthenticationException $e) {
-            $this->render('admin/create_user', ['error' => $e->getMessage()]);
-        } catch (ValidationException $e) {
-            $this->render('admin/create_user', [
-                'error' => $e->getMessage(),
-                'errors' => $e->getErrors(),
-                'csrf_token' => $this->generateCsrfToken()
-            ]);
-        } catch (DatabaseException $e) {
-            $this->render('admin/create_user', [
-                'error' => "Database error occurred while creating user account.",
-                'csrf_token' => $this->generateCsrfToken()
-            ]);
-        } catch (Exception $e) {
-            $this->render('admin/create_user', [
-                'error' => "An error occurred: " . $e->getMessage(),
-                'csrf_token' => $this->generateCsrfToken()
-            ]);
         }
     }
 
@@ -649,10 +581,17 @@ class AdminController extends Controller {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $userId = (int)$_POST['user_id'];
                 
-                $userModel = new \App\Models\User();
-                $result = $userModel->deleteById($userId);
+                // Delete from users_login table
+                $db = \App\Models\Database::getInstance();
                 
-                if ($result) {
+                $stmt = $db->getConnection()->prepare("DELETE FROM users_login WHERE id = ?");
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+                }
+                $stmt->bind_param("i", $userId);
+                $result = $stmt->execute();
+                
+                if ($result && $stmt->affected_rows > 0) {
                     $_SESSION['success_message'] = 'User account deleted successfully!';
                 } else {
                     $_SESSION['error_message'] = "Failed to delete user account.";
@@ -671,4 +610,5 @@ class AdminController extends Controller {
             exit;
         }
     }
+
 }
