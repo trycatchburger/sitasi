@@ -6,31 +6,31 @@ use App\Exceptions\DatabaseException;
 
 class UserRepository extends BaseRepository
 {
-    public function findByLibraryCardNumber(string $libraryCardNumber): ?array
+    public function findByIdMember(string $idMember): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT id, library_card_number, name, email, password_hash FROM users WHERE library_card_number = ?");
+            $stmt = $this->conn->prepare("SELECT id, id_member, password FROM users_login WHERE id_member = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
-            $stmt->bind_param("s", $libraryCardNumber);
+            $stmt->bind_param("s", $idMember);
             $stmt->execute();
             $result = $stmt->get_result();
             return $result->fetch_assoc();
         } catch (\Exception $e) {
-            throw new DatabaseException("Error while finding user by library card number: " . $e->getMessage());
+            throw new DatabaseException("Error while finding user by ID member: " . $e->getMessage());
         }
     }
 
-    public function create(string $libraryCardNumber, string $name, string $email, string $password): bool
+    public function create(string $idMember, string $password): bool
     {
         try {
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $this->conn->prepare("INSERT INTO users (library_card_number, name, email, password_hash) VALUES (?, ?, ?, ?)");
+            $stmt = $this->conn->prepare("INSERT INTO users_login (id_member, password, created_at) VALUES (?, ?, NOW())");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
-            $stmt->bind_param("ssss", $libraryCardNumber, $name, $email, $password_hash);
+            $stmt->bind_param("ss", $idMember, $password_hash);
             return $stmt->execute();
         } catch (\Exception $e) {
             throw new DatabaseException("Error while creating user: " . $e->getMessage());
@@ -40,7 +40,7 @@ class UserRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT id, library_card_number, name, email FROM users WHERE id = ?");
+            $stmt = $this->conn->prepare("SELECT id, id_member FROM users_login WHERE id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -56,7 +56,7 @@ class UserRepository extends BaseRepository
     public function getAll(): array
     {
         try {
-            $result = $this->conn->query("SELECT id, library_card_number, name, email, created_at FROM users ORDER BY created_at DESC");
+            $result = $this->conn->query("SELECT id, id_member, created_at FROM users_login ORDER BY created_at DESC");
             if (!$result) {
                 throw new DatabaseException("Query failed: " . $this->conn->error);
             }
@@ -76,7 +76,7 @@ class UserRepository extends BaseRepository
     {
         try {
             // Build dynamic query based on provided data
-            $allowed_fields = ['name', 'email', 'password_hash'];
+            $allowed_fields = ['password'];
             $set_parts = [];
             $params = [];
             $param_types = '';
@@ -96,7 +96,7 @@ class UserRepository extends BaseRepository
             $params[] = $id;
             $param_types .= 'i';
 
-            $sql = "UPDATE users SET " . implode(', ', $set_parts) . " WHERE id = ?";
+            $sql = "UPDATE users_login SET " . implode(', ', $set_parts) . " WHERE id = ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -112,7 +112,7 @@ class UserRepository extends BaseRepository
     public function deleteById(int $id): bool
     {
         try {
-            $stmt = $this->conn->prepare("DELETE FROM users WHERE id = ?");
+            $stmt = $this->conn->prepare("DELETE FROM users_login WHERE id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }

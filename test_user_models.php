@@ -24,7 +24,7 @@ try {
     echo "3. Testing User model methods...\n";
     $methods = get_class_methods($userModel);
     $expectedMethods = [
-        'findByLibraryCardNumber',
+        'findByIdMember',
         'create',
         'findById',
         'getAll',

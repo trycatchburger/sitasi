@@ -13,14 +13,14 @@ class User
         $this->repository = new UserRepository();
     }
 
-    public function findByLibraryCardNumber(string $libraryCardNumber): ?array
+    public function findByIdMember(string $idMember): ?array
     {
-        return $this->repository->findByLibraryCardNumber($libraryCardNumber);
+        return $this->repository->findByIdMember($idMember);
     }
 
-    public function create(string $libraryCardNumber, string $name, string $email, string $password): bool
+    public function create(string $idMember, string $password): bool
     {
-        return $this->repository->create($libraryCardNumber, $name, $email, $password);
+        return $this->repository->create($idMember, $password);
     }
 
     public function findById(int $id): ?array
