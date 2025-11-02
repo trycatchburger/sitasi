@@ -12,8 +12,8 @@ class UserReferenceRepository extends BaseRepository
     public function addReference(int $userId, int $submissionId): array
     {
         try {
-            // Check if the user exists in the users table
-            $stmt_user_check = $this->conn->prepare("SELECT id FROM users WHERE id = ?");
+            // Check if the user exists in the users_login table
+            $stmt_user_check = $this->conn->prepare("SELECT id FROM users_login WHERE id = ?");
             if (!$stmt_user_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -53,7 +53,7 @@ class UserReferenceRepository extends BaseRepository
                 }
                 // Check if it's a foreign key constraint error
                 if ($this->conn->errno === 1452) {
-                    // Foreign key constraint fails - user doesn't exist in users table
+                    // Foreign key constraint fails - user doesn't exist in users_login table
                     // Return false to indicate failure but don't throw error
                     return ['success' => false, 'error' => 'Foreign key constraint failed'];
                 }
@@ -74,8 +74,8 @@ class UserReferenceRepository extends BaseRepository
     public function removeReference(int $userId, int $submissionId): array
     {
         try {
-            // Check if the user exists in the users table
-            $stmt_user_check = $this->conn->prepare("SELECT id FROM users WHERE id = ?");
+            // Check if the user exists in the users_login table
+            $stmt_user_check = $this->conn->prepare("SELECT id FROM users_login WHERE id = ?");
             if (!$stmt_user_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -98,7 +98,7 @@ class UserReferenceRepository extends BaseRepository
             if (!$result) {
                 // Check if it's a foreign key constraint error
                 if ($this->conn->errno === 1452) {
-                    // Foreign key constraint fails - user doesn't exist in anggota table
+                    // Foreign key constraint fails - user doesn't exist in users_login table
                     // Return false to indicate failure but don't throw error
                     return ['success' => false, 'error' => 'Foreign key constraint failed'];
                 }
@@ -119,8 +119,8 @@ class UserReferenceRepository extends BaseRepository
     public function isReference(int $userId, int $submissionId): bool
     {
         try {
-            // Check if the user exists in the users table
-            $stmt_user_check = $this->conn->prepare("SELECT id FROM users WHERE id = ?");
+            // Check if the user exists in the users_login table
+            $stmt_user_check = $this->conn->prepare("SELECT id FROM users_login WHERE id = ?");
             if (!$stmt_user_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -154,8 +154,8 @@ class UserReferenceRepository extends BaseRepository
     public function getReferencesByUser(int $userId): array
     {
         try {
-            // Check if the user exists in the users table
-            $stmt_user_check = $this->conn->prepare("SELECT id FROM users WHERE id = ?");
+            // Check if the user exists in the users_login table
+            $stmt_user_check = $this->conn->prepare("SELECT id FROM users_login WHERE id = ?");
             if (!$stmt_user_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -214,8 +214,8 @@ class UserReferenceRepository extends BaseRepository
     public function getReferenceSubmission(int $userId, int $submissionId): ?array
     {
         try {
-            // Check if the user exists in the users table
-            $stmt_user_check = $this->conn->prepare("SELECT id FROM users WHERE id = ?");
+            // Check if the user exists in the users_login table
+            $stmt_user_check = $this->conn->prepare("SELECT id FROM users_login WHERE id = ?");
             if (!$stmt_user_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }

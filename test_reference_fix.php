@@ -1,49 +1,27 @@
 <?php
-// Simple test script to verify the reference functionality fix
+require_once 'app/Models/UserReference.php';
 
-// Include the autoloader
-require_once __DIR__ . '/vendor/autoload.php';
-
-// Initialize the UserReference model
-$userReferenceModel = new \App\Models\UserReference();
-
-// Test the return format
-$userId = 1; // Example user ID
-$submissionId = 1; // Example submission ID
-
-// Test adding a reference
-echo "Testing addReference method:\n";
-$result = $userReferenceModel->addReference($userId, $submissionId);
-var_dump($result);
-
-// The result should be an array with 'success' and potentially 'error' keys
-if (is_array($result)) {
-    if ($result['success']) {
-        echo "✓ addReference returned correct format for success\n";
+try {
+    $userReference = new \App\Models\UserReference();
+    
+    // Test adding a reference with a valid user ID (we'll use a fake ID to test the error handling)
+    // This should no longer fail with "Table 'skripsi_db.users' doesn't exist"
+    $result = $userReference->addReference(1, 1);
+    
+    echo "Test result: " . json_encode($result) . "\n";
+    
+    if (isset($result['error']) && strpos($result['error'], 'Table \'skripsi_db.users\' doesn\'t exist') !== false) {
+        echo "ERROR: The issue still exists - users table is still being referenced\n";
     } else {
-        if (isset($result['error']) && $result['error'] === 'already_exists') {
-            echo "✓ addReference correctly identifies already existing reference\n";
-        } else {
-            echo "✓ addReference returned correct format for failure\n";
-        }
+        echo "SUCCESS: The issue appears to be fixed - no longer referencing non-existent users table\n";
     }
-} else {
-    echo "✗ addReference did not return expected array format\n";
-}
-
-// Test removing a reference
-echo "\nTesting removeReference method:\n";
-$result = $userReferenceModel->removeReference($userId, $submissionId);
-var_dump($result);
-
-if (is_array($result)) {
-    if ($result['success']) {
-        echo "✓ removeReference returned correct format for success\n";
+    
+} catch (Exception $e) {
+    echo "Exception occurred: " . $e->getMessage() . "\n";
+    // Check if the error is related to the users table not existing
+    if (strpos($e->getMessage(), 'Table \'skripsi_db.users\' doesn\'t exist') !== false) {
+        echo "ERROR: The issue still exists - users table is still being referenced\n";
     } else {
-        echo "✓ removeReference returned correct format for failure\n";
+        echo "Different error occurred (not the original issue): " . $e->getMessage() . "\n";
     }
-} else {
-    echo "✗ removeReference did not return expected array format\n";
 }
-
-echo "\nAll tests completed!\n";

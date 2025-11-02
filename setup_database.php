@@ -1,11 +1,12 @@
 <?php
 /**
- * Database Setup Script for Thesis Submission System
- * 
- * This script will create the entire database schema for the application.
- * Run this script on your local machine to set up the database with the same
- * structure as the original developer's database.
- * 
+ * Complete Database Setup Script for University Thesis Submission System
+ *
+ * This script will create the entire database schema for the application including
+ * all tables, columns, indexes, and foreign key constraints that have been added
+ * during development. Run this script on your local machine to set up the database
+ * with the same structure as the original developer's database.
+ *
  * Usage: php setup_database.php
  * Or run it through a web browser if PHP is configured in your web server
  */
@@ -139,6 +140,24 @@ try {
         throw new Exception("Error creating users table: " . $conn->error);
     }
 
+    // Create user_references table
+    $userReferencesTableSql = "CREATE TABLE IF NOT EXISTS `user_references` (
+        `id` int(11) NOT NULL AUTO_INCREMENT,
+        `user_id` int(11) NOT NULL,
+        `submission_id` int(11) NOT NULL,
+        `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `unique_user_submission` (`user_id`, `submission_id`),
+        KEY `idx_user_id` (`user_id`),
+        KEY `idx_submission_id` (`submission_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET={$config['charset']} COLLATE {$config['charset']}_general_ci;";
+    
+    if ($conn->query($userReferencesTableSql) === TRUE) {
+        echo "Table 'user_references' created or already exists.\n";
+    } else {
+        throw new Exception("Error creating user_references table: " . $conn->error);
+    }
+
     // Add foreign key constraint for user_id in submissions table
     // Check if the column exists first
     $columnCheckSql = "SELECT COUNT(*) as count 
@@ -234,6 +253,61 @@ try {
         echo "Foreign key constraint for submission_id already exists in submission_files table.\n";
     }
 
+    // Add foreign key constraints for user_references table (if not exist)
+    $userRefFkCheckSql = "SELECT COUNT(*) as count
+                        FROM information_schema.KEY_COLUMN_USAGE
+                        WHERE TABLE_SCHEMA = DATABASE()
+                        AND TABLE_NAME = 'user_references'
+                        AND COLUMN_NAME = 'user_id'
+                        AND REFERENCED_TABLE_NAME = 'users'";
+    
+    $result = $conn->query($userRefFkCheckSql);
+    $row = $result->fetch_assoc();
+    
+    if ($row['count'] == 0) {
+        $addUserRefUserFkSql = "ALTER TABLE `user_references`
+                                ADD CONSTRAINT `user_references_ibfk_1`
+                                FOREIGN KEY (`user_id`)
+                                REFERENCES `users` (`id`)
+                                ON DELETE CASCADE
+                                ON UPDATE CASCADE";
+        
+        if ($conn->query($addUserRefUserFkSql) === TRUE) {
+            echo "Foreign key constraint for user_id added to user_references table.\n";
+        } else {
+            echo "Warning: Could not add foreign key constraint for user_id in user_references: " . $conn->error . "\n";
+        }
+    } else {
+        echo "Foreign key constraint for user_id already exists in user_references table.\n";
+    }
+
+    $userRefSubmissionFkCheckSql = "SELECT COUNT(*) as count
+                                  FROM information_schema.KEY_COLUMN_USAGE
+                                  WHERE TABLE_SCHEMA = DATABASE()
+                                  AND TABLE_NAME = 'user_references'
+                                  AND COLUMN_NAME = 'submission_id'
+                                  AND REFERENCED_TABLE_NAME = 'submissions'";
+    
+    $result = $conn->query($userRefSubmissionFkCheckSql);
+    $row = $result->fetch_assoc();
+    
+    if ($row['count'] == 0) {
+        $addUserRefSubmissionFkSql = "ALTER TABLE `user_references`
+                                      ADD CONSTRAINT `user_references_ibfk_2`
+                                      FOREIGN KEY (`submission_id`)
+                                      REFERENCES `submissions` (`id`)
+                                      ON DELETE CASCADE
+                                      ON UPDATE CASCADE";
+        
+        if ($conn->query($addUserRefSubmissionFkSql) === TRUE) {
+            echo "Foreign key constraint for submission_id added to user_references table.\n";
+        } else {
+            echo "Warning: Could not add foreign key constraint for submission_id in user_references: " . $conn->error . "\n";
+        }
+    } else {
+        echo "Foreign key constraint for submission_id already exists in user_references table.\n";
+    }
+
     // Insert default admin if table is empty
     $adminCountSql = "SELECT COUNT(*) as count FROM `admins`";
     $result = $conn->query($adminCountSql);
@@ -257,7 +331,7 @@ try {
     // Display success message
     echo "\nDatabase setup completed successfully!\n";
     echo "Database name: {$config['database']}\n";
-    echo "Tables created: admins, submissions, submission_files, users\n";
+    echo "Tables created: admins, submissions, submission_files, users, user_references\n";
     echo "\nConfiguration used:\n";
     echo "- Host: {$config['host']}\n";
     echo "- Username: {$config['username']}\n";
