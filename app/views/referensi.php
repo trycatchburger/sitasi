@@ -70,23 +70,24 @@
                     }
                 }
                 ?>
+                <div class="flex space-x-2">
                 <?php if ($docFile): ?>
                 <a href="<?= url('file/viewAsPdf/' . $docFile['id']) ?>"
                    target="_blank"
-                   class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition text-sm font-medium">
+                   class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg transition text-sm font-medium">
                   View
                 </a>
-                <?php else: ?>
+                <?php endif; ?>
                 <a href="<?= url('submission/' . ($reference['submission_type'] === 'journal' ? 'journalDetail' : 'detail') . '/' . $reference['id']) ?>"
-                   class="flex-1 text-center bg-white border border-gray-30 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                   class="flex-1 text-center bg-white border border-gray-30 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
                   Detail
                 </a>
-                <?php endif; ?>
                 <button id="removeReferenceBtn_<?= $reference['id'] ?>"
-                        class="flex-1 text-center bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition text-sm font-medium"
+                        class="flex-1 text-center bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-lg transition text-sm font-medium"
                         data-submission-id="<?= $reference['id'] ?>">
                   Hapus
                 </button>
+                </div>
               </div>
             </div>
           <?php endforeach; ?>
