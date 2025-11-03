@@ -417,6 +417,15 @@ class FileController extends Controller {
             // Create a new PHPWord instance and load the document
             $phpWord = \PhpOffice\PhpWord\IOFactory::load($fullPath);
             
+            // Ensure document properties are not null to prevent htmlspecialchars() deprecation error in PHP 8.1+
+            $docProps = $phpWord->getDocInfo();
+            $docProps->setTitle($docProps->getTitle() ?? '');
+            $docProps->setSubject($docProps->getSubject() ?? '');
+            $docProps->setCreator($docProps->getCreator() ?? '');
+            $docProps->setCompany($docProps->getCompany() ?? '');
+            $docProps->setDescription($docProps->getDescription() ?? '');
+            $docProps->setKeywords($docProps->getKeywords() ?? '');
+            
             // Create a temporary PDF file
             $tempPdfPath = tempnam(sys_get_temp_dir(), 'converted_') . '.pdf';
             
