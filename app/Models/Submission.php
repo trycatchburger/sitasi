@@ -937,4 +937,32 @@ class Submission
      {
          return $this->repository->findUnassociatedSubmissionsByUserDetails($name, $email, $nim);
      }
+
+     /**
+      * Count approved submissions by type
+      * @param string $type Submission type ('bachelor', 'master', 'journal')
+      * @return int
+      */
+     public function countApprovedByType(string $type): int
+     {
+         return $this->repository->countApprovedByType($type);
+     }
+
+     /**
+      * Count all approved submissions
+      * @return int
+      */
+     public function countAllApproved(): int
+     {
+         return $this->repository->countAllApproved();
+     }
+
+     /**
+      * Count all approved submissions by type (bachelor, master, journal)
+      * @return array
+      */
+     public function countAllApprovedByType(): array
+     {
+         return $this->repository->countAllApprovedByType();
+     }
  }

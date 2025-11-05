@@ -315,6 +315,24 @@ class SubmissionController extends Controller {
                 $submissions = array_slice($allSubmissions, $offset, $perPage);
             }
             
+            // Get statistics for the repository with error handling
+            try {
+                $statsData = $submissionModel->countAllApprovedByType();
+                // Map the keys to the expected names in the view
+                $stats = [
+                    'skripsi' => $statsData['bachelor'] ?? 0,
+                    'tesis' => $statsData['master'] ?? 0,
+                    'jurnal' => $statsData['journal'] ?? 0
+                ];
+            } catch (DatabaseException $e) {
+                // Provide default values if there's a database error
+                $stats = [
+                    'skripsi' => 0,
+                    'tesis' => 0,
+                    'jurnal' => 0
+                ];
+            }
+            
             $this->render('repository', [
                 'submissions' => $submissions,
                 'totalSubmissions' => $totalSubmissions,
@@ -322,7 +340,8 @@ class SubmissionController extends Controller {
                 'totalPages' => $totalPages,
                 'search' => $search,
                 'year' => $year,
-                'program' => $program
+                'program' => $program,
+                'stats' => $stats
             ]);
         } catch (DatabaseException $e) {
             $this->render('repository', ['error' => "Terjadi kesalahan database saat memuat repository."]);

@@ -114,21 +114,20 @@
                 <?php if (!isset($_SESSION['admin_id'])): ?>
                     <a href="<?= url('/') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Beranda</a>
                     <a href="<?= url('submission/repository') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Repository</a>
-                    <a href="<?= url('submission/repository_journal') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Jurnal Repository</a>
 
                     <!-- Dropdown Unggah Mandiri -->
                     <div class="relative group">
                         <button class="block w-full text-left px-4 py-2 md:p-0 hover:text-green-700 flex items-center">
                             Unggah Mandiri
-                            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" 
-                                 viewBox="0 0 24 24">
+                            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
+                                 viewBox="0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7"></path>
                             </svg>
                         </button>
-                        <div class="hidden group-hover:block md:absolute left-0 mt-0 w-48 bg-white border border-gray-200 rounded shadow-lg z-50">
-                            <a href="<?= url('submission/new') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Form Unggah</a>
-                            <a href="https://drive.google.com/file/d/1KVBui5tYbv2Olf25DXTSYCYaRcQVvaPo/view?usp=sharing" 
-                               class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Panduan Unggah</a>
+                        <div class="hidden group-hover:block md:absolute left-0 mt-0 w-48 bg-white border-gray-200 rounded shadow-lg z-50">
+                            <a href="<?= url('submission/skripsi') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Unggah Skripsi</a>
+                            <a href="<?= url('submission/tesis') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Unggah Tesis</a>
+                            <a href="<?= url('submission/jurnal') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Unggah Karya Ilmiah</a>
                         </div>
                     </div>
                 <?php endif; ?>

@@ -755,4 +755,75 @@ class SubmissionRepository extends BaseRepository
             throw new DatabaseException("Error while finding unassociated submissions: " . $e->getMessage());
         }
     }
+
+    /**
+     * Count approved submissions by type
+     * @param string $type Submission type ('bachelor', 'master', 'journal')
+     * @return int
+     * @throws DatabaseException
+     */
+    public function countApprovedByType(string $type): int
+    {
+        try {
+            $sql = "SELECT COUNT(*) as count FROM submissions WHERE status = 'Diterima'";
+            if ($type !== 'all' && !empty($type)) {
+                $sql .= " AND submission_type = ?";
+            } else {
+                // For 'all', we want to count all approved submissions regardless of type
+                // If an empty string is passed, we also count all approved submissions
+            }
+            
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            
+            if ($type !== 'all' && !empty($type)) {
+                $stmt->bind_param("s", $type);
+            }
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $row = $result->fetch_assoc();
+            return (int) $row['count'];
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while counting approved submissions by type: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Count all approved submissions
+     * @return int
+     * @throws DatabaseException
+     */
+    public function countAllApproved(): int
+    {
+        try {
+            $sql = "SELECT COUNT(*) as count FROM submissions WHERE status = 'Diterima'";
+            $result = $this->conn->query($sql);
+            if ($result === false) {
+                throw new DatabaseException("Database query failed: " . $this->conn->error);
+            }
+            
+            $row = $result->fetch_assoc();
+            return (int) $row['count'];
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while counting all approved submissions: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Count all approved submissions by type (bachelor, master, journal)
+     * @return array
+     * @throws DatabaseException
+     */
+    public function countAllApprovedByType(): array
+    {
+        return [
+            'bachelor' => $this->countApprovedByType('bachelor'),
+            'master' => $this->countApprovedByType('master'),
+            'journal' => $this->countApprovedByType('journal')
+        ];
+    }
 }
