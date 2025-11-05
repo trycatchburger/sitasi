@@ -10,6 +10,9 @@ use App\Exceptions\AuthenticationException;
 use App\Exceptions\ValidationException;
 use App\Exceptions\DatabaseException;
 use Exception;
+use App\Models\User;
+use PhpOffice\PhpSpreadsheet\IOFactory; 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class AdminController extends Controller {
     
@@ -610,5 +613,214 @@ class AdminController extends Controller {
             exit;
         }
     }
+
+    public function importDataAnggota()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+
+        // Get search and sort parameters
+        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $sort = isset($_GET['sort']) ? $_GET['sort'] : 'nama';
+        $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'DESC' : 'ASC';
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $perPage = 10; // Number of records per page
+        $offset = ($page - 1) * $perPage;
+
+        // Validate sort column to prevent SQL injection
+        $allowedSortColumns = ['id_member', 'nama', 'prodi', 'email', 'no_hp', 'tipe_member', 'member_since', 'expired'];
+        if (!in_array($sort, $allowedSortColumns)) {
+            $sort = 'id_member'; // Default sort column to show most recent first (assuming higher ID = more recent)
+            $order = 'DESC'; // Default to descending order for most recent first
+        }
+
+        // Fetch members from the anggota table with search, sort and pagination
+        $db = \App\Models\Database::getInstance();
+        $connection = $db->getConnection();
+        
+        // Build the WHERE clause for search
+        $whereClause = "";
+        $searchParam = "";
+        $countParams = [];
+        $dataParams = [];
+        
+        if (!empty($search)) {
+            $whereClause = "WHERE id_member LIKE ? OR nama LIKE ? OR prodi LIKE ? OR email LIKE ?";
+            $searchParam = "%{$search}%";
+            $countParams = [$searchParam, $searchParam];
+            $dataParams = [$searchParam, $searchParam];
+        }
+
+        // Get total count for pagination
+        $countSql = "SELECT COUNT(*) as total FROM anggota ";
+        $countSql .= $whereClause;
+        
+        if (!empty($search)) {
+            $countStmt = $connection->prepare($countSql);
+            $countStmt->bind_param("ssss", $searchParam, $searchParam, $searchParam, $searchParam);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+        } else {
+            $countResult = $connection->query($countSql);
+        }
+        
+        $totalCount = $countResult->fetch_assoc()['total'];
+        $totalPages = ceil($totalCount / $perPage);
+        
+        $sql = "SELECT id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired FROM anggota ";
+        $sql .= $whereClause;
+        $sql .= " ORDER BY {$sort} {$order} LIMIT ? OFFSET ?";
+        
+        $stmt = $connection->prepare($sql);
+        if (!empty($search)) {
+            $stmt->bind_param("ssi", $searchParam, $searchParam, $perPage, $offset);
+        } else {
+            $stmt->bind_param("ii", $perPage, $offset);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $members = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $members[] = $row;
+            }
+        }
+
+        $this->render('admin/import_data_anggota', [
+            'csrf_token' => $this->generateCsrfToken(),
+            'members' => $members,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalCount' => $totalCount,
+            'search' => $search,
+            'sort' => $sort,
+            'order' => $order
+        ]);
+    }
+    
+    public function prosesImportAnggota()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // CSRF protection
+            $this->runMiddleware(['csrf']);
+
+            if (!isset($_FILES['file_excel']) || $_FILES['file_excel']['error'] !== UPLOAD_ERR_OK) {
+                $_SESSION['error_message'] = 'Error uploading file.';
+                header('Location: ' . url('admin/importDataAnggota'));
+                exit;
+            }
+
+            $file = $_FILES['file_excel'];
+            
+            // Validate file type
+            $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if (!in_array(strtolower($fileExtension), ['xls', 'xlsx'])) {
+                $_SESSION['error_message'] = 'Invalid file type. Please upload an Excel file (.xls or .xlsx).';
+                header('Location: ' . url('admin/importDataAnggota'));
+                exit;
+            }
+
+            try {
+                // Load PhpSpreadsheet
+                $inputFileName = $file['tmp_name'];
+                $spreadsheet = IOFactory::load($inputFileName);
+                $worksheet = $spreadsheet->getActiveSheet();
+                $rows = $worksheet->toArray(null, true, true, true);
+
+                // Skip header row (assuming first row is header)
+                array_shift($rows); // Remove header row
+
+                $db = \App\Models\Database::getInstance();
+                $connection = $db->getConnection();
+                
+                $successCount = 0;
+                $errorCount = 0;
+                $errors = [];
+
+                foreach ($rows as $rowIndex => $row) {
+                    // Assuming columns are: id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired
+                    
+                    $id_member = trim($row['A'] ?? $row[0] ?? '');
+                    $nama = trim($row['B'] ?? $row[1] ?? '');
+                    $prodi = trim($row['C'] ?? $row[2] ?? '');
+                    $email = trim($row['D'] ?? $row[3] ?? '');
+                    $no_hp = trim($row['E'] ?? $row[4] ?? '');
+                    $tipe_member = trim($row['F'] ?? $row[5] ?? '');
+                    $member_since = trim($row['G'] ?? $row[6] ?? '');
+                    $expired = trim($row['H'] ?? $row[7] ?? '');
+                    
+                    // Skip empty rows
+                    if (empty($id_member) && empty($nama) && empty($email)) {
+                        continue;
+                    }
+                    
+
+                    // Validate required fields
+                    if (empty($id_member) || empty($nama)) {
+                        $errorCount++;
+                        $errors[] = "Row " . ($rowIndex + 1) . ": Missing required fields (ID Member or Nama)";
+                        continue;
+                    }
+
+                    // Check if member already exists
+                    $checkStmt = $connection->prepare("SELECT id_member FROM anggota WHERE id_member = ?");
+                    $checkStmt->bind_param("s", $id_member);
+                    $checkStmt->execute();
+                    $result = $checkStmt->get_result();
+                    if ($result->num_rows > 0) {
+                        // Update existing member
+                        $updateStmt = $connection->prepare("UPDATE anggota SET nama = ?, prodi = ?, email = ?, no_hp = ?, tipe_member = ?, member_since = ?, expired = ? WHERE id_member = ?");
+                        $updateStmt->bind_param("ssssssss", $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired, $id_member);
+                    
+                        if ($updateStmt->execute()) {
+                            $successCount++;
+                        } else {
+                            $errorCount++;
+                            $errors[] = "Row " . ($rowIndex + 1) . ": Failed to update member with ID: $id_member";
+                        }
+                        $updateStmt->close();
+                    } else {
+                        // Insert new member
+                        $insertStmt = $connection->prepare("INSERT INTO anggota (id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                        $insertStmt->bind_param("ssssssss", $id_member, $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired);
+                        
+                        if ($insertStmt->execute()) {
+                            $successCount++;
+                        } else {
+                            $errorCount++;
+                            $errors[] = "Row " . ($rowIndex + 1) . ": Failed to insert member with ID: $id_member";
+                        }
+                        $insertStmt->close();
+                    }
+                    $checkStmt->close();
+                }
+
+                // Prepare success message
+                $message = "Import completed. $successCount record(s) processed successfully.";
+                if ($errorCount > 0) {
+                    $message .= " $errorCount error(s) occurred.";
+                    $_SESSION['error_message'] = $message . " Errors: " . implode("; ", $errors);
+                } else {
+                    $_SESSION['success_message'] = $message;
+                }
+
+                header('Location: ' . url('admin/importDataAnggota'));
+                exit;
+                
+            } catch (\Throwable $th) {
+                $_SESSION['error_message'] = "Error processing Excel file: " . $th->getMessage();
+                header('Location: ' . url('admin/importDataAnggota'));
+                exit;
+            }
+        } else {
+            header('Location: ' . url('admin/importDataAnggota'));
+            exit;
+        }
+    }
+
 
 }
