@@ -822,5 +822,68 @@ class AdminController extends Controller {
         }
     }
 
+    public function managementFile() {
+         try {
+             if (!$this->isAdminLoggedIn()) {
+                 header('Location: ' . url('admin/login'));
+                 exit;
+             }
+             
+             $submissionModel = new Submission();
+             
+             // Get query parameters
+             $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
+             $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
+             $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+             $perPage = 10; // Default items per page
+             
+             // Determine which method to use based on parameters
+             if (!empty($search)) {
+                 // Use search functionality
+                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $page, $perPage);
+                 $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal);
+             } else if ($showJournal) {
+                 // Show only journal submissions
+                 $submissions = $submissionModel->findJournalSubmissions($page, $perPage);
+                 $totalResults = $submissionModel->countJournalSubmissions();
+             } else if ($showAll) {
+                 // Show all submissions
+                 $submissions = $submissionModel->findAll($page, $perPage);
+                 $totalResults = $submissionModel->countAll();
+             } else {
+                 // Show only pending submissions (default)
+                 $submissions = $submissionModel->findPending(true, $page, $perPage);
+                 $totalResults = $submissionModel->countPending();
+             }
+             
+             // Calculate pagination values
+             $totalPages = ceil($totalResults / $perPage);
+             
+             // Get query profiling stats if enabled
+             $queryStats = null;
+             if (class_exists('\App\Services\QueryProfiler')) {
+                 $profiler = \App\Services\QueryProfiler::getInstance();
+                 if ($profiler->isEnabled()) {
+                     $queryStats = $profiler->getStats();
+                 }
+             }
+             
+             $this->render('management_file', [
+                 'submissions' => $submissions,
+                 'showAll' => $showAll,
+                 'search' => $search,
+                 'currentPage' => $page,
+                 'totalPages' => $totalPages,
+                 'totalResults' => $totalResults,
+                 'queryStats' => $queryStats
+             ]);
+         } catch (DatabaseException $e) {
+             $this->render('management_file', ['error' => "Database error occurred while loading management file page."]);
+         } catch (Exception $e) {
+             $this->render('management_file', ['error' => "An error occurred: " . $e->getMessage()]);
+         }
+     }
+
 
 }

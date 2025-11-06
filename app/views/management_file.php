@@ -42,7 +42,7 @@
       
       <!-- Search Form -->
       <div class="flex items-center ml-auto">
-        <form method="GET" action="<?= url('admin/dashboard') ?>" class="flex">
+        <form method="GET" action="<?= url('admin/management_file') ?>" class="flex">
           <?php if (isset($_GET['type']) && $_GET['type'] === 'journal'): ?>
             <input type="hidden" name="type" value="journal">
           <?php else: ?>
@@ -55,12 +55,12 @@
                  value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>"
                  class="border border-gray-300 rounded-l px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/200/svg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 014 0z"></path>
             </svg>
           </button>
           <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
-            <a href="<?= url('admin/dashboard') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'show=all' : '') ?>&page=1"
+            <a href="<?= url('admin/management_file') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'show=all' : '') ?>&page=1"
                class="ml-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -74,7 +74,7 @@
     <div class="mb-6 flex flex-wrap gap-2">
       <a href="<?= url('file/downloadAll') ?>" class="btn btn-primary text-white">
         <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
         </svg>
         Unduh Semua Berkas (Terorganisir)
       </a>
@@ -90,9 +90,8 @@
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mahasiswa</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul Skripsi</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Berkas</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alasan</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Pengajuan</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
             </tr>
           </thead>
@@ -163,7 +162,7 @@
                           <div class="flex flex-col gap-1">
                             <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center">
                               <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 0 01.293.707V19a2 0 01-2 2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                               </svg>
                               View
                             </a>
@@ -180,37 +179,6 @@
                       <span class="text-gray-400 text-sm">No files</span>
                     <?php endif; ?>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <?php
-                      $status = htmlspecialchars($submission['status']);
-                      $badge_color = 'bg-gray-100 text-gray-800'; // Default for Pending
-                      if ($status === 'Diterima') {
-                        $badge_color = 'bg-green-100 text-green-800';
-                      } elseif ($status === 'Ditolak') {
-                        $badge_color = 'bg-red-100 text-red-800';
-                      } elseif ($status === 'Digantikan') {
-                        $badge_color = 'bg-yellow-100 text-yellow-800';
-                      }
-                    ?>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $badge_color ?>">
-                      <?= $status ?>
-                    </span>
-                  </td>
-                  <td class="px-4 py-3">
-                    <form action="<?= url('admin/updateStatus') ?>" method="POST" class="flex flex-col gap-1">
-                      
-                      <input type="hidden" name="submission_id" value="<?= $submission['id'] ?>">
-                      <?= csrf_field() ?>
-                      <input type="text" name="serial_number" placeholder="No. Surat" class="border rounded px-1 py-1 text-xs" value="<?= htmlspecialchars($submission['serial_number'] ?? '') ?>">
-                      <select name="status" class="border rounded px-1 py-1 text-xs">
-                        <option value="Pending" <?= $status === 'Pending' ? 'selected' : '' ?>>Pending</option>
-                        <option value="Diterima" <?= $status === 'Diterima' ? 'selected' : '' ?>>Diterima</option>
-                        <option value="Ditolak" <?= $status === 'Ditolak' ? 'selected' : '' ?>>Ditolak</option>
-                      </select>
-                      <textarea name="reason" placeholder="Alasan" class="border rounded px-1 py-1 text-xs"><?= htmlspecialchars($submission['keterangan'] ?? '') ?></textarea>
-                      <button type="submit" class="btn btn-primary btn-sm text-xs py-1 px-2">Update</button>
-                    </form>
-                  </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <?php if (isset($submission['is_resubmission']) && $submission['is_resubmission'] && $submission['created_at'] !== $submission['updated_at']): ?>
                       <div class="flex flex-col">
@@ -223,9 +191,19 @@
                     <?php endif; ?>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <!-- File upload form for converted files -->
+                    <div class="mt-2 pt-2 border-t border-gray-200">
+                      <form action="<?= url('file/uploadConvertedFile/' . $submission['id']) ?>" method="POST" enctype="multipart/form-data" class="flex flex-col gap-1" onsubmit="return confirm('Are you sure you want to upload this converted file? This will add the file to the existing submission.')">
+                        <?= csrf_field() ?>
+                        <input type="file" name="converted_file" accept=".pdf,.doc,.docx" class="text-xs mb-1" required>
+                        <button type="submit" class="btn btn-success btn-sm text-xs py-1 px-2">Upload Converted</button>
+                      </form>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <a href="<?= url('file/download/' . $submission['id']) ?>" class="btn btn-secondary btn-sm">
                       <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 0 003-3v-1m-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4l-4 4m0 0l-4-4m4 4V4"></path>
                       </svg>
                       ZIP
                     </a>
@@ -242,7 +220,7 @@
         <div class="mt-6 flex justify-center">
           <nav class="inline-flex rounded-md shadow">
             <?php if ($currentPage > 1): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Previous
               </a>
             <?php endif; ?>
@@ -251,7 +229,7 @@
               // Show first page
               if ($currentPage > 3):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=1<?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 1
               </a>
               <?php if ($currentPage > 4): ?>
@@ -267,7 +245,7 @@
               $end = min($totalPages, $currentPage + 2);
               for ($i = $start; $i <= $end; $i++):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $i ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
                 <?= $i ?>
               </a>
             <?php endfor; ?>
@@ -281,13 +259,13 @@
                     ...
                   </span>
                 <?php endif; ?>
-                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="<?= url('admin/management_file') ?>?page=<?= $totalPages ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                   <?= $totalPages ?>
                 </a>
               <?php endif; ?>
             
             <?php if ($currentPage < $totalPages): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage + 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage + 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Next
               </a>
             <?php endif; ?>
@@ -299,32 +277,10 @@
 </main>
 
 <?php
-$title = 'Admin Dashboard - University Thesis Submission System';
+$title = 'Management File - University Thesis Submission System';
 $content = ob_get_clean();
 require __DIR__ . '/main.php';
 ?>
-
-<!-- Success Modal -->
-<div id="successModal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
-  <div class="absolute inset-0 bg-black opacity-50"></div>
-  <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold text-green-600">Success!</h3>
-      <button id="closeModal" class="text-gray-50 hover:text-gray-700">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-    </div>
-    <p class="text-gray-700">Status updated and email sent successfully!</p>
-    <div class="mt-6">
-      <button id="okButton" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded">
-        OK
-      </button>
-    </div>
-  </div>
-</div>
-
 
 <style>
   .modal-open {
@@ -333,137 +289,6 @@ require __DIR__ . '/main.php';
 </style>
 
 <script>
-// Handle status update form submissions via AJAX
-document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').forEach(form => {
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const submitButton = this.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    
-    // Show loading state
-    submitButton.disabled = true;
-    submitButton.textContent = 'Updating...';
-    
-    fetch(this.action, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-    .then(response => {
-       if (!response.ok) {
-         // Log the response status and text for debugging
-         return response.text().then(text => {
-           console.error('Server error response:', response.status, text);
-           throw new Error(`Network response was not ok: ${response.status} - ${text}`);
-         });
-       }
-       return response.json();
-     })
-    .then(data => {
-      if (data.success) {
-        // Get the row for this submission
-        const row = this.closest('tr');
-        
-        // Update the status badge
-        const statusCell = row.querySelector('td:nth-child(6)'); // Status column (now 6th column after adding type column at the beginning)
-        const statusSelect = this.querySelector('select[name="status"]');
-        const newStatus = statusSelect.value;
-        
-        // Determine badge color based on new status
-        let badgeColor = 'bg-gray-100 text-gray-800'; // Default for Pending
-        if (newStatus === 'Diterima') {
-          badgeColor = 'bg-green-100 text-green-800';
-        } else if (newStatus === 'Ditolak') {
-          badgeColor = 'bg-red-100 text-red-800';
-        } else if (newStatus === 'Digantikan') {
-          badgeColor = 'bg-yellow-100 text-yellow-800';
-        }
-        
-        // Update the status badge HTML
-        statusCell.innerHTML = `
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}">
-            ${newStatus}
-          </span>
-        `;
-        
-        // Preserve the submission type column by getting the original value from the form or server response
-        // The submission type doesn't change, so we don't need to update it
-        
-        // Get the input values from the form that was submitted
-        const reasonInput = this.querySelector('textarea[name="reason"]');
-        const serialInput = this.querySelector('input[name="serial_number"]');
-        
-        // Show success modal with server message
-        document.getElementById('successModal').classList.remove('hidden');
-        document.body.classList.add('modal-open');
-        
-        // Update modal content with server message
-        const modalContent = document.querySelector('#successModal p');
-        if (modalContent) {
-          modalContent.textContent = data.message || 'Status updated and email sent successfully!';
-        }
-        
-        // Also update the values displayed in the form in the table cell
-        const reasonCell = this.querySelector('td:nth-child(8)'); // Reason column (8th column based on the table structure after adding type column at the beginning)
-        if (reasonCell) {
-            const reasonField = reasonCell.querySelector('textarea[name="reason"]');
-            if (reasonField) {
-              reasonField.value = reasonInput.value;
-            }
-            
-            const serialField = reasonCell.querySelector('input[name="serial_number"]');
-            if (serialField) {
-              serialField.value = serialInput.value;
-            }
-        }
-        
-        // After successful update, the page might need to be refreshed to reflect changes in the search results
-        // Only refresh if the modal is shown to indicate success and we're on a search results page
-        if (data && data.success && !document.getElementById('successModal').classList.contains('hidden')) {
-            // Add a small delay to allow the success message to be seen
-            setTimeout(() => {
-                // Check if we're on a search results page and refresh to update the display
-                if (window.location.search.includes('search=')) {
-                    window.location.reload();
-                } else if (window.location.search.includes('show=') || window.location.search.includes('type=')) {
-                    // Also refresh if we're on a filtered view (show=all, show=pending, or type=journal)
-                    window.location.reload();
-                }
-            }, 500); // 0.5 second delay to allow user to see success message
-        }
-      } else {
-        // Handle error from server
-        alert(data.message || 'An error occurred while updating the status.');
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      // Check if this is a JSON parsing error or network error
-      // In most cases, we still want to show a user-friendly message
-      alert('An error occurred while updating the status. Error details: ' + error.message + '. Please refresh the page to check the current status.');
-    })
-    .finally(() => {
-      // Reset button state
-      submitButton.disabled = false;
-      submitButton.textContent = originalText;
-    });
-  });
-});
-
-// Handle modal close buttons
-document.getElementById('closeModal')?.addEventListener('click', function() {
-  document.getElementById('successModal').classList.add('hidden');
-  document.body.classList.remove('modal-open');
-});
-
-document.getElementById('okButton')?.addEventListener('click', function() {
-  document.getElementById('successModal').classList.add('hidden');
-  document.body.classList.remove('modal-open');
-});
 // Handle filter buttons
 document.getElementById('showAllBtn')?.addEventListener('click', function() {
   // Redirect to the same page with show=all parameter
