@@ -139,18 +139,29 @@ class UserController extends Controller
             return false;
         }
         
-        $submissionModel = new Submission();
-        // Try to find unassociated submissions by matching name and email from anggota table
-        $unassociatedSubmissions = $submissionModel->findUnassociatedSubmissionsByUserDetails(
-            $anggotaDetails['name'] ?? $userLibraryCard,
-            $anggotaDetails['email'] ?? '',
-            null // Don't require NIM match initially
-        );
-        
-        if (!empty($unassociatedSubmissions)) {
-            // Store potential matches in session for user confirmation
-            $_SESSION['potential_submission_matches'] = $unassociatedSubmissions;
-            return true;
+        // Find unassociated submissions by matching name only from anggota table
+        $db = \App\Models\Database::getInstance();
+        $sql = "SELECT id FROM submissions WHERE user_id IS NULL AND nama_mahasiswa = ?";
+        $stmt = $db->getConnection()->prepare($sql);
+        if ($stmt) {
+            $name = $anggotaDetails['name'] ?? $userLibraryCard;
+            $stmt->bind_param("s", $name);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $submissionIds = [];
+            while ($row = $result->fetch_assoc()) {
+                $submissionIds[] = $row['id'];
+            }
+            $stmt->close();
+            
+            // Automatically associate all matching submissions with the user
+            $submissionModel = new Submission();
+            foreach ($submissionIds as $submissionId) {
+                $submissionModel->associateSubmissionToUser($submissionId, $userId);
+            }
+            
+            return !empty($submissionIds);
         }
         
         return false;

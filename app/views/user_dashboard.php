@@ -39,7 +39,7 @@
     <?php endif; ?>
 
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold text-gray-800">Your Submissions</h2>
+        <h2 class="text-xl font-semibold text-gray-80">Your Submissions</h2>
         <a href="<?= url('submission/skripsi') ?>" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition duration-200 flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -62,26 +62,26 @@
             </div>
         </div>
     <?php else: ?>
-        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="bg-white shadow-md rounded-lg overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php foreach ($submissions as $submission): ?>
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($submission['judul_skripsi']) ?></div>
+                        <td class="px-6 py-4 max-w-xs">
+                            <div class="text-sm font-medium text-gray-900 break-words"><?= htmlspecialchars($submission['judul_skripsi']) ?></div>
                             <div class="text-sm text-gray-500"><?= htmlspecialchars($submission['nama_mahasiswa']) ?></div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-10 text-blue-800">
+                        <td class="px-6 py-4 whitespace-normal">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-10 text-blue-800 break-words">
                                 <?= htmlspecialchars($submission['submission_type'] ?? 'skripsi') ?>
                             </span>
                         </td>
@@ -102,7 +102,7 @@
                                     $statusClass = 'bg-gray-100 text-gray-800';
                             }
                             ?>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $statusClass ?>">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $statusClass ?> break-words">
                                 <?= htmlspecialchars($submission['status']) ?>
                             </span>
                         </td>
@@ -110,10 +110,12 @@
                             <?= date('M j, Y', strtotime($submission['created_at'])) ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="<?= url('detail/' . $submission['id']) ?>" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                            <?php if ($submission['status'] === 'Ditolak' || $submission['is_resubmission']): ?>
-                                <a href="<?= url('resubmit/' . $submission['id']) ?>" class="text-green-600 hover:text-green-900">Resubmit</a>
-                            <?php endif; ?>
+                            <div class="flex flex-col">
+                                <a href="<?= url('detail/' . $submission['id']) ?>" class="text-blue-600 hover:text-blue-90 mb-1 block">View</a>
+                                <?php if ($submission['status'] === 'Ditolak' || $submission['is_resubmission']): ?>
+                                    <a href="<?= url('resubmit/' . $submission['id']) ?>" class="text-green-600 hover:text-green-900 block">Resubmit</a>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
