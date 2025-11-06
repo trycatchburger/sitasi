@@ -160,12 +160,20 @@
                     <?php if (!empty($submission['files'])): ?>
                       <div class="flex flex-col gap-1">
                         <?php foreach ($submission['files'] as $file): ?>
-                          <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center">
-                            <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 0 01.293.707V19a2 0 01-2 2z"></path>
-                            </svg>
-                            View
-                          </a>
+                          <div class="flex flex-col gap-1">
+                            <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center">
+                              <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 0 01.293.707V19a2 0 01-2 2z"></path>
+                              </svg>
+                              View
+                            </a>
+                            
+                            <?php
+                              $fileExtension = strtolower(pathinfo($file['file_name'], PATHINFO_EXTENSION));
+                              if (in_array($fileExtension, ['doc', 'docx'])):
+                            ?>
+                            <?php endif; ?>
+                          </div>
                         <?php endforeach; ?>
                       </div>
                     <?php else: ?>
@@ -202,6 +210,15 @@
                       <textarea name="reason" placeholder="Alasan" class="border rounded px-1 py-1 text-xs"><?= htmlspecialchars($submission['keterangan'] ?? '') ?></textarea>
                       <button type="submit" class="btn btn-primary btn-sm text-xs py-1 px-2">Update</button>
                     </form>
+                    
+                    <!-- File upload form for converted files -->
+                    <div class="mt-2 pt-2 border-t border-gray-200">
+                      <form action="<?= url('file/uploadConvertedFile/' . $submission['id']) ?>" method="POST" enctype="multipart/form-data" class="flex flex-col gap-1" onsubmit="return confirm('Are you sure you want to upload this converted file? This will add the file to the existing submission.')">
+                        <?= csrf_field() ?>
+                        <input type="file" name="converted_file" accept=".pdf,.doc,.docx" class="text-xs mb-1" required>
+                        <button type="submit" class="btn btn-success btn-sm text-xs py-1 px-2">Upload Converted</button>
+                      </form>
+                    </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <?php if (isset($submission['is_resubmission']) && $submission['is_resubmission'] && $submission['created_at'] !== $submission['updated_at']): ?>

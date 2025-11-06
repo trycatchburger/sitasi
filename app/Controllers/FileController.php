@@ -369,93 +369,124 @@ class FileController extends Controller {
     }
 
     /**
-     * Convert DOC/DOCX file to PDF and view in browser (no download option)
-     * @param int $fileId The ID of the file to convert and view
+     * View DOC/DOCX file directly in the browser (no conversion)
+     * @param int $fileId The ID of the file to view
      */
     public function viewAsPdf(int $fileId): void {
-        try {
-            // Fetch file information from database
-            $stmt = $this->conn->prepare("SELECT file_path, file_name FROM submission_files WHERE id = ?");
-            $stmt->bind_param("i", $fileId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows === 0) {
-                http_response_code(404);
-                echo "File not found.";
-                return;
-            }
-            
-            $file = $result->fetch_assoc();
-            $stmt->close();
-            
-            // Get the full file path - file_path is always relative to the public directory
-            // __DIR__ is c:/xampp/htdocs/sitasi/app/Controllers, so we need to go up 3 levels to reach root, then into public/
-            $fullPath = __DIR__ . '/../../public/' . $file['file_path'];
-            
-            // Check if file exists
-            if (!file_exists($fullPath)) {
-                http_response_code(404);
-                echo "File not found on server at path: " . $fullPath . " (original path: " . $file['file_path'] . ")";
-                return;
-            }
-            
-            // Get file extension to determine if it's a DOC/DOCX file
-            $extension = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
-            
-            if (!in_array($extension, ['doc', 'docx'])) {
-                http_response_code(400);
-                echo "File type not supported for PDF conversion. Only DOC and DOCX files are supported.";
-                return;
-            }
-            
-            // Load the PHPWord library and configure PDF renderer
-            require_once __DIR__ . '/../../vendor/autoload.php';
-            \PhpOffice\PhpWord\Settings::setPdfRendererName(\PhpOffice\PhpWord\Settings::PDF_RENDERER_TCPDF);
-            \PhpOffice\PhpWord\Settings::setPdfRendererPath(__DIR__ . '/../../vendor/tecnickcom/tcpdf');
+        // Simply redirect to the regular view function to display the original file
+        $this->view($fileId);
+    }
 
-            // Create a new PHPWord instance and load the document
-            $phpWord = \PhpOffice\PhpWord\IOFactory::load($fullPath);
-            
-            // Ensure document properties are not null to prevent htmlspecialchars() deprecation error in PHP 8.1+
-            $docProps = $phpWord->getDocInfo();
-            $docProps->setTitle($docProps->getTitle() ?? '');
-            $docProps->setSubject($docProps->getSubject() ?? '');
-            $docProps->setCreator($docProps->getCreator() ?? '');
-            $docProps->setCompany($docProps->getCompany() ?? '');
-            $docProps->setDescription($docProps->getDescription() ?? '');
-            $docProps->setKeywords($docProps->getKeywords() ?? '');
-            
-            // Create a temporary PDF file
-            $tempPdfPath = tempnam(sys_get_temp_dir(), 'converted_') . '.pdf';
-            
-            // Save as PDF using the PDF writer
-            $pdfWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
-            $pdfWriter->save($tempPdfPath);
-            
-            // Set headers to display PDF in browser (inline) without download option
-            header('Content-Type: application/pdf');
-            header('Content-Disposition: inline; filename="' . pathinfo($file['file_name'], PATHINFO_FILENAME) . '.pdf"');
-            header('Content-Length: ' . filesize($tempPdfPath));
-            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-            header('Cache-Control: private', false);
-            header('Pragma: no-cache'); // Prevent caching
-            header('Expires: 0'); // Expire immediately
-            
-            // Output the PDF content
-            readfile($tempPdfPath);
-            
-            // Delete the temporary file after output
-            if (file_exists($tempPdfPath)) {
-                unlink($tempPdfPath);
+    /**
+     * Upload a converted file to an existing submission
+     * @param int $submissionId The ID of the submission to add the file to
+     */
+    public function uploadConvertedFile(int $submissionId): void {
+        try {
+            // Run authentication middleware
+            $this->runMiddleware(['auth']);
+
+            // Check if admin is logged in
+            if (!$this->isLoggedIn()) {
+                http_response_code(403);
+                echo "Access denied. You must be logged in as an administrator to upload files.";
+                return;
             }
-            
-        } catch (\PhpOffice\PhpWord\Exception\Exception $e) {
-            http_response_code(500);
-            echo "An error occurred while processing the document: " . $e->getMessage();
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                http_response_code(405);
+                echo "Method not allowed. Use POST to upload files.";
+                return;
+            }
+
+            // Run CSRF middleware for security
+            $this->runMiddleware(['csrf']);
+
+            // Validate file upload
+            if (!isset($_FILES['converted_file']) || $_FILES['converted_file']['error'] !== UPLOAD_ERR_OK) {
+                http_response_code(400);
+                echo "No file uploaded or upload error occurred.";
+                return;
+            }
+
+            $file = $_FILES['converted_file'];
+
+            // Validate file size (max 10MB)
+            if ($file['size'] > 10 * 1024 * 1024) {
+                http_response_code(400);
+                echo "File size exceeds 10MB limit.";
+                return;
+            }
+
+            // Validate file type
+            $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            $fileMimeType = mime_content_type($file['tmp_name']);
+            $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+            if (!in_array($fileMimeType, $allowedTypes) && !in_array($fileExtension, ['pdf', 'doc', 'docx'])) {
+                http_response_code(400);
+                echo "Invalid file type. Only PDF, DOC, and DOCX files are allowed.";
+                return;
+            }
+
+            // Validate submission exists
+            $submissionStmt = $this->conn->prepare("SELECT id, nama_mahasiswa, nim FROM submissions WHERE id = ?");
+            $submissionStmt->bind_param("i", $submissionId);
+            $submissionStmt->execute();
+            $submissionResult = $submissionStmt->get_result();
+
+            if ($submissionResult->num_rows === 0) {
+                http_response_code(404);
+                echo "Submission not found.";
+                return;
+            }
+
+            $submission = $submissionResult->fetch_assoc();
+            $submissionStmt->close();
+
+            // Generate unique filename
+            $originalName = pathinfo($file['name'], PATHINFO_FILENAME);
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $uniqueFilename = $originalName . '.' . $submission['nim'] . '_' . $submission['nama_mahasiswa'] . '_' . time() . '.' . $extension;
+
+            // Create upload directory if it doesn't exist
+            $uploadDir = __DIR__ . '/../../public/uploads/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $uploadPath = $uploadDir . $uniqueFilename;
+
+            // Move uploaded file to destination
+            if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                http_response_code(500);
+                echo "Failed to save uploaded file.";
+                return;
+            }
+
+            // Store file information in database
+            $relativePath = 'uploads/' . $uniqueFilename;
+            $insertStmt = $this->conn->prepare("INSERT INTO submission_files (submission_id, file_path, file_name, uploaded_at) VALUES (?, ?, ?, NOW())");
+            $insertStmt->bind_param("iss", $submissionId, $relativePath, $file['name']);
+
+            if (!$insertStmt->execute()) {
+                // If database insert fails, remove the uploaded file
+                unlink($uploadPath);
+                http_response_code(500);
+                echo "Failed to save file information to database.";
+                return;
+            }
+
+            $insertStmt->close();
+
+            // Redirect back to dashboard with success message
+            $_SESSION['success_message'] = "File uploaded successfully to submission.";
+            header('Location: ' . url('admin/dashboard'));
+            exit;
+
         } catch (Exception $e) {
             http_response_code(500);
-            echo "An error occurred while converting the file to PDF: " . $e->getMessage();
+            echo "An error occurred while uploading the file: " . $e->getMessage();
         }
     }
 }
