@@ -214,7 +214,15 @@
                               } else if (stripos($fileLabel, 'bab2') !== false || stripos($fileLabel, 'toefl') !== false) {
                                   $displayLabel = 'Bab 2';
                               } else if (stripos($fileLabel, 'persetujuan') !== false || stripos($fileLabel, 'doc') !== false) {
-                                  $displayLabel = 'Full Version';
+                                  // Determine if it's a doc or pdf file based on the actual file extension
+                                  $fileExtension = strtolower(pathinfo($file['file_name'], PATHINFO_EXTENSION));
+                                  if ($fileExtension === 'doc' || $fileExtension === 'docx') {
+                                      $displayLabel = 'Full Version Doc';
+                                  } else if ($fileExtension === 'pdf') {
+                                      $displayLabel = 'Full Version PDF';
+                                  } else {
+                                      $displayLabel = 'Full Version';
+                                  }
                               } else if (stripos($fileLabel, 'converted') !== false) {
                                   $displayLabel = 'Converted';
                               } else {
