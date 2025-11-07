@@ -1,3 +1,4 @@
+
 <?php ob_start(); ?>
 
 <!-- Main Content -->
@@ -14,7 +15,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-white p-3 rounded shadow">
             <div class="text-sm text-gray-600">Total Queries</div>
-            <div class="text-2xl font-bold text-blue-600"><?= $queryStats['total_queries'] ?></div>
+            <div class="text-2xl font-bold text-blue-60"><?= $queryStats['total_queries'] ?></div>
           </div>
           <div class="bg-white p-3 rounded shadow">
             <div class="text-sm text-gray-600">Avg. Execution Time</div>
@@ -35,9 +36,11 @@
     <div class="mb-6 flex flex-wrap items-center gap-4">
       <div class="flex items-center space-x-4">
         <span class="text-gray-700">Filter:</span>
-        <button id="showAllBtn" class="btn btn-secondary btn-sm <?= (!empty($showAll) && !isset($_GET['type'])) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Semua Pengajuan</button>
-        <button id="showPendingBtn" class="btn btn-secondary btn-sm <?= (empty($showAll) && !isset($_GET['type'])) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Hanya yang Belum Diverifikasi (Default)</button>
-        <button id="showJournalBtn" class="btn btn-secondary btn-sm <?= (isset($_GET['type']) && $_GET['type'] === 'journal') ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Pengajuan Jurnal Saja</button>
+        <select id="filterSelect" class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option value="pending" <?= (empty($showAll) && !isset($_GET['type'])) ? 'selected' : '' ?>>Tampilkan Hanya yang Belum Diverifikasi (Default)</option>
+          <option value="all" <?= (!empty($showAll) && !isset($_GET['type'])) ? 'selected' : '' ?>>Tampilkan Semua Pengajuan</option>
+          <option value="journal" <?= (isset($_GET['type']) && $_GET['type'] === 'journal') ? 'selected' : '' ?>>Tampilkan Pengajuan Jurnal Saja</option>
+        </select>
       </div>
       
       <!-- Search Form -->
@@ -55,7 +58,7 @@
                  value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>"
                  class="border border-gray-300 rounded-l px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/200/svg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 014 0z"></path>
             </svg>
           </button>
@@ -74,7 +77,7 @@
     <div class="mb-6 flex flex-wrap gap-2">
       <a href="<?= url('file/downloadAll') ?>" class="btn btn-primary text-white">
         <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 0 003-3v-1m-4-4l-4 4m0 0l-4m4 4V4"></path>
         </svg>
         Unduh Semua Berkas (Terorganisir)
       </a>
@@ -163,7 +166,7 @@
                           <div class="flex flex-col gap-1">
                             <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center">
                               <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 0 01.293.707V19a2 0 01-2 2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 0 01.293.707V19a2 0 01-2 2z"></path>
                               </svg>
                               View
                             </a>
@@ -214,7 +217,7 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <?php if (isset($submission['is_resubmission']) && $submission['is_resubmission'] && $submission['created_at'] !== $submission['updated_at']): ?>
                       <div class="flex flex-col">
-                        <span class="text-xs text-gray-500">Dibuat: <?= format_datetime($submission['created_at']) ?></span>
+                        <span class="text-xs text-gray-50">Dibuat: <?= format_datetime($submission['created_at']) ?></span>
                         <span class="text-xs text-blue-60 font-medium">Diperbarui: <?= format_datetime($submission['updated_at']) ?></span>
                       </div>
                     <?php else: ?>
@@ -255,7 +258,7 @@
                 1
               </a>
               <?php if ($currentPage > 4): ?>
-                <span class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500">
+                <span class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium text-gray-500">
                   ...
                 </span>
               <?php endif; ?>
@@ -287,9 +290,6 @@
               <?php endif; ?>
             
             <?php if ($currentPage < $totalPages): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage + 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                Next
-              </a>
             <?php endif; ?>
           </nav>
         </div>
@@ -464,35 +464,25 @@ document.getElementById('okButton')?.addEventListener('click', function() {
   document.getElementById('successModal').classList.add('hidden');
   document.body.classList.remove('modal-open');
 });
-// Handle filter buttons
-document.getElementById('showAllBtn')?.addEventListener('click', function() {
-  // Redirect to the same page with show=all parameter
+// Handle filter dropdown
+document.getElementById('filterSelect')?.addEventListener('change', function() {
+  const selectedValue = this.value;
   const url = new URL(window.location);
-  url.searchParams.set('show', 'all');
-  url.searchParams.delete('type'); // Remove type parameter when showing all
-  url.searchParams.delete('page'); // Reset to first page when changing filter
-  url.searchParams.delete('search'); // Also clear search when changing filter
-  window.location.href = url.toString();
-});
-
-document.getElementById('showPendingBtn')?.addEventListener('click', function() {
-  // Redirect to the same page without show parameter (default is pending only)
-  const url = new URL(window.location);
+  
+  // Clear existing filter parameters
   url.searchParams.delete('show');
-  url.searchParams.delete('type'); // Remove type parameter when showing pending
+  url.searchParams.delete('type');
   url.searchParams.delete('page'); // Reset to first page when changing filter
   url.searchParams.delete('search'); // Also clear search when changing filter
-  window.location.href = url.toString();
-});
-
-// Handle journal filter button
-document.getElementById('showJournalBtn')?.addEventListener('click', function() {
-  // Redirect to the same page with type=journal parameter
-  const url = new URL(window.location);
-  url.searchParams.set('type', 'journal');
-  url.searchParams.delete('show'); // Remove show parameter when showing journals
-  url.searchParams.delete('page'); // Reset to first page when changing filter
-  url.searchParams.delete('search'); // Also clear search when changing filter
+  
+  // Set new filter parameter based on selection
+  if (selectedValue === 'all') {
+    url.searchParams.set('show', 'all');
+  } else if (selectedValue === 'journal') {
+    url.searchParams.set('type', 'journal');
+  }
+  // For 'pending' option, we don't need to set any parameter as it's the default
+  
   window.location.href = url.toString();
 });
 </script>

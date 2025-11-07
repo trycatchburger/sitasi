@@ -4,8 +4,8 @@
 <main id="main-content">
   <div class="px-1 py-1 w-full">
     <div class="mb-4">
-      <h1 class="text-2xl font-bold text-gray-800">Verifikasi Skripsi</h1>
-      <p class="text-gray-600 mt-1">Kelola dan tinjau pengajuan skripsi mahasiswa</p>
+      <h1 class="text-2xl font-bold text-gray-800">Management File</h1>
+      <p class="text-gray-600 mt-1">Halaman khusus untuk teknisi IT untuk mengelola file yang diunggah</p>
     </div>
     
     <?php if (isset($queryStats) && $queryStats): ?>
@@ -99,14 +99,14 @@
     </div>
     
     <div class="card">
-      <div class="overflow-x-auto">
-        <table class="w-full divide-y divide-gray-200 max-w-full">
+      <div class="overflow-x-auto overflow-y-visible">
+        <table class="w-full divide-y divide-gray-200 table-auto">
           <thead class="bg-gray-50">
             <tr>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Tipe</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mahasiswa</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul Skripsi</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Berkas</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-80">Berkas</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Pengajuan</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -169,7 +169,7 @@
                   </td>
                   <td class="px-6 py-4">
                     <?php if (!empty($submission['files'])): ?>
-                      <div class="flex flex-col gap-1">
+                      <div class="flex flex-wrap gap-2 max-w-md">
                         <?php foreach ($submission['files'] as $file): ?>
                           <?php
                             // Extract the file label from the file name to show what type of file it is
@@ -188,7 +188,7 @@
                               } else if (stripos($fileLabel, 'bab2') !== false || stripos($fileLabel, 'toefl') !== false) {
                                   $displayLabel = 'Bab 2';
                               } else if (stripos($fileLabel, 'persetujuan') !== false || stripos($fileLabel, 'doc') !== false) {
-                                  $displayLabel = 'Full Version.doc';
+                                  $displayLabel = 'Full Version';
                               } else if (stripos($fileLabel, 'converted') !== false) {
                                   $displayLabel = 'Converted';
                               } else {
@@ -198,8 +198,8 @@
                               $displayLabel = 'File';
                             }
                           ?>
-                          <div class="flex flex-col gap-1">
-                            <div class="text-xs font-medium text-gray-700"><?= htmlspecialchars($displayLabel) ?></div>
+                          <div class="flex flex-col items-center text-center min-w-[100px] max-w-[120px]">
+                            <div class="text-xs font-medium text-gray-700 mb-1 truncate w-full" title="<?= htmlspecialchars($displayLabel) ?>"><?= htmlspecialchars($displayLabel) ?></div>
                             <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-1 px-2 text-xs">
                               <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -312,6 +312,10 @@ require __DIR__ . '/main.php';
 <style>
   .modal-open {
     overflow: hidden;
+  }
+  
+  .table-container {
+    min-width: 100%;
   }
 </style>
 
