@@ -51,6 +51,12 @@
           <?php else: ?>
             <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'all' : 'pending') ?>">
           <?php endif; ?>
+          <?php if (isset($_GET['sort'])): ?>
+            <input type="hidden" name="sort" value="<?= htmlspecialchars($_GET['sort']) ?>">
+          <?php endif; ?>
+          <?php if (isset($_GET['order'])): ?>
+            <input type="hidden" name="order" value="<?= htmlspecialchars($_GET['order']) ?>">
+          <?php endif; ?>
           <input type="hidden" name="page" value="1"> <!-- Reset to first page when searching -->
           <input type="text"
                  name="search"
@@ -63,7 +69,7 @@
             </svg>
           </button>
           <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
-            <a href="<?= url('admin/dashboard') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'show=all' : '') ?>&page=1"
+            <a href="<?= url('admin/dashboard') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'show=all' : '') ?>&page=1<?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>"
                class="ml-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -75,7 +81,7 @@
     </div>
     
     <div class="mb-6 flex flex-wrap gap-2">
-      <a href="<?= url('file/downloadAll') ?>" class="btn btn-primary text-white">
+      <a href="<?= url('file/downloadAll') ?>" class="btn btn-primary text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-2 px-4 flex items-center">
         <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 0 003-3v-1m-4-4l-4 4m0 0l-4m4 4V4"></path>
         </svg>
@@ -89,13 +95,38 @@
         <table class="w-full divide-y divide-gray-200 max-w-full">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Tipe</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mahasiswa</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul Skripsi</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('type', '<?= isset($_GET['sort']) && $_GET['sort'] === 'type' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Tipe
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'type'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('student_name', '<?= isset($_GET['sort']) && $_GET['sort'] === 'student_name' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Nama Mahasiswa
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'student_name'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('title', '<?= isset($_GET['sort']) && $_GET['sort'] === 'title' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Judul Skripsi
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'title'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Berkas</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('status', '<?= isset($_GET['sort']) && $_GET['sort'] === 'status' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Status
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'status'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alasan</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Pengajuan</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('date', '<?= isset($_GET['sort']) && $_GET['sort'] === 'date' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Tanggal Pengajuan
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'date'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
             </tr>
           </thead>
@@ -161,23 +192,55 @@
                   </td>
                   <td class="px-6 py-4">
                     <?php if (!empty($submission['files'])): ?>
-                      <div class="flex flex-col gap-1">
-                        <?php foreach ($submission['files'] as $file): ?>
-                          <div class="flex flex-col gap-1">
-                            <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center">
+                      <?php
+                        // Limit to first 4 files to show in 2x2 grid
+                        $filesToShow = array_slice($submission['files'], 0, 4);
+                        $fileCount = count($filesToShow);
+                      ?>
+                      <div class="flex flex-wrap gap-1 max-w-xs">
+                        <?php foreach ($filesToShow as $file): ?>
+                          <?php
+                            // Extract the file label from the file name to show what type of file it is
+                            $fileNameWithoutExtension = pathinfo($file['file_name'], PATHINFO_FILENAME);
+                            $fileNameParts = explode('.', $fileNameWithoutExtension);
+                            $fileLabel = '';
+                            
+                            if (count($fileNameParts) >= 1) {
+                              $fileLabel = $fileNameParts[0]; // First part is the label
+                              
+                              // Map the file label to specific labels for better readability
+                              if (stripos($fileLabel, 'cover') !== false) {
+                                  $displayLabel = 'Cover';
+                              } else if (stripos($fileLabel, 'bab1') !== false || stripos($fileLabel, 'transkrip') !== false) {
+                                  $displayLabel = 'Bab 1';
+                              } else if (stripos($fileLabel, 'bab2') !== false || stripos($fileLabel, 'toefl') !== false) {
+                                  $displayLabel = 'Bab 2';
+                              } else if (stripos($fileLabel, 'persetujuan') !== false || stripos($fileLabel, 'doc') !== false) {
+                                  $displayLabel = 'Full Version';
+                              } else if (stripos($fileLabel, 'converted') !== false) {
+                                  $displayLabel = 'Converted';
+                              } else {
+                                  $displayLabel = ucfirst(str_replace('_', ' ', $fileLabel));
+                              }
+                            } else {
+                              $displayLabel = 'File';
+                            }
+                          ?>
+                          <div class="flex flex-col items-center text-center min-w-[80px] max-w-[90px]">
+                            <div class="text-xs font-medium text-gray-700 mb-1 truncate w-full" title="<?= htmlspecialchars($displayLabel) ?>"><?= htmlspecialchars($displayLabel) ?></div>
+                            <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out py-1 px-2 text-xs">
                               <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 0 01.293.707V19a2 0 01-2 2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 0 01-2 2z"></path>
                               </svg>
                               View
                             </a>
-                            
-                            <?php
-                              $fileExtension = strtolower(pathinfo($file['file_name'], PATHINFO_EXTENSION));
-                              if (in_array($fileExtension, ['doc', 'docx'])):
-                            ?>
-                            <?php endif; ?>
                           </div>
                         <?php endforeach; ?>
+                        <?php if (count($submission['files']) > 4): ?>
+                          <div class="flex items-center justify-center min-w-[80px] max-w-[90px] text-xs text-gray-500">
+                            +<?= count($submission['files']) - 4 ?> more
+                          </div>
+                        <?php endif; ?>
                       </div>
                     <?php else: ?>
                       <span class="text-gray-400 text-sm">No files</span>
@@ -211,7 +274,9 @@
                         <option value="Ditolak" <?= $status === 'Ditolak' ? 'selected' : '' ?>>Ditolak</option>
                       </select>
                       <textarea name="reason" placeholder="Alasan" class="border rounded px-1 py-1 text-xs"><?= htmlspecialchars($submission['keterangan'] ?? '') ?></textarea>
-                      <button type="submit" class="btn btn-primary btn-sm text-xs py-1 px-2">Update</button>
+                      <button type="submit" class="btn btn-primary btn-sm text-xs py-1 px-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105">
+                        Update
+                      </button>
                     </form>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -226,7 +291,7 @@
                     <?php endif; ?>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <a href="<?= url('file/download/' . $submission['id']) ?>" class="btn btn-secondary btn-sm">
+                    <a href="<?= url('file/download/' . $submission['id']) ?>" class="btn btn-secondary btn-sm bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-1 px-2 text-xs flex items-center">
                       <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 0 003-3v-1m-4l-4 4m0 0l-4-4m4 4V4"></path>
                       </svg>
@@ -245,7 +310,7 @@
         <div class="mt-6 flex justify-center">
           <nav class="inline-flex rounded-md shadow">
             <?php if ($currentPage > 1): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Previous
               </a>
             <?php endif; ?>
@@ -254,7 +319,7 @@
               // Show first page
               if ($currentPage > 3):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 1
               </a>
               <?php if ($currentPage > 4): ?>
@@ -270,7 +335,7 @@
               $end = min($totalPages, $currentPage + 2);
               for ($i = $start; $i <= $end; $i++):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
                 <?= $i ?>
               </a>
             <?php endfor; ?>
@@ -280,11 +345,11 @@
               if ($currentPage < $totalPages - 2):
                 if ($currentPage < $totalPages - 3):
             ?>
-                  <span class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500">
+                  <span class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium text-gray-500">
                     ...
                   </span>
                 <?php endif; ?>
-                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                   <?= $totalPages ?>
                 </a>
               <?php endif; ?>
@@ -460,6 +525,32 @@ document.getElementById('closeModal')?.addEventListener('click', function() {
   document.body.classList.remove('modal-open');
 });
 
+// Function to handle sorting
+function sortTable(column, order, showType, search) {
+  let url = new URL(window.location);
+  
+  // Set sorting parameters
+  url.searchParams.set('sort', column);
+  url.searchParams.set('order', order);
+  
+  // Preserve existing parameters
+  if(showType) {
+    if(showType === 'all' || showType === 'pending') {
+      url.searchParams.set('show', showType);
+    } else if(showType === 'journal') {
+      url.searchParams.set('type', showType);
+    }
+  }
+  
+  if(search) {
+    url.searchParams.set('search', search);
+  }
+  
+  // Reset to first page when sorting
+  url.searchParams.set('page', 1);
+  
+  window.location.href = url.toString();
+}
 document.getElementById('okButton')?.addEventListener('click', function() {
   document.getElementById('successModal').classList.add('hidden');
   document.body.classList.remove('modal-open');
@@ -469,19 +560,31 @@ document.getElementById('filterSelect')?.addEventListener('change', function() {
   const selectedValue = this.value;
   const url = new URL(window.location);
   
+  // Preserve sorting parameters
+ const sortParam = url.searchParams.get('sort');
+  const orderParam = url.searchParams.get('order');
+  
   // Clear existing filter parameters
   url.searchParams.delete('show');
   url.searchParams.delete('type');
   url.searchParams.delete('page'); // Reset to first page when changing filter
-  url.searchParams.delete('search'); // Also clear search when changing filter
+ url.searchParams.delete('search'); // Also clear search when changing filter
   
   // Set new filter parameter based on selection
-  if (selectedValue === 'all') {
+ if (selectedValue === 'all') {
     url.searchParams.set('show', 'all');
-  } else if (selectedValue === 'journal') {
+ } else if (selectedValue === 'journal') {
     url.searchParams.set('type', 'journal');
   }
   // For 'pending' option, we don't need to set any parameter as it's the default
+  
+  // Re-add sorting parameters if they existed
+  if(sortParam) {
+    url.searchParams.set('sort', sortParam);
+  }
+  if(orderParam) {
+    url.searchParams.set('order', orderParam);
+  }
   
   window.location.href = url.toString();
 });

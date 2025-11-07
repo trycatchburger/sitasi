@@ -67,67 +67,73 @@ class AdminController extends Controller {
     }
 
     public function dashboard() {
-         try {
-             if (!$this->isAdminLoggedIn()) {
-                 header('Location: ' . url('admin/login'));
-                 exit;
-             }
-             
-             $submissionModel = new Submission();
-             
-             // Get query parameters
-             $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
-             $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
-             $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-             $perPage = 10; // Default items per page
-             
-             // Determine which method to use based on parameters
-             if (!empty($search)) {
-                 // Use search functionality
-                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $page, $perPage);
-                 $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal);
-             } else if ($showJournal) {
-                 // Show only journal submissions
-                 $submissions = $submissionModel->findJournalSubmissions($page, $perPage);
-                 $totalResults = $submissionModel->countJournalSubmissions();
-             } else if ($showAll) {
-                 // Show all submissions
-                 $submissions = $submissionModel->findAll($page, $perPage);
-                 $totalResults = $submissionModel->countAll();
-             } else {
-                 // Show only pending submissions (default)
-                 $submissions = $submissionModel->findPending(true, $page, $perPage);
-                 $totalResults = $submissionModel->countPending();
-             }
-             
-             // Calculate pagination values
-             $totalPages = ceil($totalResults / $perPage);
-             
-             // Get query profiling stats if enabled
-             $queryStats = null;
-             if (class_exists('\App\Services\QueryProfiler')) {
-                 $profiler = \App\Services\QueryProfiler::getInstance();
-                 if ($profiler->isEnabled()) {
-                     $queryStats = $profiler->getStats();
-                 }
-             }
-             
-             $this->render('dashboard', [
-                 'submissions' => $submissions,
-                 'showAll' => $showAll,
-                 'search' => $search,
-                 'currentPage' => $page,
-                 'totalPages' => $totalPages,
-                 'totalResults' => $totalResults,
-                 'queryStats' => $queryStats
-             ]);
-         } catch (DatabaseException $e) {
-             $this->render('dashboard', ['error' => "Database error occurred while loading dashboard."]);
-         } catch (Exception $e) {
-             $this->render('dashboard', ['error' => "An error occurred: " . $e->getMessage()]);
-         }
-     }
+          try {
+              if (!$this->isAdminLoggedIn()) {
+                  header('Location: ' . url('admin/login'));
+                  exit;
+              }
+              
+              $submissionModel = new Submission();
+              
+              // Get query parameters
+              $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
+              $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
+              $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+              $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+              $perPage = 10; // Default items per page
+              
+              // Get sort parameters
+              $sort = isset($_GET['sort']) ? $_GET['sort'] : null;
+              $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
+              
+              // Determine which method to use based on parameters
+              if (!empty($search)) {
+                  // Use search functionality
+                  $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, false, $page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal, false);
+              } else if ($showJournal) {
+                  // Show only journal submissions
+                  $submissions = $submissionModel->findJournalSubmissions($page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countJournalSubmissions();
+              } else if ($showAll) {
+                  // Show all submissions
+                  $submissions = $submissionModel->findAll($page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countAll();
+              } else {
+                  // Show only pending submissions (default)
+                  $submissions = $submissionModel->findPending(true, $page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countPending();
+              }
+              
+              // Calculate pagination values
+              $totalPages = ceil($totalResults / $perPage);
+              
+              // Get query profiling stats if enabled
+              $queryStats = null;
+              if (class_exists('\App\Services\QueryProfiler')) {
+                  $profiler = \App\Services\QueryProfiler::getInstance();
+                  if ($profiler->isEnabled()) {
+                      $queryStats = $profiler->getStats();
+                  }
+              }
+              
+              $this->render('dashboard', [
+                  'submissions' => $submissions,
+                  'showAll' => $showAll,
+                  'search' => $search,
+                  'currentPage' => $page,
+                  'totalPages' => $totalPages,
+                  'totalResults' => $totalResults,
+                  'queryStats' => $queryStats,
+                  'sort' => $sort,
+                  'order' => $order
+              ]);
+          } catch (DatabaseException $e) {
+              $this->render('dashboard', ['error' => "Database error occurred while loading dashboard."]);
+          } catch (Exception $e) {
+              $this->render('dashboard', ['error' => "An error occurred: " . $e->getMessage()]);
+          }
+      }
 
     public function logout() {
         SessionManager::logout();
@@ -839,22 +845,26 @@ class AdminController extends Controller {
              $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
              $perPage = 10; // Default items per page
              
+             // Get sort parameters
+             $sort = isset($_GET['sort']) ? $_GET['sort'] : null;
+             $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
+             
              // Determine which method to use based on parameters
              if (!empty($search)) {
                  // Use search functionality
-                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $showUnconverted, $page, $perPage);
+                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $showUnconverted, $page, $perPage, $sort, $order);
                  $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal, $showUnconverted);
              } else if ($showJournal) {
                  // Show only journal submissions
-                 $submissions = $submissionModel->findJournalSubmissions($page, $perPage);
+                 $submissions = $submissionModel->findJournalSubmissions($page, $perPage, $sort, $order);
                  $totalResults = $submissionModel->countJournalSubmissions();
              } else if ($showUnconverted) {
                  // Show submissions that have not been converted (no additional files uploaded after initial submission)
-                 $submissions = $submissionModel->findUnconverted($page, $perPage);
+                 $submissions = $submissionModel->findUnconverted($page, $perPage, $sort, $order);
                  $totalResults = $submissionModel->countUnconverted();
              } else {
                  // Show all submissions by default when no specific filter is selected
-                 $submissions = $submissionModel->findAll($page, $perPage);
+                 $submissions = $submissionModel->findAll($page, $perPage, $sort, $order);
                  $totalResults = $submissionModel->countAll();
              }
              
@@ -878,7 +888,9 @@ class AdminController extends Controller {
                  'currentPage' => $page,
                  'totalPages' => $totalPages,
                  'totalResults' => $totalResults,
-                 'queryStats' => $queryStats
+                 'queryStats' => $queryStats,
+                 'sort' => $sort,
+                 'order' => $order
              ]);
          } catch (DatabaseException $e) {
              $this->render('management_file', ['error' => "Database error occurred while loading management file page."]);

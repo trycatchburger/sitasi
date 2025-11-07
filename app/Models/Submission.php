@@ -689,9 +689,9 @@ class Submission
         }
     }
 
-    public function findAll(int $page = 1, int $perPage = 0): array
+    public function findAll(int $page = 1, int $perPage = 0, string $sort = null, string $order = 'asc'): array
     {
-        return $this->repository->findAll($page, $perPage);
+        return $this->repository->findAll($page, $perPage, $sort, $order);
     }
     
     /**
@@ -702,14 +702,14 @@ class Submission
         return $this->repository->countAll();
     }
 
-    public function findPending(bool $useCache = true, int $page = 1, int $perPage = 10): array
+    public function findPending(bool $useCache = true, int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
         $cacheService = CacheService::getInstance();
-        $cacheKey = 'pending_submissions_page_' . $page . '_per_' . $perPage;
+        $cacheKey = 'pending_submissions_page_' . $page . '_per_' . $perPage . '_' . ($sort ?? 'default') . '_' . $order;
         $cacheTtl = 300; // 5 minutes
         
         // Try to get from cache first
-        if ($useCache) {
+        if ($useCache && $sort === null && $order === 'asc') { // Only use cache when no sorting is applied
             $cachedData = $cacheService->get($cacheKey, $cacheTtl);
             if ($cachedData !== null) {
                 return $cachedData;
@@ -717,10 +717,10 @@ class Submission
         }
         
         // Get data from repository
-        $submissions = $this->repository->findPending($page, $perPage);
+        $submissions = $this->repository->findPending($page, $perPage, $sort, $order);
         
-        // Cache the results
-        if ($useCache) {
+        // Cache the results only when no sorting is applied
+        if ($useCache && $sort === null && $order === 'asc') {
             $cacheService->set($cacheKey, $submissions, $cacheTtl);
         }
         
@@ -744,11 +744,13 @@ class Submission
      * Find journal submissions with pagination
      * @param int $page Page number
      * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      */
-    public function findJournalSubmissions(int $page = 1, int $perPage = 10): array
+    public function findJournalSubmissions(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
-        return $this->repository->findJournalSubmissions($page, $perPage);
+        return $this->repository->findJournalSubmissions($page, $perPage, $sort, $order);
     }
 
     /**
@@ -875,12 +877,14 @@ class Submission
      * @param bool $showUnconverted Whether to show only unconverted submissions
      * @param int $page Page number
      * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      * @throws DatabaseException
      */
-    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false, int $page = 1, int $perPage = 10): array
+    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false, int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
-        return $this->repository->searchSubmissions($search, $showAll, $showJournal, $showUnconverted, $page, $perPage);
+        return $this->repository->searchSubmissions($search, $showAll, $showJournal, $showUnconverted, $page, $perPage, $sort, $order);
     }
     
     /**
@@ -909,9 +913,9 @@ class Submission
          return $this->repository->searchRecentApprovedJournals($search, $limit);
      }
  
-     public function findByUserId(int $userId): array
+     public function findByUserId(int $userId, string $sort = null, string $order = 'asc'): array
      {
-         return $this->repository->findByUserId($userId);
+         return $this->repository->findByUserId($userId, $sort, $order);
      }
  
      public function associateSubmissionToUser(int $submissionId, int $userId): bool
@@ -971,11 +975,13 @@ public function countAllApprovedByType(): array
  * Find submissions that have not been converted (no additional files beyond initial submission)
  * @param int $page Page number
  * @param int $perPage Items per page
+ * @param string|null $sort Sort column
+ * @param string $order Sort order ('asc' or 'desc')
  * @return array
  */
-public function findUnconverted(int $page = 1, int $perPage = 10): array
+public function findUnconverted(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
 {
-    return $this->repository->findUnconverted($page, $perPage);
+    return $this->repository->findUnconverted($page, $perPage, $sort, $order);
 }
 
 /**

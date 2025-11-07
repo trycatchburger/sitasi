@@ -19,12 +19,6 @@
       </svg>
       Buat Admin Baru
     </a>
-     <a href="<?= url('admin/importDataAnggota') ?>" class="btn btn-primary text-white flex items-center px-4 py-2 rounded-lg shadow-sm hover:bg-blue-600 transition">
-      <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 018 0zM3 20a6 6 0 1112 0v1H3v-1z"></path>
-      </svg>
-      Import Data Anggota
-    </a>
   </div>
   
   <div class="card">

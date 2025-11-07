@@ -16,14 +16,19 @@ class SubmissionRepository extends BaseRepository
      * Find all submissions with their files
      * @param int $page Page number (optional)
      * @param int $perPage Items per page (optional)
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      * @throws DatabaseException
      */
-    public function findAll(int $page = 1, int $perPage = 0): array
+    public function findAll(int $page = 1, int $perPage = 0, string $sort = null, string $order = 'asc'): array
     {
         try {
             // Build SQL query with optional pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id";
+            
+            // Add ORDER BY clause based on sort parameter
+            $sql .= $this->buildOrderByClause($sort, $order);
             
             // Add pagination if perPage is specified
             if ($perPage > 0) {
@@ -88,17 +93,25 @@ class SubmissionRepository extends BaseRepository
      * Find pending submissions with pagination
      * @param int $page Page number
      * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      * @throws DatabaseException
      */
-    public function findPending(int $page = 1, int $perPage = 10): array
+    public function findPending(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
         try {
             // Calculate offset for pagination
             $offset = ($page - 1) * $perPage;
             
             // First get pending submissions only with pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Pending' ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Pending'";
+            
+            // Add ORDER BY clause based on sort parameter
+            $sql .= $this->buildOrderByClause($sort, $order);
+            
+            $sql .= " LIMIT ? OFFSET ?";
+            
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -295,17 +308,25 @@ class SubmissionRepository extends BaseRepository
      * Find journal submissions with pagination
      * @param int $page Page number
      * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      * @throws DatabaseException
      */
-    public function findJournalSubmissions(int $page = 1, int $perPage = 10): array
+    public function findJournalSubmissions(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
         try {
             // Calculate offset for pagination
             $offset = ($page - 1) * $perPage;
             
             // Get journal submissions only with pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.submission_type = 'journal' ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.submission_type = 'journal'";
+            
+            // Add ORDER BY clause based on sort parameter
+            $sql .= $this->buildOrderByClause($sort, $order);
+            
+            $sql .= " LIMIT ? OFFSET ?";
+            
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -507,12 +528,16 @@ class SubmissionRepository extends BaseRepository
      * Search submissions by name, title, or NIM
      * @param string $search Search term
      * @param bool $showAll Whether to show all submissions or only pending ones
+     * @param bool $showJournal Whether to show only journal submissions
+     * @param bool $showUnconverted Whether to show only unconverted submissions
      * @param int $page Page number
      * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      * @throws DatabaseException
      */
-    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false, int $page = 1, int $perPage = 10): array
+    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false, int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
         try {
             // Calculate offset for pagination
@@ -545,7 +570,12 @@ class SubmissionRepository extends BaseRepository
                 }
             }
             
-            $sql .= $whereClause . " ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            $sql .= $whereClause;
+            
+            // Add ORDER BY clause based on sort parameter
+            $sql .= $this->buildOrderByClause($sort, $order);
+            
+            $sql .= " LIMIT ? OFFSET ?";
             
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
@@ -557,7 +587,7 @@ class SubmissionRepository extends BaseRepository
             $types = "";
             
             if (!empty($search)) {
-                $params = [$searchTerm, $searchTerm, $searchTerm, $perPage, $offset];
+                $params = [$searchTerm, $searchTerm, $perPage, $offset];
                 $types = "ssiii";
                 
                 // Create array of references for bind_param
@@ -704,10 +734,14 @@ class SubmissionRepository extends BaseRepository
         }
     }
 
-    public function findByUserId(int $userId): array
+    public function findByUserId(int $userId, string $sort = null, string $order = 'asc'): array
     {
         try {
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.user_id = ? ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.user_id = ?";
+            
+            // Add ORDER BY clause based on sort parameter
+            $sql .= $this->buildOrderByClause($sort, $order);
+            
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -835,10 +869,12 @@ class SubmissionRepository extends BaseRepository
      * Find submissions that have not been converted (no additional files beyond initial submission)
      * @param int $page Page number
      * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      * @throws DatabaseException
      */
-    public function findUnconverted(int $page = 1, int $perPage = 10): array
+    public function findUnconverted(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
         try {
             // Calculate offset for pagination
@@ -849,7 +885,12 @@ class SubmissionRepository extends BaseRepository
             // the expected number of original files only
             $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id IN (
                 SELECT sf.submission_id FROM submission_files sf GROUP BY sf.submission_id HAVING COUNT(*) <= 4
-            ) ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            )";
+            
+            // Add ORDER BY clause based on sort parameter
+            $sql .= $this->buildOrderByClause($sort, $order);
+            
+            $sql .= " LIMIT ? OFFSET ?";
             
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
@@ -900,6 +941,33 @@ class SubmissionRepository extends BaseRepository
             return (int) $row['count'];
         } catch (\Exception $e) {
             throw new DatabaseException("Error while counting unconverted submissions: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Build ORDER BY clause based on sort parameter
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
+     * @return string
+     */
+    private function buildOrderByClause(?string $sort, string $order): string
+    {
+        $allowedSortColumns = [
+            'type' => 's.submission_type',
+            'student_name' => 's.nama_mahasiswa',
+            'title' => 's.judul_skripsi',
+            'status' => 's.status',
+            'date' => 's.created_at'
+        ];
+        
+        // Validate sort column to prevent SQL injection
+        if ($sort !== null && array_key_exists($sort, $allowedSortColumns)) {
+            $column = $allowedSortColumns[$sort];
+            $direction = (strtolower($order) === 'desc') ? 'DESC' : 'ASC';
+            return " ORDER BY {$column} {$direction}";
+        } else {
+            // Default to created_at DESC if no valid sort column is provided
+            return " ORDER BY s.created_at DESC";
         }
     }
 

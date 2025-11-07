@@ -65,6 +65,12 @@
               <!-- Default: no filter parameter needed for all submissions -->
             <?php endif; ?>
           <?php endif; ?>
+          <?php if (isset($_GET['sort'])): ?>
+            <input type="hidden" name="sort" value="<?= htmlspecialchars($_GET['sort']) ?>">
+          <?php endif; ?>
+          <?php if (isset($_GET['order'])): ?>
+            <input type="hidden" name="order" value="<?= htmlspecialchars($_GET['order']) ?>">
+          <?php endif; ?>
           <input type="hidden" name="page" value="1"> <!-- Reset to first page when searching -->
           <input type="text"
                  name="search"
@@ -77,7 +83,7 @@
             </svg>
           </button>
           <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
-            <a href="<?= url('admin/management_file') ?>?<?= isset($_GET['converted']) ? 'converted=' . htmlspecialchars($_GET['converted']) : (isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : '') ?>&page=1"
+            <a href="<?= url('admin/management_file') ?>?<?= isset($_GET['converted']) ? 'converted=' . htmlspecialchars($_GET['converted']) : (isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : '') ?>&page=1<?= isset($_GET['sort']) ? '&sort=' . htmlspecialchars($_GET['sort']) : '' ?><?= isset($_GET['order']) ? '&order=' . htmlspecialchars($_GET['order']) : '' ?>"
                class="ml-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -103,11 +109,31 @@
         <table class="w-full divide-y divide-gray-200 table-auto">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider">Tipe</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mahasiswa</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul Skripsi</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('type', '<?= isset($_GET['sort']) && $_GET['sort'] === 'type' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['converted']) ? $_GET['converted'] : (isset($_GET['show']) ? $_GET['show'] : '') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Tipe
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'type'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('student_name', '<?= isset($_GET['sort']) && $_GET['sort'] === 'student_name' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['converted']) ? $_GET['converted'] : (isset($_GET['show']) ? $_GET['show'] : '') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Nama Mahasiswa
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'student_name'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('title', '<?= isset($_GET['sort']) && $_GET['sort'] === 'title' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['converted']) ? $_GET['converted'] : (isset($_GET['show']) ? $_GET['show'] : '') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Judul Skripsi
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'title'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-80">Berkas</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Pengajuan</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('date', '<?= isset($_GET['sort']) && $_GET['sort'] === 'date' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['converted']) ? $_GET['converted'] : (isset($_GET['show']) ? $_GET['show'] : '') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+                Tanggal Pengajuan
+                <?php if (isset($_GET['sort']) && $_GET['sort'] === 'date'): ?>
+                  <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
+                <?php endif; ?>
+              </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
             </tr>
@@ -247,7 +273,7 @@
         <div class="mt-6 flex justify-center">
           <nav class="inline-flex rounded-md shadow">
             <?php if ($currentPage > 1): ?>
-              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($_GET['sort']) ? '&sort=' . $_GET['sort'] : '' ?><?= isset($_GET['order']) ? '&order=' . $_GET['order'] : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Previous
               </a>
             <?php endif; ?>
@@ -256,7 +282,7 @@
               // Show first page
               if ($currentPage > 3):
             ?>
-              <a href="<?= url('admin/management_file') ?>?page=1<?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=1<?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($_GET['sort']) ? '&sort=' . $_GET['sort'] : '' ?><?= isset($_GET['order']) ? '&order=' . $_GET['order'] : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 1
               </a>
               <?php if ($currentPage > 4): ?>
@@ -272,7 +298,7 @@
               $end = min($totalPages, $currentPage + 2);
               for ($i = $start; $i <= $end; $i++):
             ?>
-              <a href="<?= url('admin/management_file') ?>?page=<?= $i ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $i ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($_GET['sort']) ? '&sort=' . $_GET['sort'] : '' ?><?= isset($_GET['order']) ? '&order=' . $_GET['order'] : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
                 <?= $i ?>
               </a>
             <?php endfor; ?>
@@ -286,13 +312,13 @@
                     ...
                   </span>
                 <?php endif; ?>
-                <a href="<?= url('admin/management_file') ?>?page=<?= $totalPages ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="<?= url('admin/management_file') ?>?page=<?= $totalPages ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($_GET['sort']) ? '&sort=' . $_GET['sort'] : '' ?><?= isset($_GET['order']) ? '&order=' . $_GET['order'] : '' ?>" class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                   <?= $totalPages ?>
                 </a>
               <?php endif; ?>
             
             <?php if ($currentPage < $totalPages): ?>
-              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage + 1 ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage + 1 ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($_GET['sort']) ? '&sort=' . $_GET['sort'] : '' ?><?= isset($_GET['order']) ? '&order=' . $_GET['order'] : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Next
               </a>
             <?php endif; ?>
@@ -325,6 +351,10 @@ document.getElementById('filterSelect')?.addEventListener('change', function() {
   const selectedValue = this.value;
   const url = new URL(window.location);
   
+  // Preserve sorting parameters
+  const sortParam = url.searchParams.get('sort');
+  const orderParam = url.searchParams.get('order');
+  
   // Clear existing filter parameters
   url.searchParams.delete('show');
   url.searchParams.delete('type');
@@ -342,6 +372,41 @@ document.getElementById('filterSelect')?.addEventListener('change', function() {
       break;
   }
   
+  // Re-add sorting parameters if they existed
+  if(sortParam) {
+    url.searchParams.set('sort', sortParam);
+  }
+  if(orderParam) {
+    url.searchParams.set('order', orderParam);
+  }
+  
   window.location.href = url.toString();
 });
+
+// Function to handle sorting
+function sortTable(column, order, showType, search) {
+  let url = new URL(window.location);
+  
+  // Set sorting parameters
+  url.searchParams.set('sort', column);
+  url.searchParams.set('order', order);
+  
+  // Preserve existing parameters
+  if(showType) {
+    if(showType === 'all') {
+      url.searchParams.set('show', showType);
+    } else if(showType === 'unconverted') {
+      url.searchParams.set('converted', showType);
+    }
+  }
+  
+  if(search) {
+    url.searchParams.set('search', search);
+  }
+  
+  // Reset to first page when sorting
+  url.searchParams.set('page', 1);
+  
+  window.location.href = url.toString();
+}
 </script>
