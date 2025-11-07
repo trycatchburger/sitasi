@@ -35,18 +35,35 @@
     <div class="mb-6 flex flex-wrap items-center gap-4">
       <div class="flex items-center space-x-4">
         <span class="text-gray-700">Filter:</span>
-        <button id="showAllBtn" class="btn btn-secondary btn-sm <?= (!empty($showAll) && !isset($_GET['type'])) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Semua Pengajuan</button>
-        <button id="showPendingBtn" class="btn btn-secondary btn-sm <?= (empty($showAll) && !isset($_GET['type'])) ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Hanya yang Belum Diverifikasi (Default)</button>
-        <button id="showJournalBtn" class="btn btn-secondary btn-sm <?= (isset($_GET['type']) && $_GET['type'] === 'journal') ? 'bg-blue-600 text-white' : '' ?>">Tampilkan Pengajuan Jurnal Saja</button>
+        <div class="relative">
+          <select id="filterSelect" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 pl-3 pr-10 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none">
+            <option value="all" <?= (isset($_GET['show']) && $_GET['show'] === 'all') ? 'selected' : (!(isset($_GET['show']) || isset($_GET['converted'])) ? 'selected' : '') ?>>Tampilkan semua</option>
+            <option value="unconverted" <?= (isset($_GET['converted']) && $_GET['converted'] === 'unconverted') ? 'selected' : '' ?>>Tampilkan yang belum diconvert</option>
+          </select>
+          <!-- Dropdown arrow icon -->
+          <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+        </div>
       </div>
       
       <!-- Search Form -->
       <div class="flex items-center ml-auto">
         <form method="GET" action="<?= url('admin/management_file') ?>" class="flex">
-          <?php if (isset($_GET['type']) && $_GET['type'] === 'journal'): ?>
-            <input type="hidden" name="type" value="journal">
+          <?php if (isset($_GET['converted']) && $_GET['converted'] === 'unconverted'): ?>
+            <input type="hidden" name="converted" value="unconverted">
+          <?php elseif (isset($_GET['show']) && $_GET['show'] === 'all'): ?>
+            <input type="hidden" name="show" value="all">
           <?php else: ?>
-            <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'all' : 'pending') ?>">
+            <?php if (isset($_GET['show'])): ?>
+              <input type="hidden" name="show" value="<?= htmlspecialchars($_GET['show']) ?>">
+            <?php elseif (isset($_GET['converted'])): ?>
+              <input type="hidden" name="converted" value="<?= htmlspecialchars($_GET['converted']) ?>">
+            <?php else: ?>
+              <!-- Default: no filter parameter needed for all submissions -->
+            <?php endif; ?>
           <?php endif; ?>
           <input type="hidden" name="page" value="1"> <!-- Reset to first page when searching -->
           <input type="text"
@@ -56,11 +73,11 @@
                  class="border border-gray-300 rounded-l px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
           <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 014 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 0 014 0z"></path>
             </svg>
           </button>
           <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
-            <a href="<?= url('admin/management_file') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'show=all' : '') ?>&page=1"
+            <a href="<?= url('admin/management_file') ?>?<?= isset($_GET['converted']) ? 'converted=' . htmlspecialchars($_GET['converted']) : (isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : '') ?>&page=1"
                class="ml-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -72,7 +89,7 @@
     </div>
     
     <div class="mb-6 flex flex-wrap gap-2">
-      <a href="<?= url('file/downloadAll') ?>" class="btn btn-primary text-white">
+      <a href="<?= url('file/downloadAll') ?>" class="btn btn-primary text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-2 px-4">
         <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
         </svg>
@@ -108,7 +125,7 @@
               </tr>
             <?php else: ?>
               <?php foreach ($submissions as $submission): ?>
-                <tr class="hover:bg-gray-50 <?= isset($submission['is_resubmission']) && $submission['is_resubmission'] ? 'bg-green-50 border-l-4 border-l-green-40' : '' ?>">
+                <tr class="hover:bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap">
                     <?php
                       $submission_type = $submission['submission_type'] ?? 'bachelor'; // Default to bachelor if not set
@@ -142,12 +159,7 @@
                     <div class="text-sm font-medium text-gray-900 flex items-center">
                       <?= htmlspecialchars($submission['nama_mahasiswa']) ?>
                       <?php if (isset($submission['is_resubmission']) && $submission['is_resubmission']): ?>
-                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800" title="This submission has been resubmitted">
-                          <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.01 8.001 0 004.582 9m0 0H9m1 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                          </svg>
-                          Pengajuan Kembali
-                        </span>
+                        <!-- Resubmission indicator removed as requested -->
                       <?php endif; ?>
                     </div>
                     <div class="text-sm text-gray-500"><?= htmlspecialchars($submission['nim']) ?></div>
@@ -160,7 +172,7 @@
                       <div class="flex flex-col gap-1">
                         <?php foreach ($submission['files'] as $file): ?>
                           <div class="flex flex-col gap-1">
-                            <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center">
+                            <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-1 px-2 text-xs">
                               <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                               </svg>
@@ -180,15 +192,8 @@
                     <?php endif; ?>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <?php if (isset($submission['is_resubmission']) && $submission['is_resubmission'] && $submission['created_at'] !== $submission['updated_at']): ?>
-                      <div class="flex flex-col">
-                        <span class="text-xs text-gray-500">Dibuat: <?= format_datetime($submission['created_at']) ?></span>
-                        <span class="text-xs text-blue-60 font-medium">Diperbarui: <?= format_datetime($submission['updated_at']) ?></span>
-                      </div>
-                    <?php else: ?>
-                      <?= format_datetime($submission['created_at']) ?>
-                      <div class="text-xs text-gray-400"><?= format_time($submission['created_at']) ?></div>
-                    <?php endif; ?>
+                    <?= format_datetime($submission['created_at']) ?>
+                    <div class="text-xs text-gray-400"><?= format_time($submission['created_at']) ?></div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <!-- File upload form for converted files -->
@@ -196,12 +201,12 @@
                       <form action="<?= url('file/uploadConvertedFile/' . $submission['id']) ?>" method="POST" enctype="multipart/form-data" class="flex flex-col gap-1" onsubmit="return confirm('Are you sure you want to upload this converted file? This will add the file to the existing submission.')">
                         <?= csrf_field() ?>
                         <input type="file" name="converted_file" accept=".pdf,.doc,.docx" class="text-xs mb-1" required>
-                        <button type="submit" class="btn btn-success btn-sm text-xs py-1 px-2">Upload Converted</button>
+                        <button type="submit" class="btn btn-success btn-sm text-xs py-1 px-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105">Upload Converted</button>
                       </form>
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <a href="<?= url('file/download/' . $submission['id']) ?>" class="btn btn-secondary btn-sm">
+                    <a href="<?= url('file/download/' . $submission['id']) ?>" class="btn btn-secondary btn-sm bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-1 px-2 text-xs">
                       <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4l-4 4m0 0l-4-4m4 4V4"></path>
                       </svg>
@@ -220,7 +225,7 @@
         <div class="mt-6 flex justify-center">
           <nav class="inline-flex rounded-md shadow">
             <?php if ($currentPage > 1): ?>
-              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Previous
               </a>
             <?php endif; ?>
@@ -229,7 +234,7 @@
               // Show first page
               if ($currentPage > 3):
             ?>
-              <a href="<?= url('admin/management_file') ?>?page=1<?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=1<?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 1
               </a>
               <?php if ($currentPage > 4): ?>
@@ -245,7 +250,7 @@
               $end = min($totalPages, $currentPage + 2);
               for ($i = $start; $i <= $end; $i++):
             ?>
-              <a href="<?= url('admin/management_file') ?>?page=<?= $i ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $i ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
                 <?= $i ?>
               </a>
             <?php endfor; ?>
@@ -259,13 +264,13 @@
                     ...
                   </span>
                 <?php endif; ?>
-                <a href="<?= url('admin/management_file') ?>?page=<?= $totalPages ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="<?= url('admin/management_file') ?>?page=<?= $totalPages ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                   <?= $totalPages ?>
                 </a>
               <?php endif; ?>
             
             <?php if ($currentPage < $totalPages): ?>
-              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage + 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/management_file') ?>?page=<?= $currentPage + 1 ?><?= isset($_GET['converted']) && $_GET['converted'] === 'unconverted' ? '&converted=unconverted' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?>" class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Next
               </a>
             <?php endif; ?>
@@ -289,35 +294,28 @@ require __DIR__ . '/main.php';
 </style>
 
 <script>
-// Handle filter buttons
-document.getElementById('showAllBtn')?.addEventListener('click', function() {
-  // Redirect to the same page with show=all parameter
+// Handle filter dropdown
+document.getElementById('filterSelect')?.addEventListener('change', function() {
+  const selectedValue = this.value;
   const url = new URL(window.location);
-  url.searchParams.set('show', 'all');
-  url.searchParams.delete('type'); // Remove type parameter when showing all
-  url.searchParams.delete('page'); // Reset to first page when changing filter
-  url.searchParams.delete('search'); // Also clear search when changing filter
-  window.location.href = url.toString();
-});
-
-document.getElementById('showPendingBtn')?.addEventListener('click', function() {
-  // Redirect to the same page without show parameter (default is pending only)
-  const url = new URL(window.location);
+  
+  // Clear existing filter parameters
   url.searchParams.delete('show');
-  url.searchParams.delete('type'); // Remove type parameter when showing pending
+  url.searchParams.delete('type');
+  url.searchParams.delete('converted');
   url.searchParams.delete('page'); // Reset to first page when changing filter
   url.searchParams.delete('search'); // Also clear search when changing filter
-  window.location.href = url.toString();
-});
-
-// Handle journal filter button
-document.getElementById('showJournalBtn')?.addEventListener('click', function() {
-  // Redirect to the same page with type=journal parameter
-  const url = new URL(window.location);
-  url.searchParams.set('type', 'journal');
-  url.searchParams.delete('show'); // Remove show parameter when showing journals
-  url.searchParams.delete('page'); // Reset to first page when changing filter
-  url.searchParams.delete('search'); // Also clear search when changing filter
+  
+  // Set the appropriate parameter based on selection
+  switch(selectedValue) {
+    case 'all':
+      url.searchParams.set('show', 'all');
+      break;
+    case 'unconverted':
+      url.searchParams.set('converted', 'unconverted');
+      break;
+  }
+  
   window.location.href = url.toString();
 });
 </script>

@@ -872,14 +872,15 @@ class Submission
      * @param string $search Search term
      * @param bool $showAll Whether to show all submissions or only pending ones
      * @param bool $showJournal Whether to show only journal submissions
+     * @param bool $showUnconverted Whether to show only unconverted submissions
      * @param int $page Page number
      * @param int $perPage Items per page
      * @return array
      * @throws DatabaseException
      */
-    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, int $page = 1, int $perPage = 10): array
+    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false, int $page = 1, int $perPage = 10): array
     {
-        return $this->repository->searchSubmissions($search, $showAll, $showJournal, $page, $perPage);
+        return $this->repository->searchSubmissions($search, $showAll, $showJournal, $showUnconverted, $page, $perPage);
     }
     
     /**
@@ -887,12 +888,13 @@ class Submission
      * @param string $search Search term
      * @param bool $showAll Whether to count all submissions or only pending ones
      * @param bool $showJournal Whether to count only journal submissions
+     * @param bool $showUnconverted Whether to count only unconverted submissions
      * @return int
      * @throws DatabaseException
      */
-    public function countSearchResults(string $search, bool $showAll = false, bool $showJournal = false): int
+    public function countSearchResults(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false): int
     {
-        return $this->repository->countSearchResults($search, $showAll, $showJournal);
+        return $this->repository->countSearchResults($search, $showAll, $showJournal, $showUnconverted);
     }
     
     /**
@@ -956,13 +958,33 @@ class Submission
      {
          return $this->repository->countAllApproved();
      }
+/**
+ * Count all approved submissions by type (bachelor, master, journal)
+ * @return array
+ */
+public function countAllApprovedByType(): array
+{
+    return $this->repository->countAllApprovedByType();
+}
 
-     /**
-      * Count all approved submissions by type (bachelor, master, journal)
-      * @return array
-      */
-     public function countAllApprovedByType(): array
-     {
-         return $this->repository->countAllApprovedByType();
-     }
- }
+/**
+ * Find submissions that have not been converted (no additional files beyond initial submission)
+ * @param int $page Page number
+ * @param int $perPage Items per page
+ * @return array
+ */
+public function findUnconverted(int $page = 1, int $perPage = 10): array
+{
+    return $this->repository->findUnconverted($page, $perPage);
+}
+
+/**
+ * Count submissions that have not been converted (no additional files beyond initial submission)
+ * @return int
+ */
+public function countUnconverted(): int
+{
+    return $this->repository->countUnconverted();
+}
+
+}

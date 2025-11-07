@@ -834,6 +834,7 @@ class AdminController extends Controller {
              // Get query parameters
              $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
              $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
+             $showUnconverted = isset($_GET['converted']) && $_GET['converted'] === 'unconverted';
              $search = isset($_GET['search']) ? trim($_GET['search']) : '';
              $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
              $perPage = 10; // Default items per page
@@ -841,20 +842,20 @@ class AdminController extends Controller {
              // Determine which method to use based on parameters
              if (!empty($search)) {
                  // Use search functionality
-                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $page, $perPage);
-                 $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal);
+                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $showUnconverted, $page, $perPage);
+                 $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal, $showUnconverted);
              } else if ($showJournal) {
                  // Show only journal submissions
                  $submissions = $submissionModel->findJournalSubmissions($page, $perPage);
                  $totalResults = $submissionModel->countJournalSubmissions();
-             } else if ($showAll) {
-                 // Show all submissions
+             } else if ($showUnconverted) {
+                 // Show submissions that have not been converted (no additional files uploaded after initial submission)
+                 $submissions = $submissionModel->findUnconverted($page, $perPage);
+                 $totalResults = $submissionModel->countUnconverted();
+             } else {
+                 // Show all submissions by default when no specific filter is selected
                  $submissions = $submissionModel->findAll($page, $perPage);
                  $totalResults = $submissionModel->countAll();
-             } else {
-                 // Show only pending submissions (default)
-                 $submissions = $submissionModel->findPending(true, $page, $perPage);
-                 $totalResults = $submissionModel->countPending();
              }
              
              // Calculate pagination values
@@ -872,6 +873,7 @@ class AdminController extends Controller {
              $this->render('management_file', [
                  'submissions' => $submissions,
                  'showAll' => $showAll,
+                 'showUnconverted' => $showUnconverted,
                  'search' => $search,
                  'currentPage' => $page,
                  'totalPages' => $totalPages,

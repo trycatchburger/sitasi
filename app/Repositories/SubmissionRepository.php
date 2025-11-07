@@ -512,7 +512,7 @@ class SubmissionRepository extends BaseRepository
      * @return array
      * @throws DatabaseException
      */
-    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, int $page = 1, int $perPage = 10): array
+    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false, int $page = 1, int $perPage = 10): array
     {
         try {
             // Calculate offset for pagination
@@ -526,6 +526,8 @@ class SubmissionRepository extends BaseRepository
             
             if ($showJournal) {
                 $whereClause = "WHERE s.submission_type = 'journal'";
+            } else if ($showUnconverted) {
+                $whereClause = "WHERE s.id IN (SELECT sf.submission_id FROM submission_files sf GROUP BY sf.submission_id HAVING COUNT(*) <= 4)";
             } else if (!$showAll) {
                 $whereClause = "WHERE s.status = 'Pending'";
             } else {
@@ -598,7 +600,7 @@ class SubmissionRepository extends BaseRepository
      * @return int
      * @throws DatabaseException
      */
-    public function countSearchResults(string $search, bool $showAll = false, bool $showJournal = false): int
+    public function countSearchResults(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false): int
     {
         try {
             $sql = "SELECT COUNT(*) as count FROM submissions s ";
@@ -608,6 +610,8 @@ class SubmissionRepository extends BaseRepository
             
             if ($showJournal) {
                 $whereClause = "WHERE s.submission_type = 'journal'";
+            } else if ($showUnconverted) {
+                $whereClause = "WHERE s.id IN (SELECT sf.submission_id FROM submission_files sf GROUP BY sf.submission_id HAVING COUNT(*) <= 4)";
             } else if (!$showAll) {
                 $whereClause = "WHERE s.status = 'Pending'";
             } else {
@@ -637,7 +641,7 @@ class SubmissionRepository extends BaseRepository
             $types = "";
             
             if (!empty($search)) {
-                $params = [$searchTerm, $searchTerm, $searchTerm];
+                $params = [$searchTerm, $searchTerm];
                 $types = "sss";
                 
                 // Create array of references for bind_param
@@ -826,4 +830,77 @@ class SubmissionRepository extends BaseRepository
             'journal' => $this->countApprovedByType('journal')
         ];
     }
+
+    /**
+     * Find submissions that have not been converted (no additional files beyond initial submission)
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @return array
+     * @throws DatabaseException
+     */
+    public function findUnconverted(int $page = 1, int $perPage = 10): array
+    {
+        try {
+            // Calculate offset for pagination
+            $offset = ($page - 1) * $perPage;
+            
+            // Find submissions that have only the original files (typically 4 for bachelor/master, 2 for journal)
+            // We'll use a subquery to find submissions that have a specific number of files that matches
+            // the expected number of original files only
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id IN (
+                SELECT sf.submission_id FROM submission_files sf GROUP BY sf.submission_id HAVING COUNT(*) <= 4
+            ) ORDER BY s.created_at DESC LIMIT ? OFFSET ?";
+            
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt->bind_param("ii", $perPage, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $submissions = $result->fetch_all(MYSQLI_ASSOC);
+            
+            // For each submission, get its files
+            foreach ($submissions as &$submission) {
+                $stmt_files = $this->conn->prepare("SELECT id, file_path, file_name FROM submission_files WHERE submission_id = ?");
+                if (!$stmt_files) {
+                    throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+                }
+                $stmt_files->bind_param("i", $submission['id']);
+                $stmt_files->execute();
+                $submission['files'] = $stmt_files->get_result()->fetch_all(MYSQLI_ASSOC);
+            }
+            
+            return $submissions;
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while fetching unconverted submissions: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Count submissions that have not been converted (no additional files beyond initial submission)
+     * @return int
+     * @throws DatabaseException
+     */
+    public function countUnconverted(): int
+    {
+        try {
+            // Count submissions that have only the original files (typically 4 for bachelor/master, 2 for journal)
+            $sql = "SELECT COUNT(*) as count FROM submissions s WHERE s.id IN (
+                SELECT sf.submission_id FROM submission_files sf GROUP BY sf.submission_id HAVING COUNT(*) <= 4
+            )";
+            
+            $result = $this->conn->query($sql);
+            if ($result === false) {
+                throw new DatabaseException("Database query failed: " . $this->conn->error);
+            }
+            
+            $row = $result->fetch_assoc();
+            return (int) $row['count'];
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while counting unconverted submissions: " . $e->getMessage());
+        }
+    }
+
 }
