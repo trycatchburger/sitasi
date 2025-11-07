@@ -171,19 +171,41 @@
                     <?php if (!empty($submission['files'])): ?>
                       <div class="flex flex-col gap-1">
                         <?php foreach ($submission['files'] as $file): ?>
+                          <?php
+                            // Extract the file label from the file name to show what type of file it is
+                            $fileNameWithoutExtension = pathinfo($file['file_name'], PATHINFO_FILENAME);
+                            $fileNameParts = explode('.', $fileNameWithoutExtension);
+                            $fileLabel = '';
+                            
+                            if (count($fileNameParts) >= 1) {
+                              $fileLabel = $fileNameParts[0]; // First part is the label
+                              
+                              // Map the file label to specific labels for better readability
+                              if (stripos($fileLabel, 'cover') !== false) {
+                                  $displayLabel = 'Cover';
+                              } else if (stripos($fileLabel, 'bab1') !== false || stripos($fileLabel, 'transkrip') !== false) {
+                                  $displayLabel = 'Bab 1';
+                              } else if (stripos($fileLabel, 'bab2') !== false || stripos($fileLabel, 'toefl') !== false) {
+                                  $displayLabel = 'Bab 2';
+                              } else if (stripos($fileLabel, 'persetujuan') !== false || stripos($fileLabel, 'doc') !== false) {
+                                  $displayLabel = 'Full Version.doc';
+                              } else if (stripos($fileLabel, 'converted') !== false) {
+                                  $displayLabel = 'Converted';
+                              } else {
+                                  $displayLabel = ucfirst(str_replace('_', ' ', $fileLabel));
+                              }
+                            } else {
+                              $displayLabel = 'File';
+                            }
+                          ?>
                           <div class="flex flex-col gap-1">
+                            <div class="text-xs font-medium text-gray-700"><?= htmlspecialchars($displayLabel) ?></div>
                             <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-1 px-2 text-xs">
                               <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                               </svg>
                               View
                             </a>
-                            
-                            <?php
-                              $fileExtension = strtolower(pathinfo($file['file_name'], PATHINFO_EXTENSION));
-                              if (in_array($fileExtension, ['doc', 'docx'])):
-                            ?>
-                            <?php endif; ?>
                           </div>
                         <?php endforeach; ?>
                       </div>
