@@ -481,7 +481,7 @@ class FileController extends Controller {
 
             // Redirect back to dashboard with success message
             $_SESSION['success_message'] = "File uploaded successfully to submission.";
-            header('Location: ' . url('admin/dashboard'));
+            header('Location: ' . url('admin/management_file'));
             exit;
 
         } catch (Exception $e) {
