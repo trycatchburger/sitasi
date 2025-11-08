@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\Database;
+use App\Repositories\UserReferenceRepository;
 use Exception;
 use mysqli;
 
@@ -373,8 +374,151 @@ class FileController extends Controller {
      * @param int $fileId The ID of the file to view
      */
     public function viewAsPdf(int $fileId): void {
-        // Simply redirect to the regular view function to display the original file
-        $this->view($fileId);
+        // First check if user is logged in as admin (they can always view files)
+        if ($this->isAdminLoggedIn()) {
+            $this->view($fileId);
+            return;
+        }
+
+        // Check if user is logged in as a regular user
+        if (!$this->isUserLoggedIn()) {
+            // Not logged in as either admin or user, redirect to login
+            http_response_code(403);
+            header('Location: ' . url('user/login'));
+            return;
+        }
+
+        // User is logged in, now check if they have permission to view this file
+        // by checking if the submission containing this file is in their references
+        $currentUser = $this->getCurrentUser();
+        $userId = $currentUser['id'] ?? null;
+
+        if (!$userId) {
+            http_response_code(403);
+            header('Location: ' . url('user/login'));
+            return;
+        }
+
+        // Get the file information to find which submission it belongs to
+        $stmt = $this->conn->prepare("SELECT sf.submission_id, sf.file_name, sf.file_path FROM submission_files sf WHERE sf.id = ?");
+        $stmt->bind_param("i", $fileId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
+            http_response_code(404);
+            echo "File not found.";
+            return;
+        }
+
+        $fileInfo = $result->fetch_assoc();
+        $submissionId = $fileInfo['submission_id'];
+
+        // Check if this submission is in the user's references
+        $userReferenceRepo = new \App\Repositories\UserReferenceRepository($this->conn);
+        if (!$userReferenceRepo->isReference($userId, $submissionId)) {
+            http_response_code(403);
+            echo "Access denied. You must add this submission to your references to view its files.";
+            return;
+        }
+
+        // Check if this is a DOC/DOCX file and if there's a converted PDF version available
+        $originalFileName = $fileInfo['file_name'];
+        $fileExtension = strtolower(pathinfo($originalFileName, PATHINFO_EXTENSION));
+        
+        // If the requested file is already a PDF, serve it directly
+        if ($fileExtension === 'pdf') {
+            $this->serveFile($fileId, 'inline');
+            return;
+        }
+
+        // If it's a DOC/DOCX file, try to find the converted PDF version
+        if ($fileExtension === 'doc' || $fileExtension === 'docx') {
+            // Get the base name without extension to match converted files
+            $baseFileName = pathinfo($originalFileName, PATHINFO_FILENAME); // This gives us something like "Doc.123456789_John Doe"
+            
+            // Look for a converted PDF file that corresponds to this DOC/DOCX file
+            // First, try exact match with .pdf extension
+            $convertedStmt = $this->conn->prepare("SELECT id FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+            $pdfPattern = $baseFileName . '.pdf';
+            $convertedStmt->bind_param("is", $submissionId, $pdfPattern);
+            $convertedStmt->execute();
+            $convertedResult = $convertedStmt->get_result();
+            
+            if ($convertedResult->num_rows > 0) {
+                // Found exact match for converted file
+                $convertedFile = $convertedResult->fetch_assoc();
+                $this->serveFile($convertedFile['id'], 'inline');
+                return;
+            }
+            
+            // If no exact match, try to find a converted file by looking for patterns that might indicate a converted file
+            // Try with different patterns that might be used for converted files
+            $patterns = [
+                '%' . $baseFileName . '%.pdf',  // Pattern: contains base filename + .pdf
+                '%converted%' . $baseFileName . '%.pdf',  // Pattern: contains "converted" + base filename + .pdf
+                '%' . $baseFileName . '%converted%.pdf',  // Pattern: contains base filename + "converted" + .pdf
+                '%Converted%' . $baseFileName . '%.pdf',  // Pattern: contains "Converted" + base filename + .pdf
+                '%' . $baseFileName . '%Converted%.pdf',  // Pattern: contains base filename + "Converted" + .pdf
+                '%' . $baseFileName . '%.pdf%'            // Pattern: contains base filename + .pdf + anything
+            ];
+            
+            foreach ($patterns as $pattern) {
+                $altConvertedStmt = $this->conn->prepare("SELECT id, file_name FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+                $altConvertedStmt->bind_param("is", $submissionId, $pattern);
+                $altConvertedStmt->execute();
+                $altConvertedResult = $altConvertedStmt->get_result();
+                
+                if ($altConvertedResult->num_rows > 0) {
+                    $convertedFile = $altConvertedResult->fetch_assoc();
+                    $this->serveFile($convertedFile['id'], 'inline');
+                    return;
+                }
+            }
+            
+            // If still no converted PDF found, try to find any PDF in the submission that might be a converted version
+            // by looking for PDF files that have similar naming patterns to the original file
+            $allPdfStmt = $this->conn->prepare("SELECT id, file_name FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+            $allPdfPattern = '%' . pathinfo($baseFileName, PATHINFO_FILENAME) . '%.pdf'; // Match just the main part of the filename
+            $allPdfStmt->bind_param("is", $submissionId, $allPdfPattern);
+            $allPdfStmt->execute();
+            $allPdfResult = $allPdfStmt->get_result();
+            
+            if ($allPdfResult->num_rows > 0) {
+                $convertedFile = $allPdfResult->fetch_assoc();
+                $this->serveFile($convertedFile['id'], 'inline');
+                return;
+            }
+            
+            // Try to find a PDF file that might be a converted version by checking if there's any PDF file
+            // in the submission that isn't one of the standard file types (cover, bab1, bab2, doc)
+            // Look for any PDF file that doesn't match the standard types, which could be a converted file
+            $otherPdfStmt = $this->conn->prepare("SELECT id, file_name FROM submission_files WHERE submission_id = ? AND file_name LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ?");
+            $pdfPattern = '%.pdf';
+            $coverPattern = '%cover%.pdf';
+            $bab1Pattern = '%bab1%.pdf';
+            $bab2Pattern = '%bab2%.pdf';
+            $docPattern = '%doc%.pdf';
+            
+            $otherPdfStmt->bind_param("isssss", $submissionId, $pdfPattern, $coverPattern, $bab1Pattern, $bab2Pattern, $docPattern);
+            $otherPdfStmt->execute();
+            $otherPdfResult = $otherPdfStmt->get_result();
+            
+            if ($otherPdfResult->num_rows > 0) {
+                // Just get the first PDF that could be a converted version
+                $convertedFile = $otherPdfResult->fetch_assoc();
+                $this->serveFile($convertedFile['id'], 'inline');
+                return;
+            }
+            
+            // If no converted PDF found, fall back to serving the original DOC/DOCX file
+            // This might not render properly in the browser, but it's better than nothing
+            $this->serveFile($fileId, 'inline');
+            return;
+        }
+
+        // For other file types, serve directly
+        $this->serveFile($fileId, 'inline');
     }
 
     /**
