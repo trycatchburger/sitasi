@@ -106,13 +106,13 @@
                 <div class="flex space-x-2">
                 <?php if ($docFile || $fileToShow): ?>
                 <?php if ($fileToShow): ?>
-                <a href="<?= url('file/protectedView/' . $fileToShow['id']) ?>"
+                <a href="<?= url('file/cleanPdfJsView/' . $fileToShow['id']) ?>"
                    target="_blank"
                    class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg transition text-sm font-medium">
                   View PDF
                 </a>
                 <?php elseif ($docFile): ?>
-                <a href="<?= url('file/protectedView/' . $docFile['id']) ?>"
+                <a href="<?= url('file/cleanPdfJsView/' . $docFile['id']) ?>"
                    target="_blank"
                    class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg transition text-sm font-medium">
                   View

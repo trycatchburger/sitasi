@@ -983,4 +983,574 @@ class FileController extends Controller {
         </html>
         <?php
     }
+    
+    /**
+     * Display a PDF using PDF.js viewer with enhanced security
+     * @param int $fileId The ID of the file to view
+     */
+    public function securePdfJsView(int $fileId): void {
+        // First check if user is logged in as admin (they can always view files)
+        if ($this->isAdminLoggedIn()) {
+            $this->view($fileId);
+            return;
+        }
+
+        // Check if user is logged in as a regular user
+        if (!$this->isUserLoggedIn()) {
+            // Not logged in as either admin or user, redirect to login
+            http_response_code(403);
+            header('Location: ' . url('user/login'));
+            return;
+        }
+
+        // User is logged in, now check if they have permission to view this file
+        // by checking if the submission containing this file is in their references
+        $currentUser = $this->getCurrentUser();
+        $userId = $currentUser['id'] ?? null;
+
+        if (!$userId) {
+            http_response_code(403);
+            header('Location: ' . url('user/login'));
+            return;
+        }
+
+        // Get the file information to find which submission it belongs to
+        $stmt = $this->conn->prepare("SELECT sf.submission_id, sf.file_name, sf.file_path FROM submission_files sf WHERE sf.id = ?");
+        $stmt->bind_param("i", $fileId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
+            http_response_code(404);
+            echo "File not found.";
+            return;
+        }
+
+        $fileInfo = $result->fetch_assoc();
+        $submissionId = $fileInfo['submission_id'];
+
+        // Check if this submission is in the user's references
+        $userReferenceRepo = new \App\Repositories\UserReferenceRepository($this->conn);
+        if (!$userReferenceRepo->isReference($userId, $submissionId)) {
+            http_response_code(403);
+            echo "Access denied. You must add this submission to your references to view its files.";
+            return;
+        }
+
+        // Check if this is a PDF file
+        $originalFileName = $fileInfo['file_name'];
+        $fileExtension = strtolower(pathinfo($originalFileName, PATHINFO_EXTENSION));
+        
+        if ($fileExtension !== 'pdf') {
+            http_response_code(400);
+            echo "Only PDF files can be displayed with this secure viewer.";
+            return;
+        }
+
+        // Set security headers
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('X-XSS-Protection: 1; mode=block');
+        header('Cache-Control: no-store, no-cache, must-revalidate, private');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        // Set security headers
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('X-XSS-Protection: 1; mode=block');
+        header('Cache-Control: no-store, no-cache, must-revalidate, private');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        // For PDF.js, we need to handle authentication differently
+        // We'll pass the file ID and let the viewer handle the authenticated request
+        
+        // Render the secure PDF viewer page with the file ID
+        $this->renderSecurePdfViewer($fileId, $originalFileName);
+    }
+
+    /**
+     * Render the secure PDF viewer page using PDF.js
+     * @param string $pdfUrl The URL to the PDF file
+     * @param string $fileName The name of the file
+     */
+    private function renderSecurePdfViewer(int $fileId, string $fileName): void {
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Secure PDF Viewer - <?= htmlspecialchars($fileName) ?></title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    overflow: hidden;
+                    background-color: #eee;
+                    font-family: sans-serif;
+                }
+                
+                .toolbar {
+                    height: 40px;
+                    background-color: #4285f4;
+                    color: white;
+                    line-height: 40px;
+                    padding: 0 10px;
+                    display: flex;
+                    justify-content: space-between;
+                }
+                
+                .pdf-container {
+                    width: 100vw;
+                    height: calc(100vh - 40px);
+                }
+                
+                #pdf-render {
+                    width: 100%;
+                    height: 100%;
+                    display: block;
+                }
+                
+                .warning-message {
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    background: rgba(25, 255, 255, 0.9);
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    font-size: 14px;
+                    color: #d32f2f;
+                    z-index: 1000;
+                    box-shadow: 0 2px 4px rgba(0,0,0.1);
+                }
+                
+                @media print {
+                    body { display: none !important; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="toolbar">
+                <div>Secure PDF Viewer - <?= htmlspecialchars($fileName) ?></div>
+                <div><button onclick="goBack()">Back</button></div>
+            </div>
+            <div class="pdf-container">
+                <canvas id="pdf-render"></canvas>
+            </div>
+            <div class="warning-message">Protected Document - Do not download or print</div>
+
+            <!-- PDF.js viewer -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+            <script>
+                // Disable common shortcuts
+                document.addEventListener('keydown', function(e) {
+                    // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S, Ctrl+P
+                    if (
+                        e.keyCode === 123 ||
+                        (e.ctrlKey && e.shiftKey && e.keyCode === 73) ||
+                        (e.ctrlKey && e.shiftKey && e.keyCode === 74) ||
+                        (e.ctrlKey && e.keyCode === 85) ||
+                        (e.ctrlKey && e.keyCode === 83) ||
+                        (e.ctrlKey && e.keyCode === 80) ||
+                        e.keyCode === 12 // F1 key (help)
+                    ) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+
+                // Disable right-click
+                document.addEventListener('contextmenu', event => {
+                    event.preventDefault();
+                    return false;
+                });
+
+                // Disable drag and drop
+                document.addEventListener('dragstart', function(e) {
+                    e.preventDefault();
+                    return false;
+                });
+
+                // Disable text selection
+                document.onselectstart = function() {
+                    return false;
+                };
+
+                // Disable copy
+                document.addEventListener('copy', function(e) {
+                    e.preventDefault();
+                    return false;
+                });
+
+                // Go back function
+                function goBack() {
+                    window.history.back();
+                }
+
+                // Set PDF.js worker
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+                // Define the PDF URL
+                const pdfUrl = '<?= url('file/publicView/' . $fileId) ?>';
+                
+                console.log('Attempting to load PDF from URL:', pdfUrl);
+                
+                // Global variables for PDF and current page
+                let pdf = null;
+                let currentPage = 1;
+                let scale = 1.0; // Start with a scale that fits the container
+
+                // Use PDF.js to directly load the PDF from the URL
+                const loadingTask = pdfjsLib.getDocument({
+                    url: pdfUrl,
+                    withCredentials: true  // Include cookies in the request
+                });
+                
+                loadingTask.promise.then(function(loadedPdf) {
+                    console.log('PDF loaded, total pages:', loadedPdf.numPages);
+                    pdf = loadedPdf;
+                    
+                    // Render the first page
+                    renderPage(currentPage);
+                }).catch(function(error) {
+                    console.error('Error loading PDF:', error);
+                    alert('Error loading PDF. Please try again or contact support.');
+                });
+                
+                // Function to render a specific page
+                function renderPage(pageNumber) {
+                    if (!pdf) return;
+                    
+                    pdf.getPage(pageNumber).then(function(page) {
+                        console.log('Rendering page', pageNumber);
+                        
+                        // Get the canvas and context
+                        const canvas = document.getElementById('pdf-render');
+                        const context = canvas.getContext('2d');
+                        
+                        // Calculate scale to fit the page to the container width
+                        const containerWidth = canvas.parentElement.clientWidth;
+                        const containerHeight = canvas.parentElement.clientHeight;
+                        const viewport = page.getViewport({ scale: 1.0 });
+                        
+                        // Calculate scales for both width and height
+                        const scaleX = containerWidth / viewport.width;
+                        const scaleY = containerHeight / viewport.height;
+                        
+                        // Use the smaller scale to fit both dimensions, with a maximum of 1.5
+                        scale = Math.min(scaleX, scaleY, 1.5);
+                        
+                        // Recalculate viewport with the adjusted scale
+                        const scaledViewport = page.getViewport({ scale: scale });
+                        
+                        // Set canvas dimensions to match the scaled viewport
+                        canvas.height = scaledViewport.height;
+                        canvas.width = scaledViewport.width;
+                        
+                        // Clear the canvas before drawing
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Render the page on the canvas
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: scaledViewport
+                        };
+                        const renderTask = page.render(renderContext);
+                        renderTask.promise.then(function() {
+                            console.log('Page', pageNumber, 'rendered successfully');
+                        }).catch(function(renderError) {
+                            console.error('Error rendering page:', renderError);
+                        });
+                    });
+                }
+                
+                // Navigation functions - define globally so they can be called from HTML
+                window.goToPage = function(pageNumber) {
+                    if (!pdf || pageNumber < 1 || pageNumber > pdf.numPages) return;
+                    currentPage = pageNumber;
+                    renderPage(currentPage);
+                    updatePageInfo();
+                };
+                
+                window.nextPage = function() {
+                    if (pdf && currentPage < pdf.numPages) {
+                        window.goToPage(currentPage + 1);
+                    }
+                };
+                
+                window.prevPage = function() {
+                    if (pdf && currentPage > 1) {
+                        window.goToPage(currentPage - 1);
+                    }
+                };
+                
+                // Update page info display
+                function updatePageInfo() {
+                    const pageInfoElement = document.getElementById('page-info');
+                    if (pageInfoElement && pdf) {
+                        pageInfoElement.textContent = `${currentPage} of ${pdf.numPages}`;
+                    }
+                }
+                
+                // Update toolbar with navigation controls after PDF is loaded
+                function updateToolbar() {
+                    if (!pdf) return;
+                    
+                    const toolbar = document.querySelector('.toolbar');
+                    if (toolbar) {
+                        // Create navigation controls
+                        const navControls = document.createElement('div');
+                        navControls.innerHTML = `
+                            <button onclick="window.prevPage()" id="prev-page-btn">‹ Prev</button>
+                            <span id="page-info">${currentPage} of ${pdf.numPages}</span>
+                            <button onclick="window.nextPage()" id="next-page-btn">Next ›</button>
+                        `;
+                        toolbar.appendChild(navControls);
+                    }
+                }
+                
+                // Call updateToolbar after PDF is loaded
+                updateToolbar();
+            </script>
+        </body>
+        </html>
+        <?php
+    }
+    
+    /**
+     * Display a clean PDF using PDF.js viewer without protection elements
+     * @param int $fileId The ID of the file to view
+     */
+    public function cleanPdfJsView(int $fileId): void {
+        // First check if user is logged in as admin (they can always view files)
+        if ($this->isAdminLoggedIn()) {
+            $this->view($fileId);
+            return;
+        }
+
+        // Check if user is logged in as a regular user
+        if (!$this->isUserLoggedIn()) {
+            // Not logged in as either admin or user, redirect to login
+            http_response_code(403);
+            header('Location: ' . url('user/login'));
+            return;
+        }
+
+        // User is logged in, now check if they have permission to view this file
+        // by checking if the submission containing this file is in their references
+        $currentUser = $this->getCurrentUser();
+        $userId = $currentUser['id'] ?? null;
+
+        if (!$userId) {
+            http_response_code(403);
+            header('Location: ' . url('user/login'));
+            return;
+        }
+
+        // Get the file information to find which submission it belongs to
+        $stmt = $this->conn->prepare("SELECT sf.submission_id, sf.file_name, sf.file_path FROM submission_files sf WHERE sf.id = ?");
+        $stmt->bind_param("i", $fileId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
+            http_response_code(404);
+            echo "File not found.";
+            return;
+        }
+
+        $fileInfo = $result->fetch_assoc();
+        $submissionId = $fileInfo['submission_id'];
+
+        // Check if this submission is in the user's references
+        $userReferenceRepo = new \App\Repositories\UserReferenceRepository($this->conn);
+        if (!$userReferenceRepo->isReference($userId, $submissionId)) {
+            http_response_code(403);
+            echo "Access denied. You must add this submission to your references to view its files.";
+            return;
+        }
+
+        // Check if this is a PDF file
+        $originalFileName = $fileInfo['file_name'];
+        $fileExtension = strtolower(pathinfo($originalFileName, PATHINFO_EXTENSION));
+        
+        if ($fileExtension !== 'pdf') {
+            http_response_code(400);
+            echo "Only PDF files can be displayed with this secure viewer.";
+            return;
+        }
+
+        // Set security headers
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('X-XSS-Protection: 1; mode=block');
+        header('Cache-Control: no-store, no-cache, must-revalidate, private');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        // Render the clean PDF viewer page with the file ID
+        $this->renderCleanPdfViewer($fileId, $originalFileName);
+    }
+
+    /**
+     * Render a clean PDF viewer page using PDF.js without protection elements
+     * @param int $fileId The ID of the file
+     * @param string $fileName The name of the file
+     */
+    private function renderCleanPdfViewer(int $fileId, string $fileName): void {
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>PDF Viewer - <?= htmlspecialchars($fileName) ?></title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    overflow: hidden;
+                    background-color: #eee;
+                    font-family: sans-serif;
+                }
+                
+                .toolbar {
+                    height: 40px;
+                    background-color: #4285f4;
+                    color: white;
+                    line-height: 40px;
+                    padding: 0 10px;
+                    display: flex;
+                    justify-content: space-between;
+                }
+                
+                .pdf-container {
+                    width: 100vw;
+                    height: calc(100vh - 40px);
+                    overflow-y: auto;
+                    padding: 20px;
+                    box-sizing: border-box;
+                }
+                
+                .page-container {
+                    margin: 10px auto;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+                    margin-bottom: 20px;
+                }
+                
+                @media print {
+                    body { display: none !important; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="toolbar">
+                <div>PDF Viewer - <?= htmlspecialchars($fileName) ?></div>
+            </div>
+            <div class="pdf-container" id="pdf-container">
+                <!-- Pages will be rendered here -->
+            </div>
+
+            <!-- PDF.js viewer -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+            <script>
+                // Set PDF.js worker
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+                // Define the PDF URL
+                const pdfUrl = '<?= url('file/publicView/' . $fileId) ?>';
+                
+                console.log('Attempting to load PDF from URL:', pdfUrl);
+                
+                // Global variables for PDF
+                let pdf = null;
+                let scale = 1.0; // Start with a scale that fits the container
+
+                // Use PDF.js to directly load the PDF from the URL
+                const loadingTask = pdfjsLib.getDocument({
+                    url: pdfUrl,
+                    withCredentials: true  // Include cookies in the request
+                });
+                
+                loadingTask.promise.then(function(loadedPdf) {
+                    console.log('PDF loaded, total pages:', loadedPdf.numPages);
+                    pdf = loadedPdf;
+                    
+                    // Render all pages
+                    renderAllPages();
+                }).catch(function(error) {
+                    console.error('Error loading PDF:', error);
+                    alert('Error loading PDF. Please try again or contact support.');
+                });
+                
+                // Function to render all pages
+                function renderAllPages() {
+                    if (!pdf) return;
+                    
+                    const container = document.getElementById('pdf-container');
+                    
+                    // Clear the container
+                    container.innerHTML = '';
+                    
+                    // Render each page
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        renderPage(pageNum, container);
+                    }
+                }
+                
+                // Function to render a specific page
+                function renderPage(pageNumber, container) {
+                    if (!pdf) return;
+                    
+                    pdf.getPage(pageNumber).then(function(page) {
+                        console.log('Rendering page', pageNumber);
+                        
+                        // Create a canvas for this page
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        
+                        // Calculate scale to fit the page to the container width
+                        const containerWidth = container.clientWidth - 40; // Account for margins
+                        const viewport = page.getViewport({ scale: 1.0 });
+                        
+                        // Calculate scale based on container width
+                        const scaleX = containerWidth / viewport.width;
+                        scale = scaleX;
+                        
+                        // Recalculate viewport with the adjusted scale
+                        const scaledViewport = page.getViewport({ scale: scale });
+                        
+                        // Set canvas dimensions to match the scaled viewport
+                        canvas.height = scaledViewport.height;
+                        canvas.width = scaledViewport.width;
+                        
+                        // Add the canvas to the page container
+                        const pageContainer = document.createElement('div');
+                        pageContainer.className = 'page-container';
+                        pageContainer.appendChild(canvas);
+                        container.appendChild(pageContainer);
+                        
+                        // Clear the canvas before drawing
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Render the page on the canvas
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: scaledViewport
+                        };
+                        const renderTask = page.render(renderContext);
+                        renderTask.promise.then(function() {
+                            console.log('Page', pageNumber, 'rendered successfully');
+                        }).catch(function(renderError) {
+                            console.error('Error rendering page:', renderError);
+                        });
+                    });
+                }
+            </script>
+        </body>
+        </html>
+        <?php
+    }
 }
