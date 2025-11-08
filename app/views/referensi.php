@@ -3,7 +3,7 @@
   <h1 class="text-3xl font-bold text-gray-900 mb-8">Daftar Referensi Saya</h1>
 
   <?php if (isset($error)): ?>
-    <div class="bg-red-100 border border-red-40 text-red-700 px-4 py-3 rounded mb-6">
+    <div class="bg-red-100 border-red-40 text-red-70 px-4 py-3 rounded mb-6">
       <?= htmlspecialchars($error) ?>
     </div>
   <?php endif; ?>
@@ -29,7 +29,7 @@
                       </svg>
                     </div>
                   <?php endif; ?>
-                  <h3 class="font-bold text-gray-900 line-clamp-2"><?= htmlspecialchars($reference['judul_skripsi']) ?></h3>
+                  <h3 class="font-bold text-gray-90 line-clamp-2"><?= htmlspecialchars($reference['judul_skripsi']) ?></h3>
                 </div>
                 <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">
                   <?= htmlspecialchars($reference['tahun_publikasi']) ?>
@@ -57,29 +57,70 @@
 
               <div class="flex space-x-3">
                 <?php
-                // Find the DOC file for this submission
+                // Find the DOC/PDF file for this submission (prioritizing the converted PDF from DOC files)
                 $docFile = null;
+                $pdfFile = null;
+                $convertedPdfFile = null;
+                
                 if (isset($reference['files']) && is_array($reference['files'])) {
                     foreach ($reference['files'] as $file) {
                         $fileName = $file['file_name'];
                         $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                        $fileBaseName = pathinfo($fileName, PATHINFO_FILENAME);
+                        
                         if ($fileExtension === 'doc' || $fileExtension === 'docx') {
                             $docFile = $file;
-                            break;
+                            // Look for a PDF with the same base name + '_converted' or similar pattern
+                            $expectedConvertedNames = [
+                                $fileBaseName . '_converted.pdf',
+                                $fileBaseName . '_converted.pdf',
+                                preg_replace('/\.(doc|docx)$/i', '_converted.pdf', $fileName),
+                                preg_replace('/\.(doc|docx)$/i', '.pdf', $fileName) // Direct conversion
+                            ];
+                        } else if ($fileExtension === 'pdf') {
+                            // Check if this PDF is likely a converted version of the DOC file
+                            if ($docFile) {
+                                $docBaseName = pathinfo($docFile['file_name'], PATHINFO_FILENAME);
+                                
+                                // Check if this PDF has the same base name as the DOC file
+                                // or has a converted-like name pattern
+                                if (stripos($fileName, $docBaseName . '_converted') !== false ||
+                                    stripos($fileName, $docBaseName . '_pdf') !== false ||
+                                    preg_replace('/\.(doc|docx)$/i', '.pdf', $docFile['file_name']) === $fileName ||
+                                    $fileBaseName === $docBaseName . '_converted') {
+                                    $convertedPdfFile = $file;
+                                }
+                            }
+                            
+                            // If we haven't found a converted PDF yet, store any PDF as fallback
+                            if (!$pdfFile) {
+                                $pdfFile = $file;
+                            }
                         }
                     }
                 }
+                
+                // Prioritize the converted PDF file if found, otherwise use any PDF file
+                $fileToShow = $convertedPdfFile ?: $pdfFile;
                 ?>
                 <div class="flex space-x-2">
-                <?php if ($docFile): ?>
-                <a href="<?= url('file/viewAsPdf/' . $docFile['id']) ?>"
+                <?php if ($docFile || $fileToShow): ?>
+                <?php if ($fileToShow): ?>
+                <a href="<?= url('file/protectedView/' . $fileToShow['id']) ?>"
+                   target="_blank"
+                   class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg transition text-sm font-medium">
+                  View PDF
+                </a>
+                <?php elseif ($docFile): ?>
+                <a href="<?= url('file/protectedView/' . $docFile['id']) ?>"
                    target="_blank"
                    class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg transition text-sm font-medium">
                   View
                 </a>
                 <?php endif; ?>
+                <?php endif; ?>
                 <a href="<?= url('submission/' . ($reference['submission_type'] === 'journal' ? 'journalDetail' : 'detail') . '/' . $reference['id']) ?>"
-                   class="flex-1 text-center bg-white border border-gray-30 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
+                   class="flex-1 text-center bg-white border border-gray-30 text-gray-70 py-2 px-3 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
                   Detail
                 </a>
                 <button id="removeReferenceBtn_<?= $reference['id'] ?>"
@@ -98,13 +139,13 @@
     <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
       <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
         <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
       <h3 class="text-xl font-semibold text-gray-900 mb-2">Belum ada referensi</h3>
       <p class="text-gray-600 mb-6">Anda belum menambahkan submission apapun ke referensi Anda.</p>
       <a href="<?= url('submission/repository') ?>" 
-         class="inline-block bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition">
+         class="inline-block bg-green-600 hover:bg-green-70 text-white font-medium py-3 px-6 rounded-lg transition">
         Cari Submission
       </a>
     </div>

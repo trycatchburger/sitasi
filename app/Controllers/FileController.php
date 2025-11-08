@@ -104,6 +104,24 @@ class FileController extends Controller {
             header('Content-Disposition: ' . $disposition . '; filename="' . basename($file['file_name']) . '"');
             header('Content-Length: ' . filesize($fullPath));
             
+            // Add security headers
+            header('X-Content-Type-Options: nosniff');
+            header('X-XSS-Protection: 1; mode=block');
+            
+            // For inline viewing, we need to allow the file to be displayed in the browser
+            // but we can add some protections against external embedding
+            if ($disposition === 'inline') {
+                // Allow same-origin framing but prevent external sites from embedding
+                header('X-Frame-Options: SAMEORIGIN');
+            } else {
+                header('X-Frame-Options: DENY');
+            }
+            
+            // Cache control headers to prevent caching
+            header('Cache-Control: no-store, no-cache, must-revalidate, private');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            
             // Output the file content
             readfile($fullPath);
             
@@ -632,5 +650,337 @@ class FileController extends Controller {
             http_response_code(500);
             echo "An error occurred while uploading the file: " . $e->getMessage();
         }
+    }
+
+    /**
+     * Display a protected PDF viewer with JavaScript protections
+     * @param int $fileId The ID of the file to view
+     */
+    public function protectedView(int $fileId): void {
+        // First check if user is logged in as admin (they can always view files)
+        if ($this->isAdminLoggedIn()) {
+            $this->view($fileId);
+            return;
+        }
+
+        // Check if user is logged in as a regular user
+        if (!$this->isUserLoggedIn()) {
+            // Not logged in as either admin or user, redirect to login
+            http_response_code(403);
+            header('Location: ' . url('user/login'));
+            return;
+        }
+
+        // User is logged in, now check if they have permission to view this file
+        // by checking if the submission containing this file is in their references
+        $currentUser = $this->getCurrentUser();
+        $userId = $currentUser['id'] ?? null;
+
+        if (!$userId) {
+            http_response_code(403);
+            header('Location: ' . url('user/login'));
+            return;
+        }
+
+        // Get the file information to find which submission it belongs to
+        $stmt = $this->conn->prepare("SELECT sf.submission_id, sf.file_name, sf.file_path FROM submission_files sf WHERE sf.id = ?");
+        $stmt->bind_param("i", $fileId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 0) {
+            http_response_code(404);
+            echo "File not found.";
+            return;
+        }
+
+        $fileInfo = $result->fetch_assoc();
+        $submissionId = $fileInfo['submission_id'];
+
+        // Check if this submission is in the user's references
+        $userReferenceRepo = new \App\Repositories\UserReferenceRepository($this->conn);
+        if (!$userReferenceRepo->isReference($userId, $submissionId)) {
+            http_response_code(403);
+            echo "Access denied. You must add this submission to your references to view its files.";
+            return;
+        }
+
+        // Check if this is a DOC/DOCX file and if there's a converted PDF version available
+        $originalFileName = $fileInfo['file_name'];
+        $fileExtension = strtolower(pathinfo($originalFileName, PATHINFO_EXTENSION));
+        
+        // If it's a DOC/DOCX file, try to find the converted PDF version first
+        if ($fileExtension === 'doc' || $fileExtension === 'docx') {
+            // Get the base name without extension to match converted files
+            $baseFileName = pathinfo($originalFileName, PATHINFO_FILENAME); // This gives us something like "Doc.123456789_John Doe"
+            
+            // Look for a converted PDF file that corresponds to this DOC/DOCX file
+            // First, try exact match with .pdf extension
+            $convertedStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+            $pdfPattern = $baseFileName . '.pdf';
+            $convertedStmt->bind_param("is", $submissionId, $pdfPattern);
+            $convertedStmt->execute();
+            $convertedResult = $convertedStmt->get_result();
+            
+            if ($convertedResult->num_rows > 0) {
+                // Found exact match for converted file
+                $convertedFile = $convertedResult->fetch_assoc();
+                // Set up the protected viewer page for the converted PDF
+                $this->renderProtectedViewer($convertedFile['id'], $convertedFile['file_path'], $convertedFile['file_name']);
+                return;
+            }
+            
+            // If no exact match, try to find a converted file by looking for patterns that might indicate a converted file
+            // Try with different patterns that might be used for converted files
+            $patterns = [
+                '%' . $baseFileName . '%.pdf',  // Pattern: contains base filename + .pdf
+                '%converted%' . $baseFileName . '%.pdf',  // Pattern: contains "converted" + base filename + .pdf
+                '%' . $baseFileName . '%converted%.pdf',  // Pattern: contains base filename + "converted" + .pdf
+                '%Converted%' . $baseFileName . '%.pdf',  // Pattern: contains "Converted" + base filename + .pdf
+                '%' . $baseFileName . '%Converted%.pdf',  // Pattern: contains base filename + "Converted" + .pdf
+                '%' . $baseFileName . '%.pdf%'            // Pattern: contains base filename + .pdf + anything
+            ];
+            
+            foreach ($patterns as $pattern) {
+                $altConvertedStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+                $altConvertedStmt->bind_param("is", $submissionId, $pattern);
+                $altConvertedStmt->execute();
+                $altConvertedResult = $altConvertedStmt->get_result();
+                
+                if ($altConvertedResult->num_rows > 0) {
+                    $convertedFile = $altConvertedResult->fetch_assoc();
+                    // Set up the protected viewer page for the converted PDF
+                    $this->renderProtectedViewer($convertedFile['id'], $convertedFile['file_path'], $convertedFile['file_name']);
+                    return;
+                }
+            }
+            
+            // If still no converted PDF found, try to find any PDF in the submission that might be a converted version
+            // by looking for PDF files that have similar naming patterns to the original file
+            $allPdfStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+            $allPdfPattern = '%' . pathinfo($baseFileName, PATHINFO_FILENAME) . '%.pdf'; // Match just the main part of the filename
+            $allPdfStmt->bind_param("is", $submissionId, $allPdfPattern);
+            $allPdfStmt->execute();
+            $allPdfResult = $allPdfStmt->get_result();
+            
+            if ($allPdfResult->num_rows > 0) {
+                $convertedFile = $allPdfResult->fetch_assoc();
+                // Set up the protected viewer page for the converted PDF
+                $this->renderProtectedViewer($convertedFile['id'], $convertedFile['file_path'], $convertedFile['file_name']);
+                return;
+            }
+            
+            // Try to find a PDF file that might be a converted version by checking if there's any PDF file
+            // in the submission that isn't one of the standard file types (cover, bab1, bab2, doc)
+            // Look for any PDF file that doesn't match the standard types, which could be a converted file
+            $otherPdfStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ?");
+            $pdfPattern = '%.pdf';
+            $coverPattern = '%cover%.pdf';
+            $bab1Pattern = '%bab1%.pdf';
+            $bab2Pattern = '%bab2%.pdf';
+            $docPattern = '%doc%.pdf';
+            
+            $otherPdfStmt->bind_param("isssss", $submissionId, $pdfPattern, $coverPattern, $bab1Pattern, $bab2Pattern, $docPattern);
+            $otherPdfStmt->execute();
+            $otherPdfResult = $otherPdfStmt->get_result();
+            
+            if ($otherPdfResult->num_rows > 0) {
+                // Just get the first PDF that could be a converted version
+                $convertedFile = $otherPdfResult->fetch_assoc();
+                // Set up the protected viewer page for the converted PDF
+                $this->renderProtectedViewer($convertedFile['id'], $convertedFile['file_path'], $convertedFile['file_name']);
+                return;
+            }
+        }
+
+        // If the requested file is already a PDF or no converted PDF was found for DOC/DOCX files, serve it directly
+        if ($fileExtension === 'pdf') {
+            // Set up the protected viewer page
+            $filePath = $fileInfo['file_path'];
+            $fileName = $fileInfo['file_name'];
+
+            // Set security headers
+            header('X-Content-Type-Options: nosniff');
+            header('X-Frame-Options: SAMEORIGIN');
+            header('X-XSS-Protection: 1; mode=block');
+            header('Cache-Control: no-store, no-cache, must-revalidate, private');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            // Output the protected viewer HTML
+            $this->renderProtectedViewer($fileId, $filePath, $fileName);
+            return;
+        }
+
+        // If the original file is not a PDF and no converted PDF was found, show error
+        http_response_code(400);
+        echo "Only PDF files can be displayed with this protected viewer.";
+    }
+
+    /**
+     * Render the protected PDF viewer HTML
+     * @param int $fileId The ID of the file
+     * @param string $filePath The path to the file
+     * @param string $fileName The name of the file
+     */
+    private function renderProtectedViewer(int $fileId, string $filePath, string $fileName): void {
+        $pdfUrl = url('file/publicView/' . $fileId); // Use publicView to bypass auth for the iframe src
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Protected Document Viewer</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    overflow: hidden;
+                    height: 100vh;
+                    background-color: #f0f0f0;
+                    font-family: Arial, sans-serif;
+                }
+                
+                .viewer-container {
+                    position: relative;
+                    width: 100%;
+                    height: 100vh;
+                }
+                
+                .pdf-frame {
+                    width: 100%;
+                    height: 100%;
+                    border: none;
+                }
+                
+                .warning-message {
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    background: rgba(255, 25, 255, 0.9);
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    color: #d32f2f;
+                    z-index: 1000;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                
+                .controls {
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    background: rgba(255, 255, 255, 0.9);
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    z-index: 1000;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                
+                .controls button {
+                    margin-left: 5px;
+                    padding: 4px 8px;
+                    background: #1976d2;
+                    color: white;
+                    border: none;
+                    border-radius: 3px;
+                    cursor: pointer;
+                }
+                
+                .controls button:hover {
+                    background: #1565c0;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="viewer-container">
+                <div class="warning-message">Protected Document - Do not download or print</div>
+                <div class="controls">
+                    <button onclick="goBack()">Back</button>
+                </div>
+                <iframe src="<?= $pdfUrl ?>" class="pdf-frame" title="Protected PDF Viewer"></iframe>
+            </div>
+
+            <script>
+                // Disable right-click
+                document.addEventListener('contextmenu', event => event.preventDefault());
+                
+                // Disable F12 and other developer tools shortcuts
+                document.addEventListener('keydown', function(e) {
+                    // F12
+                    if (e.key === 'F12') {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Ctrl+Shift+I (Inspect)
+                    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Ctrl+Shift+J (Console)
+                    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Ctrl+U (View source)
+                    if (e.ctrlKey && e.key === 'u' || e.key === 'U') {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Ctrl+S (Save)
+                    if (e.ctrlKey && e.key === 's' || e.key === 'S') {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Ctrl+P (Print)
+                    if (e.ctrlKey && e.key === 'p' || e.key === 'P') {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Print Screen key
+                    if (e.key === 'PrintScreen') {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+                
+                // Disable drag and drop
+                document.addEventListener('dragstart', function(e) {
+                    e.preventDefault();
+                    return false;
+                });
+                
+                // Disable text selection
+                document.onselectstart = function() {
+                    return false;
+                };
+                
+                // Disable copy
+                document.addEventListener('copy', function(e) {
+                    e.preventDefault();
+                    return false;
+                });
+                
+                // Go back function
+                function goBack() {
+                    window.history.back();
+                }
+                
+                // Prevent iframe from being accessed directly
+                if (window.self !== window.top) {
+                    // If the page is loaded in an iframe, try to break out
+                    window.top.location = window.location;
+                }
+            </script>
+        </body>
+        </html>
+        <?php
     }
 }
