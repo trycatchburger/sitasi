@@ -376,6 +376,9 @@
             <?= $content ?>
         </div>
     </main>
+    
+    <!-- Hidden CSRF Token Field -->
+    <input type="hidden" name="csrf_token" id="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
 
     <?php include __DIR__ . '/footer.php'; ?>
 

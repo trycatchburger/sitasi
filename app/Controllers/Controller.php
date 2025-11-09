@@ -38,6 +38,11 @@ abstract class Controller
             }
         }
         
+        // Generate CSRF token if not already set
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        
         $this->middlewareManager = new MiddlewareManager();
         
         // Register default middleware

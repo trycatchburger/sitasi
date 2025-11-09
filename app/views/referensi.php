@@ -210,13 +210,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!submissionIdToRemove) return;
     
     try {
-      const csrftoken = document.querySelector('input[name="csrftoken"]').value;
+      const csrftoken = document.getElementById('csrf_token').value;
       
       const response = await fetch('<?= url('submission/toggleReference') ?>', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrftoken
+          'X-CSRF-TOKEN': csrftoken,
+          'X-CSRFToken': csrftoken  // Also try the alternate header name
         },
         body: JSON.stringify({
           submission_id: parseInt(submissionIdToRemove)
