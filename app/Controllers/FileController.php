@@ -454,6 +454,7 @@ class FileController extends Controller {
         if ($fileExtension === 'doc' || $fileExtension === 'docx') {
             // Get the base name without extension to match converted files
             $baseFileName = pathinfo($originalFileName, PATHINFO_FILENAME); // This gives us something like "Doc.123456789_John Doe"
+            $baseNameWithoutLabel = substr($baseFileName, strpos($baseFileName, '.') + 1); // Get everything after the first dot (e.g., "123456789_John Doe")
             
             // Look for a converted PDF file that corresponds to this DOC/DOCX file
             // First, try exact match with .pdf extension
@@ -473,12 +474,14 @@ class FileController extends Controller {
             // If no exact match, try to find a converted file by looking for patterns that might indicate a converted file
             // Try with different patterns that might be used for converted files
             $patterns = [
-                '%' . $baseFileName . '%.pdf',  // Pattern: contains base filename + .pdf
-                '%converted%' . $baseFileName . '%.pdf',  // Pattern: contains "converted" + base filename + .pdf
+                '%' . $baseNameWithoutLabel . '%.pdf',  // Pattern: contains base name without label + .pdf
                 '%' . $baseFileName . '%converted%.pdf',  // Pattern: contains base filename + "converted" + .pdf
-                '%Converted%' . $baseFileName . '%.pdf',  // Pattern: contains "Converted" + base filename + .pdf
+                '%converted%' . $baseFileName . '%.pdf',  // Pattern: contains "converted" + base filename + .pdf
                 '%' . $baseFileName . '%Converted%.pdf',  // Pattern: contains base filename + "Converted" + .pdf
-                '%' . $baseFileName . '%.pdf%'            // Pattern: contains base filename + .pdf + anything
+                '%Converted%' . $baseFileName . '%.pdf',  // Pattern: contains "Converted" + base filename + .pdf
+                '%' . $baseNameWithoutLabel . '%_converted%.pdf',  // Pattern: contains base name + "_converted" + .pdf
+                '%' . $baseNameWithoutLabel . '%_pdf%.pdf',  // Pattern: contains base name + "_pdf" + .pdf
+                $baseNameWithoutLabel . '_converted.pdf',  // Pattern: exact base name + "_converted.pdf"
             ];
             
             foreach ($patterns as $pattern) {
@@ -497,7 +500,7 @@ class FileController extends Controller {
             // If still no converted PDF found, try to find any PDF in the submission that might be a converted version
             // by looking for PDF files that have similar naming patterns to the original file
             $allPdfStmt = $this->conn->prepare("SELECT id, file_name FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
-            $allPdfPattern = '%' . pathinfo($baseFileName, PATHINFO_FILENAME) . '%.pdf'; // Match just the main part of the filename
+            $allPdfPattern = '%' . $baseNameWithoutLabel . '%.pdf'; // Match just the main part of the filename
             $allPdfStmt->bind_param("is", $submissionId, $allPdfPattern);
             $allPdfStmt->execute();
             $allPdfResult = $allPdfStmt->get_result();
@@ -713,6 +716,7 @@ class FileController extends Controller {
         if ($fileExtension === 'doc' || $fileExtension === 'docx') {
             // Get the base name without extension to match converted files
             $baseFileName = pathinfo($originalFileName, PATHINFO_FILENAME); // This gives us something like "Doc.123456789_John Doe"
+            $baseNameWithoutLabel = substr($baseFileName, strpos($baseFileName, '.') + 1); // Get everything after the first dot (e.g., "123456789_John Doe")
             
             // Look for a converted PDF file that corresponds to this DOC/DOCX file
             // First, try exact match with .pdf extension
@@ -733,12 +737,14 @@ class FileController extends Controller {
             // If no exact match, try to find a converted file by looking for patterns that might indicate a converted file
             // Try with different patterns that might be used for converted files
             $patterns = [
-                '%' . $baseFileName . '%.pdf',  // Pattern: contains base filename + .pdf
-                '%converted%' . $baseFileName . '%.pdf',  // Pattern: contains "converted" + base filename + .pdf
+                '%' . $baseNameWithoutLabel . '%.pdf',  // Pattern: contains base name without label + .pdf
                 '%' . $baseFileName . '%converted%.pdf',  // Pattern: contains base filename + "converted" + .pdf
-                '%Converted%' . $baseFileName . '%.pdf',  // Pattern: contains "Converted" + base filename + .pdf
+                '%converted%' . $baseFileName . '%.pdf',  // Pattern: contains "converted" + base filename + .pdf
                 '%' . $baseFileName . '%Converted%.pdf',  // Pattern: contains base filename + "Converted" + .pdf
-                '%' . $baseFileName . '%.pdf%'            // Pattern: contains base filename + .pdf + anything
+                '%Converted%' . $baseFileName . '%.pdf',  // Pattern: contains "Converted" + base filename + .pdf
+                '%' . $baseNameWithoutLabel . '%_converted%.pdf',  // Pattern: contains base name + "_converted" + .pdf
+                '%' . $baseNameWithoutLabel . '%_pdf%.pdf',  // Pattern: contains base name + "_pdf" + .pdf
+                $baseNameWithoutLabel . '_converted.pdf',  // Pattern: exact base name + "_converted.pdf"
             ];
             
             foreach ($patterns as $pattern) {
@@ -758,7 +764,7 @@ class FileController extends Controller {
             // If still no converted PDF found, try to find any PDF in the submission that might be a converted version
             // by looking for PDF files that have similar naming patterns to the original file
             $allPdfStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
-            $allPdfPattern = '%' . pathinfo($baseFileName, PATHINFO_FILENAME) . '%.pdf'; // Match just the main part of the filename
+            $allPdfPattern = '%' . $baseNameWithoutLabel . '%.pdf'; // Match just the main part of the filename
             $allPdfStmt->bind_param("is", $submissionId, $allPdfPattern);
             $allPdfStmt->execute();
             $allPdfResult = $allPdfStmt->get_result();
@@ -1037,37 +1043,113 @@ class FileController extends Controller {
             return;
         }
 
-        // Check if this is a PDF file
+        // Check if this is a DOC/DOCX file and if there's a converted PDF version available
         $originalFileName = $fileInfo['file_name'];
         $fileExtension = strtolower(pathinfo($originalFileName, PATHINFO_EXTENSION));
         
-        if ($fileExtension !== 'pdf') {
+        // If it's a DOC/DOCX file, try to find the converted PDF version first
+        if ($fileExtension === 'doc' || $fileExtension === 'docx') {
+            // Get the base name without extension to match converted files
+            $baseFileName = pathinfo($originalFileName, PATHINFO_FILENAME); // This gives us something like "Doc.123456789_John Doe"
+            $baseNameWithoutLabel = substr($baseFileName, strpos($baseFileName, '.') + 1); // Get everything after the first dot (e.g., "123456789_John Doe")
+            
+            // Look for a converted PDF file that corresponds to this DOC/DOCX file
+            // First, try exact match with .pdf extension
+            $convertedStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+            $pdfPattern = $baseFileName . '.pdf';
+            $convertedStmt->bind_param("is", $submissionId, $pdfPattern);
+            $convertedStmt->execute();
+            $convertedResult = $convertedStmt->get_result();
+            
+            if ($convertedResult->num_rows > 0) {
+                // Found exact match for converted file
+                $convertedFile = $convertedResult->fetch_assoc();
+                // Set up the secure viewer page for the converted PDF
+                $this->renderSecurePdfViewer($convertedFile['id'], $convertedFile['file_name']);
+                return;
+            }
+            
+            // If no exact match, try to find a converted file by looking for patterns that might indicate a converted file
+            // Try with different patterns that might be used for converted files
+            $patterns = [
+                '%' . $baseNameWithoutLabel . '%.pdf',  // Pattern: contains base name without label + .pdf
+                '%' . $baseFileName . '%converted%.pdf',  // Pattern: contains base filename + "converted" + .pdf
+                '%converted%' . $baseFileName . '%.pdf',  // Pattern: contains "converted" + base filename + .pdf
+                '%' . $baseFileName . '%Converted%.pdf',  // Pattern: contains base filename + "Converted" + .pdf
+                '%Converted%' . $baseFileName . '%.pdf',  // Pattern: contains "Converted" + base filename + .pdf
+                '%' . $baseNameWithoutLabel . '%_converted%.pdf',  // Pattern: contains base name + "_converted" + .pdf
+                '%' . $baseNameWithoutLabel . '%_pdf%.pdf',  // Pattern: contains base name + "_pdf" + .pdf
+                $baseNameWithoutLabel . '_converted.pdf',  // Pattern: exact base name + "_converted.pdf"
+            ];
+            
+            foreach ($patterns as $pattern) {
+                $altConvertedStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+                $altConvertedStmt->bind_param("is", $submissionId, $pattern);
+                $altConvertedStmt->execute();
+                $altConvertedResult = $altConvertedStmt->get_result();
+                
+                if ($altConvertedResult->num_rows > 0) {
+                    $convertedFile = $altConvertedResult->fetch_assoc();
+                    // Set up the secure viewer page for the converted PDF
+                    $this->renderSecurePdfViewer($convertedFile['id'], $convertedFile['file_name']);
+                    return;
+                }
+            }
+            
+            // If still no converted PDF found, try to find any PDF in the submission that might be a converted version
+            // by looking for PDF files that have similar naming patterns to the original file
+            $allPdfStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+            $allPdfPattern = '%' . $baseNameWithoutLabel . '%.pdf'; // Match just the main part of the filename
+            $allPdfStmt->bind_param("is", $submissionId, $allPdfPattern);
+            $allPdfStmt->execute();
+            $allPdfResult = $allPdfStmt->get_result();
+            
+            if ($allPdfResult->num_rows > 0) {
+                $convertedFile = $allPdfResult->fetch_assoc();
+                // Set up the secure viewer page for the converted PDF
+                $this->renderSecurePdfViewer($convertedFile['id'], $convertedFile['file_name']);
+                return;
+            }
+            
+            // Try to find a PDF file that might be a converted version by checking if there's any PDF file
+            // in the submission that isn't one of the standard file types (cover, bab1, bab2, doc)
+            // Look for any PDF file that doesn't match the standard types, which could be a converted file
+            $otherPdfStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ?");
+            $pdfPattern = '%.pdf';
+            $coverPattern = '%cover%.pdf';
+            $bab1Pattern = '%bab1%.pdf';
+            $bab2Pattern = '%bab2%.pdf';
+            $docPattern = '%doc%.pdf';
+            
+            $otherPdfStmt->bind_param("isssss", $submissionId, $pdfPattern, $coverPattern, $bab1Pattern, $bab2Pattern, $docPattern);
+            $otherPdfStmt->execute();
+            $otherPdfResult = $otherPdfStmt->get_result();
+            
+            if ($otherPdfResult->num_rows > 0) {
+                // Just get the first PDF that could be a converted version
+                $convertedFile = $otherPdfResult->fetch_assoc();
+                // Set up the secure viewer page for the converted PDF
+                $this->renderSecurePdfViewer($convertedFile['id'], $convertedFile['file_name']);
+                return;
+            }
+            
+            // If no converted PDF found, return error since this method only handles PDFs
             http_response_code(400);
-            echo "Only PDF files can be displayed with this secure viewer.";
+            echo "No converted PDF file found for the selected document.";
             return;
         }
-
-        // Set security headers
-        header('X-Content-Type-Options: nosniff');
-        header('X-Frame-Options: SAMEORIGIN');
-        header('X-XSS-Protection: 1; mode=block');
-        header('Cache-Control: no-store, no-cache, must-revalidate, private');
-        header('Pragma: no-cache');
-        header('Expires: 0');
-
-        // Set security headers
-        header('X-Content-Type-Options: nosniff');
-        header('X-Frame-Options: SAMEORIGIN');
-        header('X-XSS-Protection: 1; mode=block');
-        header('Cache-Control: no-store, no-cache, must-revalidate, private');
-        header('Pragma: no-cache');
-        header('Expires: 0');
-
-        // For PDF.js, we need to handle authentication differently
-        // We'll pass the file ID and let the viewer handle the authenticated request
         
-        // Render the secure PDF viewer page with the file ID
-        $this->renderSecurePdfViewer($fileId, $originalFileName);
+        // If the requested file is already a PDF, serve it directly
+        if ($fileExtension === 'pdf') {
+            // Set up the secure viewer page
+            $this->renderSecurePdfViewer($fileId, $originalFileName);
+            return;
+        }
+        
+        // If the original file is not a PDF and no converted PDF was found, show error
+        http_response_code(400);
+        echo "Only PDF files can be displayed with this secure viewer.";
+        return;
     }
 
     /**
@@ -1372,26 +1454,113 @@ class FileController extends Controller {
             return;
         }
 
-        // Check if this is a PDF file
+        // Check if this is a DOC/DOCX file and if there's a converted PDF version available
         $originalFileName = $fileInfo['file_name'];
         $fileExtension = strtolower(pathinfo($originalFileName, PATHINFO_EXTENSION));
         
-        if ($fileExtension !== 'pdf') {
+        // If it's a DOC/DOCX file, try to find the converted PDF version first
+        if ($fileExtension === 'doc' || $fileExtension === 'docx') {
+            // Get the base name without extension to match converted files
+            $baseFileName = pathinfo($originalFileName, PATHINFO_FILENAME); // This gives us something like "Doc.123456789_John Doe"
+            $baseNameWithoutLabel = substr($baseFileName, strpos($baseFileName, '.') + 1); // Get everything after the first dot (e.g., "123456789_John Doe")
+            
+            // Look for a converted PDF file that corresponds to this DOC/DOCX file
+            // First, try exact match with .pdf extension
+            $convertedStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+            $pdfPattern = $baseFileName . '.pdf';
+            $convertedStmt->bind_param("is", $submissionId, $pdfPattern);
+            $convertedStmt->execute();
+            $convertedResult = $convertedStmt->get_result();
+            
+            if ($convertedResult->num_rows > 0) {
+                // Found exact match for converted file
+                $convertedFile = $convertedResult->fetch_assoc();
+                // Set up the clean viewer page for the converted PDF
+                $this->renderCleanPdfViewer($convertedFile['id'], $convertedFile['file_name']);
+                return;
+            }
+            
+            // If no exact match, try to find a converted file by looking for patterns that might indicate a converted file
+            // Try with different patterns that might be used for converted files
+            $patterns = [
+                '%' . $baseNameWithoutLabel . '%.pdf',  // Pattern: contains base name without label + .pdf
+                '%' . $baseFileName . '%converted%.pdf',  // Pattern: contains base filename + "converted" + .pdf
+                '%converted%' . $baseFileName . '%.pdf',  // Pattern: contains "converted" + base filename + .pdf
+                '%' . $baseFileName . '%Converted%.pdf',  // Pattern: contains base filename + "Converted" + .pdf
+                '%Converted%' . $baseFileName . '%.pdf',  // Pattern: contains "Converted" + base filename + .pdf
+                '%' . $baseNameWithoutLabel . '%_converted%.pdf',  // Pattern: contains base name + "_converted" + .pdf
+                '%' . $baseNameWithoutLabel . '%_pdf%.pdf',  // Pattern: contains base name + "_pdf" + .pdf
+                $baseNameWithoutLabel . '_converted.pdf',  // Pattern: exact base name + "_converted.pdf"
+            ];
+            
+            foreach ($patterns as $pattern) {
+                $altConvertedStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+                $altConvertedStmt->bind_param("is", $submissionId, $pattern);
+                $altConvertedStmt->execute();
+                $altConvertedResult = $altConvertedStmt->get_result();
+                
+                if ($altConvertedResult->num_rows > 0) {
+                    $convertedFile = $altConvertedResult->fetch_assoc();
+                    // Set up the clean viewer page for the converted PDF
+                    $this->renderCleanPdfViewer($convertedFile['id'], $convertedFile['file_name']);
+                    return;
+                }
+            }
+            
+            // If still no converted PDF found, try to find any PDF in the submission that might be a converted version
+            // by looking for PDF files that have similar naming patterns to the original file
+            $allPdfStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ?");
+            $allPdfPattern = '%' . $baseNameWithoutLabel . '%.pdf'; // Match just the main part of the filename
+            $allPdfStmt->bind_param("is", $submissionId, $allPdfPattern);
+            $allPdfStmt->execute();
+            $allPdfResult = $allPdfStmt->get_result();
+            
+            if ($allPdfResult->num_rows > 0) {
+                $convertedFile = $allPdfResult->fetch_assoc();
+                // Set up the clean viewer page for the converted PDF
+                $this->renderCleanPdfViewer($convertedFile['id'], $convertedFile['file_name']);
+                return;
+            }
+            
+            // Try to find a PDF file that might be a converted version by checking if there's any PDF file
+            // in the submission that isn't one of the standard file types (cover, bab1, bab2, doc)
+            // Look for any PDF file that doesn't match the standard types, which could be a converted file
+            $otherPdfStmt = $this->conn->prepare("SELECT id, file_name, file_path FROM submission_files WHERE submission_id = ? AND file_name LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ? AND file_name NOT LIKE ?");
+            $pdfPattern = '%.pdf';
+            $coverPattern = '%cover%.pdf';
+            $bab1Pattern = '%bab1%.pdf';
+            $bab2Pattern = '%bab2%.pdf';
+            $docPattern = '%doc%.pdf';
+            
+            $otherPdfStmt->bind_param("isssss", $submissionId, $pdfPattern, $coverPattern, $bab1Pattern, $bab2Pattern, $docPattern);
+            $otherPdfStmt->execute();
+            $otherPdfResult = $otherPdfStmt->get_result();
+            
+            if ($otherPdfResult->num_rows > 0) {
+                // Just get the first PDF that could be a converted version
+                $convertedFile = $otherPdfResult->fetch_assoc();
+                // Set up the clean viewer page for the converted PDF
+                $this->renderCleanPdfViewer($convertedFile['id'], $convertedFile['file_name']);
+                return;
+            }
+            
+            // If no converted PDF found, return error since this method only handles PDFs
             http_response_code(400);
-            echo "Only PDF files can be displayed with this secure viewer.";
+            echo "No converted PDF file found for the selected document.";
             return;
         }
-
-        // Set security headers
-        header('X-Content-Type-Options: nosniff');
-        header('X-Frame-Options: SAMEORIGIN');
-        header('X-XSS-Protection: 1; mode=block');
-        header('Cache-Control: no-store, no-cache, must-revalidate, private');
-        header('Pragma: no-cache');
-        header('Expires: 0');
-
-        // Render the clean PDF viewer page with the file ID
-        $this->renderCleanPdfViewer($fileId, $originalFileName);
+        
+        // If the requested file is already a PDF, serve it directly
+        if ($fileExtension === 'pdf') {
+            // Set up the clean viewer page
+            $this->renderCleanPdfViewer($fileId, $originalFileName);
+            return;
+        }
+        
+        // If the original file is not a PDF and no converted PDF was found, show error
+        http_response_code(400);
+        echo "Only PDF files can be displayed with this viewer.";
+        return;
     }
 
     /**

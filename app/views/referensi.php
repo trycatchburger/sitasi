@@ -66,35 +66,52 @@
                     foreach ($reference['files'] as $file) {
                         $fileName = $file['file_name'];
                         $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                        $fileBaseName = pathinfo($fileName, PATHINFO_FILENAME);
                         
                         if ($fileExtension === 'doc' || $fileExtension === 'docx') {
                             $docFile = $file;
-                            // Look for a PDF with the same base name + '_converted' or similar pattern
-                            $expectedConvertedNames = [
-                                $fileBaseName . '_converted.pdf',
-                                $fileBaseName . '_converted.pdf',
-                                preg_replace('/\.(doc|docx)$/i', '_converted.pdf', $fileName),
-                                preg_replace('/\.(doc|docx)$/i', '.pdf', $fileName) // Direct conversion
-                            ];
                         } else if ($fileExtension === 'pdf') {
-                            // Check if this PDF is likely a converted version of the DOC file
+                            // Check if this PDF is likely a converted version of a DOC file
+                            // Look for PDFs that have similar names to DOC files, especially those with converted indicators
+                            $isConvertedPdf = false;
+                            
                             if ($docFile) {
                                 $docBaseName = pathinfo($docFile['file_name'], PATHINFO_FILENAME);
+                                $pdfBaseName = pathinfo($fileName, PATHINFO_FILENAME);
                                 
-                                // Check if this PDF has the same base name as the DOC file
-                                // or has a converted-like name pattern
-                                if (stripos($fileName, $docBaseName . '_converted') !== false ||
-                                    stripos($fileName, $docBaseName . '_pdf') !== false ||
-                                    preg_replace('/\.(doc|docx)$/i', '.pdf', $docFile['file_name']) === $fileName ||
-                                    $fileBaseName === $docBaseName . '_converted') {
+                                // Check if this PDF has the same base name as the DOC file or contains conversion indicators
+                                if (stripos($fileName, $docBaseName) !== false &&
+                                    (stripos($pdfBaseName, 'converted') !== false || stripos($pdfBaseName, '_pdf') !== false ||
+                                    preg_replace('/\.(doc|docx)$/i', '', $docFile['file_name']) === $pdfBaseName)) {
                                     $convertedPdfFile = $file;
+                                    $isConvertedPdf = true;
                                 }
                             }
                             
-                            // If we haven't found a converted PDF yet, store any PDF as fallback
-                            if (!$pdfFile) {
+                            // If we haven't found a converted PDF yet and this isn't a converted one, store as fallback
+                            if (!$pdfFile && !$isConvertedPdf) {
                                 $pdfFile = $file;
+                            }
+                        }
+                    }
+                    
+                    // If no converted PDF was found but we have a DOC file, try to find a PDF with matching base name
+                    if (!$convertedPdfFile && $docFile) {
+                        $docBaseName = pathinfo($docFile['file_name'], PATHINFO_FILENAME);
+                        foreach ($reference['files'] as $file) {
+                            $fileName = $file['file_name'];
+                            $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                            
+                            if ($fileExtension === 'pdf') {
+                                $pdfBaseName = pathinfo($fileName, PATHINFO_FILENAME);
+                                // Check if the PDF has the same base name as the DOC file (which would be the converted version)
+                                if (stripos($fileName, $docBaseName) !== false && $docBaseName !== $pdfBaseName) {
+                                    $convertedPdfFile = $file;
+                                    break;
+                                } elseif ($pdfBaseName === $docBaseName) {
+                                    // Direct conversion (same base name)
+                                    $convertedPdfFile = $file;
+                                    break;
+                                }
                             }
                         }
                     }

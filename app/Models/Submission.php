@@ -33,13 +33,14 @@ class Submission
         $this->conn->begin_transaction();
 
         try {
-            $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_submission = $this->conn->prepare($sql_submission);
             if (!$stmt_submission) {
                 throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
             }
-
-            $stmt_submission->bind_param("sssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi']);
+            
+            $submission_type = 'bachelor';
+            $stmt_submission->bind_param("sssssssii", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -194,13 +195,13 @@ class Submission
                 $submission_id = $existing_submission['id'];
                 
                 // Update submission data and reset status and reason to initial state, also updated_at to mark as resubmitted
-                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, nim = ?, email = ?, dosen1 = ?, dosen2 = ?, judul_skripsi = ?, program_studi = ?, tahun_publikasi = ?, status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, nim = ?, email = ?, dosen1 = ?, dosen2 = ?, judul_skripsi = ?, program_studi = ?, tahun_publikasi = ?, submission_type = 'bachelor', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
                 $stmt_update = $this->conn->prepare($sql_update);
                 if (!$stmt_update) {
                     throw new DatabaseException("Submission update statement preparation failed: " . $this->conn->error);
                 }
                 
-                $stmt_update->bind_param("ssssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_id);
+                $stmt_update->bind_param("sssssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_id);
                 
                 if (!$stmt_update->execute()) {
                     throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);

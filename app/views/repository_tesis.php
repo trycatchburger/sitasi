@@ -35,9 +35,9 @@
     <h2 class="text-lg font-semibold text-gray-800 tracking-wide">Filter Pencarian</h2>
   </div>
 
-  <form method="GET" action="<?= url('submission/repository_journal') ?>"
-  
-        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4">
+  <form method="GET" action="<?= url('submission/repository_tesis') ?>"
+   
+         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4">
     <input type="hidden" name="page" value="1">
 
     <!-- Search -->
@@ -74,8 +74,8 @@
               class="w-full sm:w-auto px-6 py-2.5 bg-yellow-600 text-white font-medium rounded-xl shadow hover:bg-yellow-700 transition transform hover:-translate-y-0.5 duration-200">
         Filter
       </button>
-      <a href="<?= url('submission/repository_journal') ?>" 
-         class="w-full sm:w-auto px-6 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">
+      <a href="<?= url('submission/repository_tesis') ?>"
+         class="w-full sm:w-auto px-6 py-2.5 bg-gray-10 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">
         Bersihkan
       </a>
     </div>
@@ -122,7 +122,7 @@
               Journal
             </span>
           </div>
-          <?php if (!empty($submission['abstract'])): ?>
+          <?php if (!empty($submission['abstract']) && $submission['submission_type'] === 'journal'): ?>
             <div class="mt-3 text-sm text-gray-600 italic line-clamp-3">
               <?= htmlspecialchars(substr($submission['abstract'], 0, 300)) . (strlen($submission['abstract']) > 300 ? '...' : '') ?>
             </div>
