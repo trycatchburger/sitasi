@@ -36,11 +36,11 @@ class CsrfMiddleware extends BaseMiddleware
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                 strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                 // For AJAX requests, return JSON error
-                $this->json(['success' => false, 'message' => 'Invalid CSRF token.'], 400);
+                $this->json(['success' => false, 'message' => 'Invalid or expired CSRF token. Please refresh the page and try again.'], 400);
             } else {
                 // For regular requests, show error page
                 http_response_code(400);
-                echo "Invalid CSRF token.";
+                echo "Invalid or expired CSRF token. Please refresh the page and try again.";
                 exit;
             }
             

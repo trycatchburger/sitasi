@@ -141,6 +141,162 @@ class AdminController extends Controller {
         exit;
     }
 
+    /**
+     * Handles CSRF validation and status update
+     */
+    public function updateStatusWithCsrf() {
+        try {
+            // Check if user is authenticated manually to handle AJAX requests properly
+            if (!$this->isAdminLoggedIn()) {
+                // Return JSON error for AJAX requests
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Authentication required.']);
+                    exit;
+                } else {
+                    // Regular request - redirect to login
+                    header('Location: ' . url('admin/login'));
+                    exit;
+                }
+            }
+            
+            // Validate CSRF token manually to have better control over error handling
+            $token = $_POST['csrf_token'] ?? '';
+            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+                // Check if this is an AJAX request
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    // For AJAX requests, return JSON error
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Invalid or expired CSRF token. Please refresh the page and try again.']);
+                    exit;
+                } else {
+                    // For regular requests, redirect with error
+                    $_SESSION['error_message'] = 'Invalid or expired CSRF token. Please refresh the page and try again.';
+                    header('Location: ' . url('admin/dashboard'));
+                    exit;
+                }
+            }
+            
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+               $submissionId = (int)$_POST['submission_id'];
+               $status = $_POST['status'];
+               $reason = $_POST['reason'] ?? '';
+               $serialNumber = $_POST['serial_number'] ?? '';
+
+               // Validate status
+               if (!in_array($status, ['Pending', 'Diterima', 'Ditolak'])) {
+                   throw new ValidationException(['status' => "Invalid status value."]);
+               }
+
+               $submissionModel = new Submission();
+               $adminId = $_SESSION['admin_id'];
+               
+               // Update serial number in database first
+               $submissionModel->updateSerialNumber($submissionId, $serialNumber);
+               
+               // Update status in database
+               $result = $submissionModel->updateStatus($submissionId, $status, $reason, $adminId);
+               
+               // Clear cache after updating status
+               $submissionModel->clearCache();
+               
+               if ($result) {
+                   // Send email notification
+                   $submission = $submissionModel->getSubmissionWithEmail($submissionId);
+                   if ($submission) {
+                       try {
+                           $emailService = new \App\Models\EmailService();
+                           $emailService->sendStatusUpdateNotification($submission);
+                           // Set success message
+                           $message = 'Status updated and email sent successfully to ' . $submission['nama_mahasiswa'] . '.';
+                       } catch (\Exception $e) {
+                           // If email sending fails, still consider the status update successful
+                           // Log the error but don't fail the entire operation
+                           error_log("Email notification failed: " . $e->getMessage());
+                           $message = 'Status updated successfully, but email notification failed.';
+                       }
+                   } else {
+                       $message = 'Status updated successfully.';
+                   }
+                   
+                   // Return JSON success for AJAX requests
+                   if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                       header('Content-Type: application/json');
+                       echo json_encode(['success' => true, 'message' => $message]);
+                       exit;
+                   } else {
+                       // Regular form submission - set success message and redirect
+                       $_SESSION['success_message'] = $message;
+                       header('Location: ' . url('admin/dashboard'));
+                       exit;
+                   }
+               } else {
+                   // Create a more descriptive error message
+                   $error_message = "Failed to update submission status.";
+                   // Return JSON error for AJAX requests
+                   if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                       header('Content-Type: application/json');
+                       echo json_encode(['success' => false, 'message' => $error_message]);
+                       exit;
+                   } else {
+                       // Regular form submission
+                       $_SESSION['error_message'] = $error_message;
+                       header('Location: ' . url('admin/dashboard'));
+                       exit;
+                   }
+               }
+           } else {
+               // Redirect back for non-POST requests
+               header('Location: ' . url('admin/dashboard'));
+               exit;
+           }
+       } catch (ValidationException $e) {
+           $error_message = $e->getMessage();
+           // Return JSON error for AJAX requests
+           if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+               header('Content-Type: application/json');
+               echo json_encode(['success' => false, 'message' => $error_message]);
+               exit;
+           } else {
+               // Regular form submission
+               $_SESSION['error_message'] = $error_message;
+               header('Location: ' . url('admin/dashboard'));
+               exit;
+           }
+       } catch (DatabaseException $e) {
+           $error_message = "Database error occurred while updating status.";
+           // Return JSON error for AJAX requests
+           if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+               header('Content-Type: application/json');
+               echo json_encode(['success' => false, 'message' => $error_message]);
+               exit;
+           } else {
+               // Regular form submission
+               $_SESSION['error_message'] = $error_message;
+               header('Location: ' . url('admin/dashboard'));
+               exit;
+           }
+       } catch (Exception $e) {
+           $error_message = "An error occurred: " . $e->getMessage();
+           // Return JSON error for AJAX requests
+           if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+               header('Content-Type: application/json');
+               echo json_encode(['success' => false, 'message' => $error_message]);
+               exit;
+           } else {
+               // Regular form submission
+               $_SESSION['error_message'] = $error_message;
+               header('Location: ' . url('admin/dashboard'));
+               exit;
+           }
+       }
+    }
+    
+    /**
+     * Legacy updateStatus method (kept for backward compatibility)
+     * This method is deprecated, use updateStatusWithCsrf instead
+     */
     public function updateStatus() {
          try {
              // Check if user is authenticated manually to handle AJAX requests properly
@@ -156,9 +312,6 @@ class AdminController extends Controller {
                      exit;
                  }
              }
-             
-             // Run CSRF middleware for security
-             $this->runMiddleware(['csrf']);
              
              if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $submissionId = (int)$_POST['submission_id'];

@@ -263,21 +263,21 @@
                     </span>
                   </td>
                   <td class="px-4 py-3">
-                    <form action="<?= url('admin/updateStatus') ?>" method="POST" class="flex flex-col gap-1">
+                    <form action="<?= url('admin/updateStatusWithCsrf') ?>" method="POST" class="flex flex-col gap-1">
                       
-                      <input type="hidden" name="submission_id" value="<?= $submission['id'] ?>">
-                      <?= csrf_field() ?>
-                      <input type="text" name="serial_number" placeholder="No. Surat" class="border rounded px-1 py-1 text-xs" value="<?= htmlspecialchars($submission['serial_number'] ?? '') ?>">
-                      <select name="status" class="border rounded px-1 py-1 text-xs">
-                        <option value="Pending" <?= $status === 'Pending' ? 'selected' : '' ?>>Pending</option>
-                        <option value="Diterima" <?= $status === 'Diterima' ? 'selected' : '' ?>>Diterima</option>
-                        <option value="Ditolak" <?= $status === 'Ditolak' ? 'selected' : '' ?>>Ditolak</option>
-                      </select>
-                      <textarea name="reason" placeholder="Alasan" class="border rounded px-1 py-1 text-xs"><?= htmlspecialchars($submission['keterangan'] ?? '') ?></textarea>
-                      <button type="submit" class="btn btn-primary btn-sm text-xs py-1 px-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105">
-                        Update
-                      </button>
-                    </form>
+                    <input type="hidden" name="submission_id" value="<?= $submission['id'] ?>">
+                    <?= csrf_field() ?>
+                    <input type="text" name="serial_number" placeholder="No. Surat" class="border rounded px-1 py-1 text-xs" value="<?= htmlspecialchars($submission['serial_number'] ?? '') ?>">
+                    <select name="status" class="border rounded px-1 py-1 text-xs">
+                      <option value="Pending" <?= $status === 'Pending' ? 'selected' : '' ?>>Pending</option>
+                      <option value="Diterima" <?= $status === 'Diterima' ? 'selected' : '' ?>>Diterima</option>
+                      <option value="Ditolak" <?= $status === 'Ditolak' ? 'selected' : '' ?>>Ditolak</option>
+                    </select>
+                    <textarea name="reason" placeholder="Alasan" class="border rounded px-1 py-1 text-xs"><?= htmlspecialchars($submission['keterangan'] ?? '') ?></textarea>
+                    <button type="submit" class="btn btn-primary btn-sm text-xs py-1 px-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105">
+                      Update
+                    </button>
+                  </form>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <?php if (isset($submission['is_resubmission']) && $submission['is_resubmission'] && $submission['created_at'] !== $submission['updated_at']): ?>
@@ -396,11 +396,10 @@ require __DIR__ . '/main.php';
     overflow: hidden;
   }
 </style>
-
 <script>
 // Handle status update form submissions via AJAX
-document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').forEach(form => {
-  form.addEventListener('submit', function(e) {
+document.querySelectorAll('form[action="<?= url('admin/updateStatusWithCsrf') ?>"]').forEach(form => {
+ form.addEventListener('submit', function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
@@ -419,15 +418,22 @@ document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').for
       }
     })
     .then(response => {
-       if (!response.ok) {
-         // Log the response status and text for debugging
-         return response.text().then(text => {
-           console.error('Server error response:', response.status, text);
-           throw new Error(`Network response was not ok: ${response.status} - ${text}`);
-         });
-       }
-       return response.json();
-     })
+      // Check if response is JSON or HTML
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      } else {
+        // If not JSON, try to get the text to see what was returned
+        return response.text().then(text => {
+          console.error('Server returned non-JSON response:', text);
+          // Check if it's an HTML error page containing CSRF error
+          if (text.includes('CSRF') || text.includes('token') || text.includes('<!DOCTYPE') || text.includes('<html') || text.includes('<strong>TC')) {
+            throw new Error('CSRF token validation failed. Please refresh the page and try again.');
+          }
+          throw new Error('Server returned an unexpected response format.');
+        });
+      }
+    })
     .then(data => {
       if (data.success) {
         // Get the row for this submission
@@ -502,14 +508,22 @@ document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').for
         }
       } else {
         // Handle error from server
-        alert(data.message || 'An error occurred while updating the status.');
+        if (data.message && data.message.includes('CSRF')) {
+          alert('CSRF token validation failed. Please refresh the page and try again.');
+        } else {
+          alert(data.message || 'An error occurred while updating the status.');
+        }
       }
     })
     .catch(error => {
       console.error('Error:', error);
       // Check if this is a JSON parsing error or network error
       // In most cases, we still want to show a user-friendly message
-      alert('An error occurred while updating the status. Error details: ' + error.message + '. Please refresh the page to check the current status.');
+      if (error.message.includes('CSRF') || error.message.includes('token')) {
+        alert('Security token expired. Please refresh the page and try again. Error details: ' + error.message);
+      } else {
+        alert('An error occurred while updating the status. Error details: ' + error.message + '. Please refresh the page to check the current status.');
+      }
     })
     .finally(() => {
       // Reset button state
@@ -518,6 +532,7 @@ document.querySelectorAll('form[action="<?= url('admin/updateStatus') ?>"]').for
     });
   });
 });
+
 
 // Handle modal close buttons
 document.getElementById('closeModal')?.addEventListener('click', function() {
