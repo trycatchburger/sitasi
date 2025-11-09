@@ -170,7 +170,7 @@
 </div>
 
 <!-- Remove reference confirmation modal -->
-<div id="removeReferenceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+<div id="removeReferenceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
   <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
     <h3 class="text-lg font-semibold text-gray-900 mb-2">Hapus Referensi</h3>
     <p class="text-gray-600 mb-6">Apakah Anda yakin ingin menghapus submission ini dari referensi Anda?</p>
@@ -233,16 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
             referenceElement.remove();
           }
           
-          // Show success message
-          const messageDiv = document.createElement('div');
-          messageDiv.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6';
-          messageDiv.textContent = 'Submission berhasil dihapus dari referensi';
-          document.querySelector('.container').insertBefore(messageDiv, document.querySelector('.container').firstChild);
-          
-          // Auto-remove message after 3 seconds
-          setTimeout(() => {
-            messageDiv.remove();
-          }, 3000);
+          // Create and show success popup
+          createSuccessPopup('Submission berhasil dihapus dari referensi');
           
           // Hide modal and reset
           modal.classList.add('hidden');
@@ -262,6 +254,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+// Function to create success popup
+function createSuccessPopup(message) {
+  // Remove any existing popup
+  const existingPopup = document.getElementById('reference-success-popup');
+  if (existingPopup) {
+    existingPopup.remove();
+ }
+  
+  // Create popup container
+  const popup = document.createElement('div');
+  popup.id = 'reference-success-popup';
+  popup.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg z-50 max-w-sm';
+  popup.innerHTML = `
+    <div class="flex items-start">
+      <svg class="w-5 h-5 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      <div class="flex-1">
+        <div class="font-medium">Sukses!</div>
+        <div class="text-sm">${message}</div>
+      </div>
+      <button class="ml-2 text-green-70 hover:text-green-900" onclick="this.parentElement.parentElement.remove()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+  `;
+  
+  // Add to page
+ document.body.appendChild(popup);
+  
+  // Auto remove after 5 seconds
+  setTimeout(() => {
+    if (popup.parentNode) {
+      popup.remove();
+    }
+ }, 5000);
+}
 </script>
 
 <?php
