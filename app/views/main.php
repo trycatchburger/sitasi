@@ -174,6 +174,7 @@
                          </button>
                          <div class="hidden group-hover:block md:absolute right-0 mt-0 w-48 bg-white border border-gray-200 rounded shadow-lg z-50">
                              <a href="<?= url('user/dashboard') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Dashboard</a>
+                             <a href="<?= url('user/profile') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Profile</a>
                              <a href="<?= url('user/logout') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">
                                  <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

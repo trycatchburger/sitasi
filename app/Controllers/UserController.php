@@ -269,6 +269,62 @@ class UserController extends Controller
         }
     }
 
+    public function updateProfile()
+    {
+        // This method handles profile updates via POST request
+        // It's an alias for editProfile to handle the update_profile route
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                if (!$this->isUserLoggedIn()) {
+                    header('Location: ' . url('user/login'));
+                    exit;
+                }
+
+                $email = trim($_POST['email'] ?? '');
+                $no_hp = trim($_POST['no_hp'] ?? '');
+                
+                // Validate input - email format
+                if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $_SESSION['error_message'] = "Invalid email format.";
+                    header('Location: ' . url('user/edit_profile'));
+                    exit;
+                }
+                
+                // Update the anggota table with new values
+                $db = \App\Models\Database::getInstance();
+                
+                $stmt = $db->getConnection()->prepare("UPDATE anggota SET email = ?, no_hp = ? WHERE id_member = ?");
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+                }
+                
+                $stmt->bind_param("sss", $email, $no_hp, $_SESSION['user_library_card_number']);
+                
+                if ($stmt->execute()) {
+                    $_SESSION['success_message'] = "Profile updated successfully!";
+                    
+                    // Refresh the session data by redirecting to profile
+                    header('Location: ' . url('user/profile'));
+                    exit;
+                } else {
+                    throw new DatabaseException("Failed to update profile.");
+                }
+            } catch (DatabaseException $e) {
+                $_SESSION['error_message'] = "Database error occurred while updating profile.";
+                header('Location: ' . url('user/profile'));
+                exit;
+            } catch (Exception $e) {
+                $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+                header('Location: ' . url('user/profile'));
+                exit;
+            }
+        } else {
+            // If accessed via GET, redirect to edit profile page
+            header('Location: ' . url('user/edit_profile'));
+            exit;
+        }
+    }
+
     /**
      * Find user in users_login table by ID member
      */
@@ -387,7 +443,7 @@ class UserController extends Controller
                 return [];
             }
             
-            $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email FROM anggota WHERE id_member = ?");
+            $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
             }
@@ -399,6 +455,110 @@ class UserController extends Controller
         } catch (Exception $e) {
             error_log("Error getting anggota details: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function profile()
+    {
+        try {
+            if (!$this->isUserLoggedIn()) {
+                header('Location: ' . url('user/login'));
+                exit;
+            }
+
+            // Get user details from anggota table for display
+            $anggotaDetails = $this->getAnggotaDetails($_SESSION['user_library_card_number']);
+
+            // If no anggota details found, use session data as fallback
+            $userProfile = [
+                'id_member' => $anggotaDetails['id_member'] ?? $_SESSION['user_library_card_number'],
+                'name' => $anggotaDetails['name'] ?? $_SESSION['user_name'],
+                'email' => $anggotaDetails['email'] ?? '',
+                'no_hp' => $anggotaDetails['no_hp'] ?? '',
+                'prodi' => $anggotaDetails['prodi'] ?? '',
+                'tipe_member' => $anggotaDetails['tipe_member'] ?? '',
+                'member_since' => $anggotaDetails['member_since'] ?? '',
+                'expired' => $anggotaDetails['expired'] ?? '',
+            ];
+
+            $this->render('profile', [
+                'user' => $userProfile
+            ]);
+        } catch (DatabaseException $e) {
+            $this->render('profile', ['error' => "Database error occurred while loading profile."]);
+        } catch (Exception $e) {
+            $this->render('profile', ['error' => "An error occurred: " . $e->getMessage()]);
+        }
+    }
+
+    public function editProfile()
+    {
+        try {
+            if (!$this->isUserLoggedIn()) {
+                header('Location: ' . url('user/login'));
+                exit;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Process profile update
+                $email = trim($_POST['email'] ?? '');
+                $no_hp = trim($_POST['no_hp'] ?? '');
+                
+                // Validate input - email format
+                if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $_SESSION['error_message'] = "Invalid email format.";
+                    header('Location: ' . url('user/edit_profile'));
+                    exit;
+                }
+                
+                // Update the anggota table with new values
+                $db = \App\Models\Database::getInstance();
+                
+                $stmt = $db->getConnection()->prepare("UPDATE anggota SET email = ?, no_hp = ? WHERE id_member = ?");
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+                }
+                
+                $stmt->bind_param("sss", $email, $no_hp, $_SESSION['user_library_card_number']);
+                
+                if ($stmt->execute()) {
+                    $_SESSION['success_message'] = "Profile updated successfully!";
+                    
+                    // Refresh the session data by redirecting to profile
+                    header('Location: ' . url('user/profile'));
+                    exit;
+                } else {
+                    throw new DatabaseException("Failed to update profile.");
+                }
+            } else {
+                // GET request - show edit profile form
+                // Get user details from anggota table for display
+                $anggotaDetails = $this->getAnggotaDetails($_SESSION['user_library_card_number']);
+
+                // If no anggota details found, use session data as fallback
+                $userProfile = [
+                    'id_member' => $anggotaDetails['id_member'] ?? $_SESSION['user_library_card_number'],
+                    'name' => $anggotaDetails['name'] ?? $_SESSION['user_name'],
+                    'email' => $anggotaDetails['email'] ?? '',
+                    'no_hp' => $anggotaDetails['no_hp'] ?? '',
+                    'prodi' => $anggotaDetails['prodi'] ?? '',
+                    'tipe_member' => $anggotaDetails['tipe_member'] ?? '',
+                    'member_since' => $anggotaDetails['member_since'] ?? '',
+                    'expired' => $anggotaDetails['expired'] ?? '',
+                ];
+
+                $this->render('edit_profile', [
+                    'user' => $userProfile
+                ]);
+            }
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred while updating profile.";
+            header('Location: ' . url('user/profile'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('user/profile'));
+            exit;
         }
     }
 }
