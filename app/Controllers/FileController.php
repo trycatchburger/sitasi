@@ -1722,4 +1722,80 @@ class FileController extends Controller {
         </html>
         <?php
     }
+    
+    /**
+     * Delete a file from the system
+     * @param int $fileId The ID of the file to delete
+     */
+    public function delete(int $fileId): void {
+        try {
+            // Run authentication middleware
+            $this->runMiddleware(['auth']);
+            
+            // Check if admin is logged in
+            if (!$this->isLoggedIn()) {
+                http_response_code(403);
+                echo "Access denied. You must be logged in as an administrator to delete files.";
+                return;
+            }
+            
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                http_response_code(405);
+                echo "Method not allowed. Use POST to delete files.";
+                return;
+            }
+            
+            // Run CSRF middleware for security
+            $this->runMiddleware(['csrf']);
+            
+            // Fetch file information from database
+            $stmt = $this->conn->prepare("SELECT file_path, submission_id FROM submission_files WHERE id = ?");
+            $stmt->bind_param("i", $fileId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows === 0) {
+                http_response_code(404);
+                echo "File not found.";
+                return;
+            }
+            
+            $file = $result->fetch_assoc();
+            $stmt->close();
+            
+            // Get the full file path
+            $fullPath = __DIR__ . '/../../public/' . $file['file_path'];
+            
+            // Check if file exists on server
+            if (file_exists($fullPath)) {
+                // Attempt to delete the file from the server
+                if (!unlink($fullPath)) {
+                    http_response_code(500);
+                    echo "Failed to delete file from server.";
+                    return;
+                }
+            }
+            
+            // Delete file record from database
+            $deleteStmt = $this->conn->prepare("DELETE FROM submission_files WHERE id = ?");
+            $deleteStmt->bind_param("i", $fileId);
+            
+            if (!$deleteStmt->execute()) {
+                http_response_code(500);
+                echo "Failed to delete file record from database.";
+                return;
+            }
+            
+            $deleteStmt->close();
+            
+            // Redirect back to management file page with success message
+            $_SESSION['success_message'] = "File deleted successfully.";
+            header('Location: ' . url('admin/management_file'));
+            exit;
+            
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo "An error occurred while deleting the file: " . $e->getMessage();
+        }
+    }
 }

@@ -212,7 +212,7 @@
                               } else if (stripos($fileLabel, 'bab1') !== false || stripos($fileLabel, 'transkrip') !== false) {
                                   $displayLabel = 'Bab 1';
                               } else if (stripos($fileLabel, 'bab2') !== false || stripos($fileLabel, 'toefl') !== false) {
-                                  $displayLabel = 'Bab 2';
+                                  $displayLabel = 'Bab 2-5';
                               } else if (stripos($fileLabel, 'persetujuan') !== false || stripos($fileLabel, 'doc') !== false) {
                                   // Determine if it's a doc or pdf file based on the actual file extension
                                   $fileExtension = strtolower(pathinfo($file['file_name'], PATHINFO_EXTENSION));
@@ -234,12 +234,28 @@
                           ?>
                           <div class="flex flex-col items-center text-center min-w-[100px] max-w-[120px]">
                             <div class="text-xs font-medium text-gray-700 mb-1 truncate w-full" title="<?= htmlspecialchars($displayLabel) ?>"><?= htmlspecialchars($displayLabel) ?></div>
-                            <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm w-full text-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-1 px-2 text-xs">
-                              <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                              </svg>
-                              View
-                            </a>
+                            <div class="flex gap-1 w-full">
+                              <a href="<?= url('file/view/' . $file['id']) ?>" target="_blank" class="btn btn-secondary btn-sm flex-1 text-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-md transition duration-300 ease-in-out transform hover:scale-105 py-1 px-2 text-xs">
+                                <svg class="w-3 h-3 mr-1 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 0 012-2h5.586a1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                View
+                              </a>
+                              <?php
+                              // Only show delete button for files that are NOT in the excluded list
+                              $excludedFiles = ['Cover', 'Bab 1', 'Bab 2-5', 'Full Version Doc'];
+                              if (!in_array($displayLabel, $excludedFiles)):
+                              ?>
+                              <button type="button" class="btn btn-danger btn-sm bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium rounded-md transition duration-30 ease-in-out transform hover:scale-105 py-1 px-1 text-xs" onclick="showDeleteConfirmation(<?= $file['id'] ?>)">
+                                <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                              </button>
+                              <form id="delete-form-<?= $file['id'] ?>" action="<?= url('file/delete/' . $file['id']) ?>" method="POST" style="display: none;">
+                                <?= csrf_field() ?>
+                              </form>
+                              <?php endif; ?>
+                            </div>
                           </div>
                         <?php endforeach; ?>
                       </div>
@@ -344,77 +360,214 @@ require __DIR__ . '/main.php';
 ?>
 
 <style>
-  .modal-open {
-    overflow: hidden;
-  }
-  
-  .table-container {
-    min-width: 100%;
-  }
+ .modal-open {
+   overflow: hidden;
+ }
+ 
+ .table-container {
+   min-width: 100%;
+ }
+
+ /* Modal styles */
+ .modal {
+   display: none;
+   position: fixed;
+   z-index: 50;
+   left: 0;
+   top: 0;
+   width: 100%;
+   height: 100%;
+   background-color: rgba(0, 0, 0, 0.5);
+ }
+
+ .modal-content {
+   background-color: white;
+   margin: 15% auto;
+   padding: 20px;
+   border-radius: 8px;
+   width: 400px;
+   box-shadow: 0 4px 6px rgba(0, 0, 0.1);
+   position: relative;
+ }
+
+ .modal-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 15px;
+ }
+
+ .modal-title {
+   font-size: 1.25rem;
+   font-weight: 600;
+   color: #dc2626;
+ }
+
+ .close {
+   font-size: 1.5rem;
+   font-weight: bold;
+   color: #aaa;
+   cursor: pointer;
+   line-height: 1;
+ }
+
+ .close:hover {
+   color: #000;
+ }
+
+ .modal-body {
+   margin-bottom: 20px;
+ }
+
+ .modal-footer {
+   display: flex;
+   justify-content: flex-end;
+   gap: 10px;
+ }
+
+ .btn-modal {
+   padding: 8px 16px;
+   border-radius: 4px;
+   cursor: pointer;
+   font-weight: 500;
+   transition: all 0.2s;
+ }
+
+ .btn-cancel {
+   background-color: #e5e7eb;
+   color: #374151;
+ }
+
+ .btn-cancel:hover {
+   background-color: #d1d5db;
+ }
+
+ .btn-delete {
+   background-color: #dc2626;
+   color: white;
+ }
+
+ .btn-delete:hover {
+   background-color: #b91c1c;
+ }
 </style>
+
+<div id="deleteModal" class="modal">
+ <div class="modal-content">
+   <div class="modal-header">
+     <h3 class="modal-title">Konfirmasi Hapus File</h3>
+     <span class="close" onclick="closeDeleteModal()">&times;</span>
+   </div>
+   <div class="modal-body">
+     <p>Apakah Anda yakin ingin menghapus file ini?</p>
+     <p class="text-sm text-gray-600 mt-2">Tindakan ini tidak dapat dibatalkan dan file akan dihapus secara permanen.</p>
+   </div>
+   <div class="modal-footer">
+     <button type="button" class="btn-modal btn-cancel" onclick="closeDeleteModal()">Batal</button>
+     <button type="button" class="btn-modal btn-delete" onclick="confirmDelete()">Hapus</button>
+   </div>
+ </div>
+</div>
 
 <script>
 // Handle filter dropdown
 document.getElementById('filterSelect')?.addEventListener('change', function() {
-  const selectedValue = this.value;
-  const url = new URL(window.location);
-  
-  // Preserve sorting parameters
-  const sortParam = url.searchParams.get('sort');
-  const orderParam = url.searchParams.get('order');
-  
-  // Clear existing filter parameters
-  url.searchParams.delete('show');
-  url.searchParams.delete('type');
-  url.searchParams.delete('converted');
-  url.searchParams.delete('page'); // Reset to first page when changing filter
-  url.searchParams.delete('search'); // Also clear search when changing filter
-  
-  // Set the appropriate parameter based on selection
-  switch(selectedValue) {
-    case 'all':
-      url.searchParams.set('show', 'all');
-      break;
-    case 'unconverted':
-      url.searchParams.set('converted', 'unconverted');
-      break;
-  }
-  
-  // Re-add sorting parameters if they existed
-  if(sortParam) {
-    url.searchParams.set('sort', sortParam);
-  }
-  if(orderParam) {
-    url.searchParams.set('order', orderParam);
-  }
-  
-  window.location.href = url.toString();
+ const selectedValue = this.value;
+ const url = new URL(window.location);
+ 
+ // Preserve sorting parameters
+ const sortParam = url.searchParams.get('sort');
+ const orderParam = url.searchParams.get('order');
+ 
+ // Clear existing filter parameters
+ url.searchParams.delete('show');
+ url.searchParams.delete('type');
+ url.searchParams.delete('converted');
+ url.searchParams.delete('page'); // Reset to first page when changing filter
+ url.searchParams.delete('search'); // Also clear search when changing filter
+ 
+ // Set the appropriate parameter based on selection
+ switch(selectedValue) {
+   case 'all':
+     url.searchParams.set('show', 'all');
+     break;
+   case 'unconverted':
+     url.searchParams.set('converted', 'unconverted');
+     break;
+ }
+ 
+ // Re-add sorting parameters if they existed
+ if(sortParam) {
+   url.searchParams.set('sort', sortParam);
+ }
+ if(orderParam) {
+   url.searchParams.set('order', orderParam);
+ }
+ 
+ window.location.href = url.toString();
 });
 
 // Function to handle sorting
 function sortTable(column, order, showType, search) {
-  let url = new URL(window.location);
-  
-  // Set sorting parameters
-  url.searchParams.set('sort', column);
-  url.searchParams.set('order', order);
-  
-  // Preserve existing parameters
-  if(showType) {
-    if(showType === 'all') {
-      url.searchParams.set('show', showType);
-    } else if(showType === 'unconverted') {
-      url.searchParams.set('converted', showType);
-    }
-  }
-  
-  if(search) {
-    url.searchParams.set('search', search);
-  }
-  
-  // Reset to first page when sorting
-  url.searchParams.set('page', 1);
-  
-  window.location.href = url.toString();
+ let url = new URL(window.location);
+ 
+ // Set sorting parameters
+ url.searchParams.set('sort', column);
+ url.searchParams.set('order', order);
+ 
+ // Preserve existing parameters
+ if(showType) {
+   if(showType === 'all') {
+     url.searchParams.set('show', showType);
+   } else if(showType === 'unconverted') {
+     url.searchParams.set('converted', showType);
+   }
+ }
+ 
+ if(search) {
+   url.searchParams.set('search', search);
+ }
+ 
+ // Reset to first page when sorting
+ url.searchParams.set('page', 1);
+ 
+ window.location.href = url.toString();
 }
+
+// Delete confirmation modal functionality
+let currentFileId = null;
+
+function showDeleteConfirmation(fileId) {
+ currentFileId = fileId;
+ document.getElementById('deleteModal').style.display = 'block';
+ document.body.classList.add('modal-open');
+}
+
+function closeDeleteModal() {
+ document.getElementById('deleteModal').style.display = 'none';
+ document.body.classList.remove('modal-open');
+ currentFileId = null;
+}
+
+function confirmDelete() {
+ if (currentFileId) {
+   // Submit the corresponding delete form
+   document.getElementById('delete-form-' + currentFileId).submit();
+ }
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+ const modal = document.getElementById('deleteModal');
+ if (event.target == modal) {
+   closeDeleteModal();
+ }
+}
+
+// Close modal when pressing ESC key
+document.addEventListener('keydown', function(event) {
+ if (event.key === 'Escape') {
+   closeDeleteModal();
+ }
+});
 </script>
