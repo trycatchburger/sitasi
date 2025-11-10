@@ -1,8 +1,8 @@
 <?php ob_start(); ?>
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-800">Welcome, <?= htmlspecialchars($user['name']) ?></h1>
-        <p class="text-gray-600">Library Card: <?= htmlspecialchars($user['library_card_number']) ?></p>
+        <h1 class="text-2xl font-bold text-gray-800">Selamat Datang, <?= htmlspecialchars($user['name']) ?></h1>
+        <p class="text-gray-600">ID Anggota: <?= htmlspecialchars($user['library_card_number']) ?></p>
     </div>
 
     <?php if (isset($_SESSION['potential_submission_matches']) && !empty($_SESSION['potential_submission_matches'])): ?>
@@ -111,7 +111,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex flex-col">
-                                <a href="<?= url('detail/' . $submission['id']) ?>" class="text-blue-600 hover:text-blue-90 mb-1 block">View</a>
+                                <a href="<?= url('submission/detail/' . $submission['id']) ?>" class="text-blue-600 hover:text-blue-90 mb-1 block">View</a>
                                 <?php if ($submission['status'] === 'Ditolak' || $submission['is_resubmission']): ?>
                                     <a href="<?= url('resubmit/' . $submission['id']) ?>" class="text-green-600 hover:text-green-900 block">Resubmit</a>
                                 <?php endif; ?>
