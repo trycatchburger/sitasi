@@ -142,21 +142,17 @@
 
                     <!-- Dropdown Admin -->
                     <div class="relative group">
-                        <button class="block w-full text-left px-4 py-2 md:p-0 bg-green-700 text-white rounded md:rounded-none hover:bg-green-800 flex items-center justify-between md:justify-start">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        <button class="bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             <?= htmlspecialchars($_SESSION['admin_username'] ?? 'Admin') ?>
-                            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                      d="M19 9l-7 7-7"></path>
-                            </svg>
                         </button>
-                        <div class="hidden group-hover:block md:absolute right-0 mt-0 w-48 bg-white border border-gray-200 rounded shadow-lg z-50">
-                            <a href="<?= url('admin/logout') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">
-                                <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform group-hover:translate-y-1">
+                            <a href="<?= url('admin/logout') ?>" class="block px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-800 border-b border-gray-100 last:border-b-0 transition-colors duration-150 first:rounded-t-md last:rounded-b-md">
+                                <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                                 </svg>
                                 Logout
@@ -169,16 +165,12 @@
                      
                      <!-- Dropdown User -->
                      <div class="relative group">
-                         <button class="block w-full text-left px-4 py-2 md:p-0 bg-blue-700 text-white rounded md:rounded-none hover:bg-blue-800 flex items-center justify-between md:justify-start">
-                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <button class="bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-blue-800 transition flex items-center">
+                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                              </svg>
                              <?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?>
-                             <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                       d="M19 9l-7 7-7"></path>
-                             </svg>
                          </button>
                          <div class="hidden group-hover:block md:absolute right-0 mt-0 w-48 bg-white border border-gray-200 rounded shadow-lg z-50">
                              <a href="<?= url('user/dashboard') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Dashboard</a>
