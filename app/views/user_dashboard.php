@@ -122,7 +122,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex flex-col">
-                                <a href="<?= url('submission/detail/' . $submission['id']) ?>" class="text-blue-600 hover:text-blue-90 mb-1 block">View</a>
+                                <a href="<?= url('user/submission/' . $submission['id']) ?>" class="text-blue-600 hover:text-blue-90 mb-1 block">View Details</a>
                                 <?php if ($submission['status'] === 'Ditolak' || $submission['is_resubmission']): ?>
                                     <a href="<?= url('resubmit/' . $submission['id']) ?>" class="text-green-600 hover:text-green-900 block">Resubmit</a>
                                 <?php endif; ?>

@@ -96,7 +96,17 @@ if (strpos($method_name, '_') !== false) {
     }
 }
 
-if (class_exists($controller_class)) {
+// Special route handling for user/submission/{id} before general controller check
+if ($controller_name === 'user' && isset($segments[1]) && $segments[1] === 'submission' && isset($segments[2])) {
+    // Handle user/submission/{id} route
+    $controller = new \App\Controllers\UserController();
+    if (is_numeric($segments[2])) {
+        call_user_func_array([$controller, 'viewSubmission'], [$segments[2]]);
+    } else {
+        http_response_code(404);
+        require_once __DIR__ . '/../app/views/errors/404.php';
+    }
+} else if (class_exists($controller_class)) {
     $controller = new $controller_class();
     if (method_exists($controller, $method_name)) {
         // Pass any additional URL segments as parameters to the method
