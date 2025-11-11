@@ -38,7 +38,23 @@ if (empty($_SESSION['csrf_token'])) {
 
             <!-- Info -->
             <div class="text-sm text-gray-600 mb-6 flex flex-wrap gap-4">
-              <span>Oleh <strong><?= htmlspecialchars($submission['nama_mahasiswa']) ?></strong></span>
+              <span>
+                Oleh
+                <strong>
+                  <?= htmlspecialchars($submission['nama_mahasiswa']) ?>
+                  <?php
+                  $additional_authors = [];
+                  if (!empty($submission['author_2'])) $additional_authors[] = htmlspecialchars($submission['author_2']);
+                  if (!empty($submission['author_3'])) $additional_authors[] = htmlspecialchars($submission['author_3']);
+                  if (!empty($submission['author_4'])) $additional_authors[] = htmlspecialchars($submission['author_4']);
+                  if (!empty($submission['author_5'])) $additional_authors[] = htmlspecialchars($submission['author_5']);
+                  
+                  if (!empty($additional_authors)) {
+                      echo ', ' . implode(', ', $additional_authors);
+                  }
+                  ?>
+                </strong>
+              </span>
               <span><?= htmlspecialchars($submission['tahun_publikasi']) ?></span>
             </div>
               <?php
@@ -61,8 +77,22 @@ if (empty($_SESSION['csrf_token'])) {
             <div class="bg-gray-50 border border-gray-200 rounded-xl p-6">
               <h3 class="text-lg font-semibold text-gray-800 mb-4">Details Jurnal</h3>
               <ul class="text-sm text-gray-700 space-y-3">
-                <li><span class="block text-gray-500">Nama
-                    Penulis</span><strong><?= htmlspecialchars($submission['nama_mahasiswa']) ?></strong></li>
+                <li><span class="block text-gray-500">Nama Penulis</span>
+                  <strong>
+                    <?= htmlspecialchars($submission['nama_mahasiswa']) ?>
+                    <?php
+                    $additional_authors = [];
+                    if (!empty($submission['author_2'])) $additional_authors[] = htmlspecialchars($submission['author_2']);
+                    if (!empty($submission['author_3'])) $additional_authors[] = htmlspecialchars($submission['author_3']);
+                    if (!empty($submission['author_4'])) $additional_authors[] = htmlspecialchars($submission['author_4']);
+                    if (!empty($submission['author_5'])) $additional_authors[] = htmlspecialchars($submission['author_5']);
+                    
+                    if (!empty($additional_authors)) {
+                        echo ', ' . implode(', ', $additional_authors);
+                    }
+                    ?>
+                  </strong>
+                </li>
                 <li><span
                     class="block text-gray-500">Email</span><strong><?= htmlspecialchars($submission['email']) ?></strong>
                 </li>

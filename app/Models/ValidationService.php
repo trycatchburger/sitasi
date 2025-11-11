@@ -110,7 +110,11 @@ class ValidationService
             'email' => 'required|email|maxLength:100',
             'judul_jurnal' => 'required|maxLength:500',
             'abstrak' => 'required|maxLength:2000',
-            'tahun_publikasi' => 'required|year'
+            'tahun_publikasi' => 'required|year',
+            'author_2' => 'maxLength:100',
+            'author_3' => 'maxLength:100',
+            'author_4' => 'maxLength:100',
+            'author_5' => 'maxLength:100'
         ];
 
         return $this->validate($data, $rules);

@@ -101,14 +101,19 @@ class Submission
         $this->conn->begin_transaction();
 
         try {
-            $sql_submission = "INSERT INTO submissions (user_id, nama_mahasiswa, email, judul_skripsi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?)";
+            $sql_submission = "INSERT INTO submissions (user_id, nama_mahasiswa, author_2, author_3, author_4, author_5, email, judul_skripsi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_submission = $this->conn->prepare($sql_submission);
             if (!$stmt_submission) {
                 throw new DatabaseException("Journal submission statement preparation failed: " . $this->conn->error);
             }
 
             $submission_type = 'journal';
-            $stmt_submission->bind_param("issisii", $data['user_id'], $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
+            $author_2 = $data['author_2'] ?? null;
+            $author_3 = $data['author_3'] ?? null;
+            $author_4 = $data['author_4'] ?? null;
+            $author_5 = $data['author_5'] ?? null;
+            
+            $stmt_submission->bind_param("isssssisiii", $data['user_id'], $data['nama_penulis'], $author_2, $author_3, $author_4, $author_5, $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Journal submission execution failed: " . $stmt_submission->error);
@@ -266,13 +271,18 @@ class Submission
                 $submission_id = $existing_submission['id'];
                 
                 // Update submission data and reset status and reason to initial state, also updated_at to mark as resubmitted
-                $sql_update = "UPDATE submissions SET user_id = ?, nama_mahasiswa = ?, email = ?, judul_skripsi = ?, abstract = ?, tahun_publikasi = ?, submission_type = 'journal', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                $sql_update = "UPDATE submissions SET user_id = ?, nama_mahasiswa = ?, author_2 = ?, author_3 = ?, author_4 = ?, author_5 = ?, email = ?, judul_skripsi = ?, abstract = ?, tahun_publikasi = ?, submission_type = 'journal', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
                 $stmt_update = $this->conn->prepare($sql_update);
                 if (!$stmt_update) {
                     throw new DatabaseException("Submission update statement preparation failed: " . $this->conn->error);
                 }
                 
-                $stmt_update->bind_param("issisii", $data['user_id'], $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_id);
+                $author_2 = $data['author_2'] ?? null;
+                $author_3 = $data['author_3'] ?? null;
+                $author_4 = $data['author_4'] ?? null;
+                $author_5 = $data['author_5'] ?? null;
+                
+                $stmt_update->bind_param("isssssisiii", $data['user_id'], $data['nama_penulis'], $author_2, $author_3, $author_4, $author_5, $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_id);
                 
                 if (!$stmt_update->execute()) {
                     throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);

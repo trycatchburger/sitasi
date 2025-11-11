@@ -216,6 +216,20 @@ class SubmissionController extends Controller {
             // NORMALISASI INPUT (huruf besar di awal kata)
             $_POST['nama_penulis'] = ucwords(strtolower($_POST['nama_penulis']));
             $_POST['judul_jurnal']  = ucwords(strtolower($_POST['judul_jurnal']));
+            
+            // Normalisasi penulis tambahan jika ada
+            if (!empty($_POST['author_2'])) {
+                $_POST['author_2'] = ucwords(strtolower($_POST['author_2']));
+            }
+            if (!empty($_POST['author_3'])) {
+                $_POST['author_3'] = ucwords(strtolower($_POST['author_3']));
+            }
+            if (!empty($_POST['author_4'])) {
+                $_POST['author_4'] = ucwords(strtolower($_POST['author_4']));
+            }
+            if (!empty($_POST['author_5'])) {
+                $_POST['author_5'] = ucwords(strtolower($_POST['author_5']));
+            }
 
             $submissionModel = new Submission();
             // Check if submission already exists for this author (using name as identifier)
