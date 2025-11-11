@@ -105,7 +105,9 @@ class UserController extends Controller
                 'submissions' => $submissions,
                 'user' => [
                     'name' => $anggotaDetails['name'] ?? $_SESSION['user_name'],
-                    'library_card_number' => $_SESSION['user_library_card_number']
+                    'library_card_number' => $_SESSION['user_library_card_number'],
+                    'tipe_member' => $anggotaDetails['tipe_member'] ?? 'Tidak diketahui',
+                    'status_display' => $this->determineUserStatus($anggotaDetails)
                 ]
             ]);
         } catch (DatabaseException $e) {
@@ -559,6 +561,27 @@ class UserController extends Controller
             $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
             header('Location: ' . url('user/profile'));
             exit;
+        }
+    }
+    
+    /**
+     * Determine user status based on tipe_member and prodi
+     */
+    private function determineUserStatus(array $anggotaDetails): string
+    {
+        $tipe_member = $anggotaDetails['tipe_member'] ?? '';
+        $prodi = $anggotaDetails['prodi'] ?? '';
+        
+        if (strtolower($tipe_member) === 'dosen') {
+            return 'Dosen';
+        } elseif (strtolower($tipe_member) === 'mahasiswa') {
+            if (strtolower($prodi) === 's2 mpi') {
+                return 'Mahasiswa Pascasarjana';
+            } else {
+                return 'Mahasiswa Strata 1';
+            }
+        } else {
+            return $tipe_member ?: 'Tidak diketahui';
         }
     }
 }

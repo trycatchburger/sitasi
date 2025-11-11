@@ -2,7 +2,8 @@
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-8">
         <h1 class="text-2xl font-bold text-gray-800">Selamat Datang, <?= htmlspecialchars($user['name']) ?></h1>
-        <p class="text-gray-600">ID Anggota: <?= htmlspecialchars($user['library_card_number']) ?></p>
+        <p class="text-gray-60">ID Anggota: <?= htmlspecialchars($user['library_card_number']) ?></p>
+        <p class="text-gray-600">Status: <span class="font-semibold"><?= htmlspecialchars($user['status_display']) ?></span></p>
     </div>
 
     <?php if (isset($_SESSION['potential_submission_matches']) && !empty($_SESSION['potential_submission_matches'])): ?>
