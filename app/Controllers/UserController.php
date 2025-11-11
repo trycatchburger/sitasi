@@ -107,7 +107,8 @@ class UserController extends Controller
                     'name' => $anggotaDetails['name'] ?? $_SESSION['user_name'],
                     'library_card_number' => $_SESSION['user_library_card_number'],
                     'tipe_member' => $anggotaDetails['tipe_member'] ?? 'Tidak diketahui',
-                    'status_display' => $this->determineUserStatus($anggotaDetails)
+                    'status_display' => $this->determineUserStatus($anggotaDetails),
+                    'prodi' => $anggotaDetails['prodi'] ?? ''
                 ]
             ]);
         } catch (DatabaseException $e) {

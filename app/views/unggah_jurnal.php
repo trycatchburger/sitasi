@@ -52,7 +52,7 @@
                                     <label for="nama_penulis" class="form-label">Nama Lengkap</label>
                                     <input type="text" id="nama_penulis" name="nama_penulis" required
                                         class="form-control"
-                                        value="<?= isset($old_data['nama_penulis']) ? htmlspecialchars($old_data['nama_penulis']) : '' ?>">
+                                        value="<?= isset($old_data['nama_penulis']) ? htmlspecialchars($old_data['nama_penulis']) : (isset($user_details['name']) ? htmlspecialchars($user_details['name']) : '') ?>">
                                     <p class="text-xs text-gray-50 mt-1">Contoh: Iis Rahayu. Gunakan huruf kapital di awal kata.</p>
                                     
                                     <?php if (isset($errors['nama_penulis'])): ?>
@@ -67,7 +67,7 @@
                                 <div class="form-group mt-6">
                                     <label for="email" class="form-label">Email</label>
                                     <input type="email" id="email" name="email" required class="form-control"
-                                           value="<?= isset($old_data['email']) ? htmlspecialchars($old_data['email']) : '' ?>">
+                                           value="<?= isset($old_data['email']) ? htmlspecialchars($old_data['email']) : (isset($user_details['email']) ? htmlspecialchars($user_details['email']) : '') ?>">
                                     <p class="text-xs text-gray-500 mt-1">Contoh: nama@domain.com</p>
                                     <?php if (isset($errors['email'])): ?>
                                         <div class="text-red-500 text-sm mt-1">

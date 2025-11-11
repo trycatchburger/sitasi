@@ -14,21 +14,69 @@ class SubmissionController extends Controller {
      * Displays the new submission form.
      */
     public function skripsi() {
-        $this->render('unggah_skripsi');
+        // Get user details from anggota table if user is logged in
+        $userDetails = null;
+        if (isset($_SESSION['user_library_card_number'])) {
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+            if ($stmt) {
+                $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $userDetails = $result->fetch_assoc() ?: null;
+                $stmt->close();
+            }
+        }
+        
+        $this->render('unggah_skripsi', [
+            'user_details' => $userDetails
+        ]);
     }
     
     /**
      * Displays the new master's degree submission form.
      */
     public function tesis() {
-        $this->render('unggah_tesis');
+        // Get user details from anggota table if user is logged in
+        $userDetails = null;
+        if (isset($_SESSION['user_library_card_number'])) {
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+            if ($stmt) {
+                $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $userDetails = $result->fetch_assoc() ?: null;
+                $stmt->close();
+            }
+        }
+        
+        $this->render('unggah_tesis', [
+            'user_details' => $userDetails
+        ]);
     }
 
     /**
      * Displays the new journal submission form.
      */
     public function jurnal() {
-        $this->render('unggah_jurnal');
+        // Get user details from anggota table if user is logged in
+        $userDetails = null;
+        if (isset($_SESSION['user_library_card_number'])) {
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+            if ($stmt) {
+                $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $userDetails = $result->fetch_assoc() ?: null;
+                $stmt->close();
+            }
+        }
+        
+        $this->render('unggah_jurnal', [
+            'user_details' => $userDetails
+        ]);
     }
 
     public function create() {
