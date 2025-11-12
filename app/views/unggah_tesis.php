@@ -43,7 +43,13 @@
                             </div>
                         <?php endif; ?>
 
+                        <?php if (isset($is_resubmission) && $is_resubmission): ?>
+                        <form action="<?php echo url('submission/resubmit'); ?>" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="submission_id" value="<?= htmlspecialchars($submission_id) ?>">
+                            <input type="hidden" name="submission_type" value="master">
+                        <?php else: ?>
                         <form action="<?php echo url('submission/create_master'); ?>" method="post" enctype="multipart/form-data">
+                        <?php endif; ?>
                             <!-- Personal Information Section -->
                             <div class="mb-8">
                                 <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Informasi Mahasiswa</h2>

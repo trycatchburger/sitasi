@@ -124,7 +124,7 @@
                             <div class="flex flex-col">
                                 <a href="<?= url('user/submission/' . $submission['id']) ?>" class="text-blue-600 hover:text-blue-90 mb-1 block">View Details</a>
                                 <?php if ($submission['status'] === 'Ditolak' || $submission['is_resubmission']): ?>
-                                    <a href="<?= url('resubmit/' . $submission['id']) ?>" class="text-green-600 hover:text-green-900 block">Resubmit</a>
+                                    <a href="<?= url('user/resubmit/' . $submission['id']) ?>" class="text-green-600 hover:text-green-900 block">Resubmit</a>
                                 <?php endif; ?>
                             </div>
                         </td>

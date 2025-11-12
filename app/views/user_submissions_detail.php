@@ -202,7 +202,7 @@
                 Kembali ke Dashboard
             </a>
             <?php if ($submission['status'] === 'Ditolak' || $submission['is_resubmission']): ?>
-                <a href="<?= url('resubmit/' . $submission['id']) ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                <a href="<?= url('user/resubmit/' . $submission['id']) ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
                     Kirim Ulang
                 </a>
             <?php endif; ?>

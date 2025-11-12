@@ -775,4 +775,190 @@ class UserController extends Controller
             exit;
         }
     }
+
+    public function resubmit($id)
+    {
+        try {
+            if (!$this->isUserLoggedIn()) {
+                header('Location: ' . url('user/login'));
+                exit;
+            }
+
+            $submissionModel = new Submission();
+            $submission = $submissionModel->findById((int)$id);
+
+            // Check if submission belongs to the current user
+            if (!$submission) {
+                $this->render('user_submissions_detail', [
+                    'error' => 'Submission not found or you do not have permission to resubmit this submission.',
+                    'submission' => null
+                ]);
+                return;
+            }
+
+            // Check if submission belongs to current user either by user_id or by matching user details
+            $isOwner = false;
+            
+            // First check: if user_id is set, compare directly
+            if (isset($submission['user_id']) && $submission['user_id'] == $_SESSION['user_id']) {
+                $isOwner = true;
+            }
+            // Second check: if user_id is not set, try to match by name/email/nim (similar to checkForExistingSubmissions)
+            elseif (!isset($submission['user_id']) || $submission['user_id'] === null) {
+                $anggotaDetails = $this->getAnggotaDetails($_SESSION['user_library_card_number']);
+                
+                // Match by name and potentially email or NIM depending on submission type
+                if ($anggotaDetails && $submission['nama_mahasiswa'] === $anggotaDetails['name']) {
+                    // Additional check for email if available in submission
+                    if (isset($submission['email']) && isset($anggotaDetails['email']) &&
+                        $submission['email'] === $anggotaDetails['email']) {
+                        $isOwner = true;
+                    } elseif (isset($submission['nim']) && isset($anggotaDetails['id_member']) &&
+                              $submission['nim'] === $anggotaDetails['id_member']) {
+                        $isOwner = true;
+                    } else {
+                        // If we only have name match, we'll consider it a potential match
+                        $isOwner = true;
+                    }
+                }
+            }
+
+            if (!$isOwner) {
+                // If submission doesn't belong to the user, show error
+                $this->render('user_submissions_detail', [
+                    'error' => 'Submission not found or you do not have permission to resubmit this submission.',
+                    'submission' => null
+                ]);
+                return;
+            }
+
+            // Get files associated with this submission
+            $db = \App\Models\Database::getInstance();
+            $stmt_files = $db->getConnection()->prepare("SELECT id, file_path, file_name FROM submission_files WHERE submission_id = ?");
+            if ($stmt_files) {
+                $stmt_files->bind_param("i", $id);
+                $stmt_files->execute();
+                $files = $stmt_files->get_result()->fetch_all(MYSQLI_ASSOC);
+                $stmt_files->close();
+                
+                $submission['files'] = $files;
+            } else {
+                $submission['files'] = [];
+            }
+
+            // Determine which form to show based on submission type
+            switch ($submission['submission_type']) {
+                case 'journal':
+                    // Get user details from anggota table if user is logged in
+                    $userDetails = null;
+                    if (isset($_SESSION['user_library_card_number'])) {
+                        $db = \App\Models\Database::getInstance();
+                        $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                        if ($stmt) {
+                            $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                            $stmt->execute();
+                            $result = $stmt->get_result();
+                            $userDetails = $result->fetch_assoc() ?: null;
+                            $stmt->close();
+                        }
+                    }
+
+                    // Render the journal resubmission form with existing data
+                    $this->render('unggah_jurnal', [
+                        'old_data' => [
+                            'nama_penulis' => $submission['nama_mahasiswa'] ?? '',
+                            'email' => $submission['email'] ?? '',
+                            'judul_jurnal' => $submission['judul_skripsi'] ?? '',
+                            'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
+                            'abstrak' => $submission['abstract'] ?? '',
+                            'author_2' => $submission['author_2'] ?? '',
+                            'author_3' => $submission['author_3'] ?? '',
+                            'author_4' => $submission['author_4'] ?? '',
+                            'author_5' => $submission['author_5'] ?? '',
+                        ],
+                        'user_details' => $userDetails,
+                        'is_resubmission' => true,
+                        'submission_id' => $id
+                    ]);
+                    break;
+                    
+                case 'master':
+                    // Get user details from anggota table if user is logged in
+                    $userDetails = null;
+                    if (isset($_SESSION['user_library_card_number'])) {
+                        $db = \App\Models\Database::getInstance();
+                        $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                        if ($stmt) {
+                            $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                            $stmt->execute();
+                            $result = $stmt->get_result();
+                            $userDetails = $result->fetch_assoc() ?: null;
+                            $stmt->close();
+                        }
+                    }
+
+                    // Render the tesis resubmission form with existing data
+                    $this->render('unggah_tesis', [
+                        'old_data' => [
+                            'nama_mahasiswa' => $submission['nama_mahasiswa'] ?? '',
+                            'nim' => $submission['nim'] ?? '',
+                            'email' => $submission['email'] ?? '',
+                            'judul_skripsi' => $submission['judul_skripsi'] ?? '',
+                            'dosen1' => $submission['dosen1'] ?? '',
+                            'dosen2' => $submission['dosen2'] ?? '',
+                            'program_studi' => $submission['program_studi'] ?? '',
+                            'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
+                        ],
+                        'user_details' => $userDetails,
+                        'is_resubmission' => true,
+                        'submission_id' => $id
+                    ]);
+                    break;
+                    
+                case 'bachelor':
+                default:
+                    // Get user details from anggota table if user is logged in
+                    $userDetails = null;
+                    if (isset($_SESSION['user_library_card_number'])) {
+                        $db = \App\Models\Database::getInstance();
+                        $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                        if ($stmt) {
+                            $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                            $stmt->execute();
+                            $result = $stmt->get_result();
+                            $userDetails = $result->fetch_assoc() ?: null;
+                            $stmt->close();
+                        }
+                    }
+
+                    // Render the skripsi resubmission form with existing data
+                    $this->render('unggah_skripsi', [
+                        'old_data' => [
+                            'nama_mahasiswa' => $submission['nama_mahasiswa'] ?? '',
+                            'nim' => $submission['nim'] ?? '',
+                            'email' => $submission['email'] ?? '',
+                            'judul_skripsi' => $submission['judul_skripsi'] ?? '',
+                            'dosen1' => $submission['dosen1'] ?? '',
+                            'dosen2' => $submission['dosen2'] ?? '',
+                            'program_studi' => $submission['program_studi'] ?? '',
+                            'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
+                        ],
+                        'user_details' => $userDetails,
+                        'is_resubmission' => true,
+                        'submission_id' => $id
+                    ]);
+                    break;
+            }
+        } catch (DatabaseException $e) {
+            $this->render('user_submissions_detail', [
+                'error' => "Database error occurred while loading submission details for resubmission.",
+                'submission' => null
+            ]);
+        } catch (Exception $e) {
+            $this->render('user_submissions_detail', [
+                'error' => "An error occurred: " . $e->getMessage(),
+                'submission' => null
+            ]);
+        }
+    }
 }
