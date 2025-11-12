@@ -805,6 +805,7 @@ class AdminController extends Controller {
                 $hashedPassword = password_hash($randomPassword, PASSWORD_DEFAULT);
                 
                 // Update user's password in the database
+                // Note: We're not updating status here, just password
                 $result = $user->update($userId, ['password' => $hashedPassword]);
                 
                 if ($result) {
