@@ -175,6 +175,7 @@
                          <div class="hidden group-hover:block md:absolute right-0 mt-0 w-48 bg-white border border-gray-200 rounded shadow-lg z-50">
                              <a href="<?= url('user/dashboard') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Dashboard</a>
                              <a href="<?= url('user/profile') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Profile</a>
+                             <a href="<?= url('user/change_password') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800 change-password-link">Ubah Password</a>
                              <a href="<?= url('user/logout') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">
                                  <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -184,6 +185,66 @@
                              </a>
                          </div>
                      </div>
+                     
+                     <!-- Change Password Popup -->
+                     <div id="change-password-popup"
+                          class="fixed inset-0 bg-black/40 hidden z-50 backdrop-blur-sm flex justify-center items-center">
+                          <div class="bg-white rounded-2xl shadow-xl w-80 sm:w-96 p-6 relative animate-fadeIn">
+                          
+                          <!-- Close button -->
+                          <button id="close-change-password" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                          </button>
+                          
+                          <!-- Header -->
+                          <div class="flex flex-col items-center mb-4">
+                              <h2 class="text-lg font-bold text-gray-800">Ubah Password</h2>
+                              <p class="text-sm text-gray-500">Ganti password akun Anda</p>
+                          </div>
+                          
+                          <!-- Error message container (initially hidden) -->
+                          <div id="change-password-error-container" class="mb-4 hidden">
+                              <div id="change-password-error" class="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm"></div>
+                          </div>
+                          
+                          <!-- Form -->
+                          <form id="change-password-form" action="<?= url('user/change_password') ?>" method="POST" class="space-y-4">
+                              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                              
+                              <div>
+                                  <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Password Lama</label>
+                                  <input type="password" name="current_password" id="current_password"
+                                         required
+                                         placeholder="Masukkan password lama"
+                                         class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                              </div>
+                              
+                              <div>
+                                  <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">Password Baru</label>
+                                  <input type="password" name="new_password" id="new_password"
+                                         required
+                                         placeholder="Masukkan password baru"
+                                         class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                              </div>
+                              
+                              <div>
+                                  <label for="confirm_new_password" class="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password Baru</label>
+                                  <input type="password" name="confirm_new_password" id="confirm_new_password"
+                                         required
+                                         placeholder="Ulangi password baru"
+                                         class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                              </div>
+                              
+                              <button type="submit"
+                                      class="w-full bg-green-700 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition">
+                                  Ubah Password
+                              </button>
+                          </form>
+                      </div>
+                     
                 <?php else: ?>
                     <button id="open-login"
         class="bg-green-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-green-800 transition">
@@ -632,11 +693,118 @@
   tabUser.addEventListener('click', () => {
     activateTab(tabUser, tabAdmin, formUser, formAdmin);
   });
+tabAdmin.addEventListener('click', () => {
+  activateTab(tabAdmin, tabUser, formAdmin, formUser);
+});
 
-  tabAdmin.addEventListener('click', () => {
-    activateTab(tabAdmin, tabUser, formAdmin, formUser);
-  });
+// Change Password Popup functionality
+const changePasswordPopup = document.getElementById('change-password-popup');
+const changePasswordLink = document.querySelector('.change-password-link');
+const closeChangePasswordBtn = document.getElementById('close-change-password');
+
+// Open popup when "Ubah Password" link is clicked
+if (changePasswordLink) {
+    changePasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        changePasswordPopup.classList.remove('hidden');
+    });
+}
+
+// Close popup when close button is clicked
+if (closeChangePasswordBtn) {
+    closeChangePasswordBtn.addEventListener('click', () => {
+        changePasswordPopup.classList.add('hidden');
+    });
+}
+
+// Close popup when clicking outside the popup content
+changePasswordPopup.addEventListener('click', (e) => {
+    if (e.target === changePasswordPopup) {
+        changePasswordPopup.classList.add('hidden');
+    }
+});
+
+// Handle form submission for password change
+const changePasswordForm = document.getElementById('change-password-form');
+if (changePasswordForm) {
+    changePasswordForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        
+        // Get form data
+        const formData = new FormData(this);
+        
+        // Show a loading state or disable the submit button
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.textContent;
+        submitButton.textContent = 'Processing...';
+        submitButton.disabled = true;
+        
+        // Send the form data using fetch API
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text()) // Get response as text to parse HTML
+        .then(data => {
+            // Create a temporary element to parse the response
+            const tempElement = document.createElement('div');
+            tempElement.innerHTML = data;
+            
+            // Check if the response contains error or success messages
+            const responseElement = document.createElement('div');
+            responseElement.innerHTML = data;
+            
+            // Look for error messages in the response
+            const errorDiv = responseElement.querySelector('.bg-red-100, .error, .alert-error, [class*="error"]');
+            const successDiv = responseElement.querySelector('.bg-green-100, .success, .alert-success, [class*="success"]');
+            
+            if (errorDiv) {
+                // Extract error message text
+                const errorMessage = errorDiv.textContent.trim();
+                
+                // Display error message in the popup
+                const errorContainer = document.getElementById('change-password-error-container');
+                const errorMsg = document.getElementById('change-password-error');
+                
+                if (errorMsg) {
+                    errorMsg.textContent = errorMessage;
+                    errorContainer.classList.remove('hidden');
+                }
+                
+                // Re-enable the submit button and reset text
+                submitButton.textContent = originalButtonText;
+                submitButton.disabled = false;
+            } else if (successDiv) {
+                // Extract success message text
+                const successMessage = successDiv.textContent.trim();
+                
+                // Show success notification and close popup after a delay
+                alert(successMessage);
+                
+                // Close the popup and reload page after a brief delay
+                setTimeout(() => {
+                    changePasswordPopup.classList.add('hidden');
+                    location.reload();
+                }, 100);
+            } else {
+                // If no clear error/success message found, assume success and reload
+                changePasswordPopup.classList.add('hidden');
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            
+            // Re-enable the submit button and reset text
+            submitButton.textContent = originalButtonText;
+            submitButton.disabled = false;
+            
+            alert('An error occurred while changing your password. Please try again.');
+        });
+    });
+}
 </script>
+
 
 </body>
 </html>

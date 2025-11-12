@@ -672,4 +672,107 @@ class UserController extends Controller
             return $tipe_member ?: 'Tidak diketahui';
         }
     }
+    
+    public function changePassword()
+    {
+        try {
+            if (!$this->isUserLoggedIn()) {
+                header('Location: ' . url('user/login'));
+                exit;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Verify CSRF token
+                $csrf_token = $_POST['csrf_token'] ?? '';
+                if (!$this->validateCsrfToken($csrf_token)) {
+                    $_SESSION['error_message'] = "Invalid CSRF token.";
+                    header('Location: ' . url('user/change_password'));
+                    exit;
+                }
+
+                $current_password = $_POST['current_password'] ?? '';
+                $new_password = $_POST['new_password'] ?? '';
+                $confirm_new_password = $_POST['confirm_new_password'] ?? '';
+
+                // Validate input
+                if (empty($current_password) || empty($new_password) || empty($confirm_new_password)) {
+                    $_SESSION['error_message'] = "All password fields are required.";
+                    header('Location: ' . url('user/change_password'));
+                    exit;
+                }
+
+                if ($new_password !== $confirm_new_password) {
+                    $_SESSION['error_message'] = "New passwords do not match.";
+                    header('Location: ' . url('user/change_password'));
+                    exit;
+                }
+
+                // Password strength validation (optional - at least 8 characters)
+                if (strlen($new_password) < 8) {
+                    $_SESSION['error_message'] = "New password must be at least 8 characters long.";
+                    header('Location: ' . url('user/change_password'));
+                    exit;
+                }
+
+                // Get user's current password hash from database
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT password FROM users_login WHERE id = ?");
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+                }
+                
+                $stmt->bind_param("i", $_SESSION['user_id']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $user = $result->fetch_assoc();
+
+                if (!$user) {
+                    $_SESSION['error_message'] = "User not found.";
+                    header('Location: ' . url('user/change_password'));
+                    exit;
+                }
+
+                // Verify current password matches
+                if (!password_verify($current_password, $user['password'])) {
+                    $_SESSION['error_message'] = "Current password is incorrect.";
+                    header('Location: ' . url('user/change_password'));
+                    exit;
+                }
+
+                // Hash the new password
+                $new_password_hash = password_hash($new_password, PASSWORD_DEFAULT);
+
+                // Update the password in the database
+                $update_stmt = $db->getConnection()->prepare("UPDATE users_login SET password = ? WHERE id = ?");
+                if (!$update_stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+                }
+                
+                $update_stmt->bind_param("si", $new_password_hash, $_SESSION['user_id']);
+                
+                if ($update_stmt->execute()) {
+                    $_SESSION['success_message'] = "Password changed successfully!";
+                    
+                    // Redirect back to profile after successful password change
+                    header('Location: ' . url('user/profile'));
+                    exit;
+                } else {
+                    throw new DatabaseException("Failed to update password.");
+                }
+            } else {
+                // GET request - show the change password page/form
+                // Ensure CSRF token is available for the view
+                $csrf_token = $this->generateCsrfToken();
+                $this->render('change_password', ['csrf_token' => $csrf_token]);
+            }
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred while changing password.";
+            header('Location: ' . url('user/change_password'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('user/change_password'));
+            exit;
+        }
+    }
 }
