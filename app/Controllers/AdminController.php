@@ -773,6 +773,89 @@ class AdminController extends Controller {
         }
     }
 
+    public function resetUserPassword()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $userId = (int)$_POST['user_id'];
+                
+                // Get user details to access email
+                $user = new User();
+                $userDetails = $user->findById($userId);
+                
+                if (!$userDetails) {
+                    $_SESSION['error_message'] = "User not found.";
+                    header('Location: ' . url('admin/userManagement'));
+                    exit;
+                }
+                
+                // Get user email from anggota table using id_member
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT email FROM anggota WHERE id_member = ?");
+                $stmt->bind_param("s", $userDetails['id_member']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $anggota = $result->fetch_assoc();
+                
+                // Generate a random password
+                $randomPassword = $this->generateRandomPassword();
+                $hashedPassword = password_hash($randomPassword, PASSWORD_DEFAULT);
+                
+                // Update user's password in the database
+                $result = $user->update($userId, ['password' => $hashedPassword]);
+                
+                if ($result) {
+                    // Send email notification if email exists
+                    if ($anggota && !empty($anggota['email'])) {
+                        try {
+                            $emailService = new \App\Models\EmailService();
+                            $emailService->sendPasswordResetNotification($anggota['email'], $randomPassword);
+                            $_SESSION['success_message'] = 'Kata sandi pengguna telah direset berhasil dan pemberitahuan telah dikirim ke pengguna!';
+                        } catch (\Exception $e) {
+                            // If email sending fails, still consider the password reset successful
+                            // Log the error but don't fail the entire operation
+                            error_log("Password reset notification failed: " . $e->getMessage());
+                            $_SESSION['success_message'] = 'Kata sandi pengguna telah direset berhasil, tetapi pemberitahuan email gagal dikirim.';
+                        }
+                    } else {
+                        $_SESSION['success_message'] = 'Kata sandi pengguna telah direset berhasil!';
+                    }
+                    
+                    // Redirect with new password in URL parameters for modal display
+                    header('Location: ' . url('admin/userManagement') . '?reset_success=1&new_password=' . urlencode($randomPassword));
+                    exit;
+                } else {
+                    $_SESSION['error_message'] = "Failed to reset user password.";
+                    header('Location: ' . url('admin/userManagement'));
+                    exit;
+                }
+            }
+            
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred while resetting user password.";
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        }
+    }
+    
+    /**
+     * Generate a random password
+     */
+    private function generateRandomPassword($length = 12): string
+    {
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        return substr(str_shuffle($chars), 0, $length);
+    }
+
     public function importDataAnggota()
     {
         // Run authentication middleware

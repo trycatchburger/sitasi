@@ -11,18 +11,28 @@
     </a>
     </div>
 
-    <?php if (isset($_SESSION['success_message'])): ?>
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-            <?= htmlspecialchars($_SESSION['success_message']) ?>
-            <?php unset($_SESSION['success_message']); ?>
+    <?php if (isset($_SESSION['success_message']) && !isset($_GET['reset_success'])): ?>
+        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg shadow-sm">
+            <div class="flex items-center">
+                <svg class="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span><?= htmlspecialchars($_SESSION['success_message']) ?></span>
+            </div>
         </div>
+        <?php unset($_SESSION['success_message']); ?>
     <?php endif; ?>
 
     <?php if (isset($_SESSION['error_message'])): ?>
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-            <?= htmlspecialchars($_SESSION['error_message']) ?>
-            <?php unset($_SESSION['error_message']); ?>
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-sm">
+            <div class="flex items-center">
+                <svg class="h-5 w-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span><?= htmlspecialchars($_SESSION['error_message']) ?></span>
+            </div>
         </div>
+        <?php unset($_SESSION['error_message']); ?>
     <?php endif; ?>
 
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
@@ -52,9 +62,15 @@
                         <div class="text-sm text-gray-900"><?= htmlspecialchars($user['created_at']) ?></div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <form method="POST" action="<?= url('admin/resetUserPassword') ?>" class="inline mr-2" id="resetForm_<?= $user['id'] ?>">
+                            <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                            <button type="button" onclick="showResetConfirmation(<?= $user['id'] ?>)" class="text-blue-600 hover:text-blue-800 font-medium cursor-pointer">
+                                Reset Password
+                            </button>
+                        </form>
                         <form method="POST" action="<?= url('admin/deleteUser') ?>" class="inline" onsubmit="return confirm('Are you sure you want to delete this user?');">
                             <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                            <button type="submit" class="text-red-600 hover:text-red-900">
+                            <button type="submit" class="text-red-600 hover:text-red-80 font-medium">
                                 Delete
                             </button>
                         </form>
@@ -78,3 +94,127 @@ $title = 'User Management | Admin Dashboard';
 $content = ob_get_clean();
 require __DIR__ . '/../main.php';
 ?>
+
+<!-- Password Reset Confirmation Modal -->
+<div id="passwordResetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50" style="display: none;">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-xl rounded-xl bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-bold text-gray-900 mt-4">Reset Kata Sandi Berhasil</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-600">Kata sandi pengguna telah berhasil direset.</p>
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                    <p class="text-sm font-medium text-gray-700 mb-2">Kata Sandi Baru:</p>
+                    <p id="newPasswordDisplay" class="text-xl font-bold text-blue-700 break-all tracking-wider bg-white p-3 rounded-md border border-gray-200"></p>
+                    <p class="text-xs text-gray-500 mt-3">Silakan bagikan ini kepada pengguna secara aman</p>
+                </div>
+            </div>
+            <div class="items-center px-4 py-3 mt-6">
+                <button id="closeModalBtn" class="px-6 py-2 bg-indigo-60 text-white text-base font-medium rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200 transform hover:scale-105">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Reset Confirmation Modal -->
+<div id="passwordResetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50" style="display: none;">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-xl rounded-xl bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-bold text-gray-900 mt-4">Reset Kata Sandi Berhasil</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-600">Kata sandi pengguna telah berhasil direset.</p>
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 text-center">
+                    <p class="text-sm font-medium text-gray-700 mb-2">Kata Sandi Baru:</p>
+                    <p id="newPasswordDisplay" class="text-xl font-bold text-blue-700 break-all tracking-wider bg-white p-3 rounded-md border border-gray-200"></p>
+                    <p class="text-xs text-gray-500 mt-3">Silakan bagikan ini kepada pengguna secara aman</p>
+                </div>
+            </div>
+            <div class="items-center px-4 py-3 mt-6">
+                <button id="closeModalBtn" class="px-6 py-2 bg-blue-600 text-white text-base font-medium rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 transform hover:scale-105">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal for Reset Password -->
+<div id="confirmResetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50" style="display: none;">
+    <div class="relative top-40 mx-auto p-5 border w-96 shadow-xl rounded-xl bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-bold text-gray-900 mt-4">Konfirmasi Reset Kata Sandi</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-600">Apakah Anda yakin ingin mereset kata sandi pengguna ini?</p>
+            </div>
+            <div class="items-center px-4 py-3 mt-4 space-x-3">
+                <button id="confirmResetBtn" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 transition duration-200 transform hover:scale-105">
+                    Ya, Reset
+                </button>
+                <button id="cancelResetBtn" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-lg shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition duration-200 transform hover:scale-105">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if there's a reset password success message in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetSuccess = urlParams.get('reset_success');
+    const newPassword = urlParams.get('new_password');
+    
+    if (resetSuccess === '1' && newPassword) {
+        // Show modal with new password
+        document.getElementById('newPasswordDisplay').textContent = newPassword;
+        document.getElementById('passwordResetModal').classList.remove('hidden');
+        document.getElementById('passwordResetModal').style.display = 'block';
+    }
+    
+    // Close modal button event
+    document.getElementById('closeModalBtn').addEventListener('click', function() {
+        document.getElementById('passwordResetModal').classList.add('hidden');
+        document.getElementById('passwordResetModal').style.display = 'none';
+        // Remove query parameters from URL
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    });
+    
+    // Confirmation modal functionality
+    let userIdToReset = null;
+    
+    window.showResetConfirmation = function(userId) {
+        userIdToReset = userId;
+        document.getElementById('confirmResetModal').classList.remove('hidden');
+        document.getElementById('confirmResetModal').style.display = 'block';
+    };
+    
+    document.getElementById('confirmResetBtn').addEventListener('click', function() {
+        if (userIdToReset) {
+            document.getElementById('resetForm_' + userIdToReset).submit();
+        }
+    });
+    
+    document.getElementById('cancelResetBtn').addEventListener('click', function() {
+        document.getElementById('confirmResetModal').classList.add('hidden');
+        document.getElementById('confirmResetModal').style.display = 'none';
+        userIdToReset = null;
+    });
+});
+</script>
