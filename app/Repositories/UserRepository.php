@@ -76,7 +76,7 @@ class UserRepository extends BaseRepository
     {
         try {
             // Build dynamic query based on provided data
-            $allowed_fields = ['password'];
+            $allowed_fields = ['password', 'status'];
             $set_parts = [];
             $params = [];
             $param_types = '';

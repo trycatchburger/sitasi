@@ -711,10 +711,10 @@ class AdminController extends Controller {
             $db = \App\Models\Database::getInstance();
             
             // Join users_login with anggota table to get complete user information
-            $sql = "SELECT ul.id, ul.id_member as library_card_number, a.nama as name, a.email, ul.created_at
-                    FROM users_login ul
-                    LEFT JOIN anggota a ON ul.id_member = a.id_member
-                    ORDER BY ul.created_at DESC";
+           $sql = "SELECT ul.id, ul.id_member as library_card_number, a.nama as name, a.email, ul.created_at, ul.status
+                   FROM users_login ul
+                   LEFT JOIN anggota a ON ul.id_member = a.id_member
+                   ORDER BY ul.created_at DESC";
             
             $result = $db->getConnection()->query($sql);
             if (!$result) {
@@ -854,6 +854,48 @@ class AdminController extends Controller {
     {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
         return substr(str_shuffle($chars), 0, $length);
+    }
+
+    public function suspendUser()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $userId = (int)$_POST['user_id'];
+                $action = $_POST['action'] ?? 'suspend'; // 'suspend' or 'activate'
+                
+                // Update user's status in the database
+                $user = new User();
+                $result = $user->update($userId, ['status' => $action === 'suspend' ? 'suspended' : 'active']);
+                
+                if ($result) {
+                    if ($action === 'suspend') {
+                        $_SESSION['success_message'] = 'Akun pengguna telah berhasil disuspend!';
+                    } else {
+                        $_SESSION['success_message'] = 'Akun pengguna telah berhasil diaktifkan kembali!';
+                    }
+                } else {
+                    if ($action === 'suspend') {
+                        $_SESSION['error_message'] = "Gagal untuk mensuspend akun pengguna.";
+                    } else {
+                        $_SESSION['error_message'] = "Gagal untuk mengaktifkan kembali akun pengguna.";
+                    }
+                }
+            }
+            
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred while updating user status.";
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        }
     }
 
     public function importDataAnggota()
