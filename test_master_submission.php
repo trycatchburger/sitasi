@@ -33,7 +33,7 @@ $_POST = [
     'judul_skripsi' => 'Test Master Thesis Title',
     'dosen1' => 'Lecturer One',
     'dosen2' => 'Lecturer Two',
-    'program_studi' => 'Magister Manajemen Pendidikan Islam',
+    'program_studi' => 'S2 Manajemen Pendidikan Islam',
     'tahun_publikasi' => date('Y')  // Current year
 ];
 

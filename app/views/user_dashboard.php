@@ -55,13 +55,13 @@
                 <?php
                 $submitUrl = '';
                 switch($user['status_display']) {
-                    case 'Mahasiswa Pascasarjana':
+                    case 'Mahasiswa Program Magister':
                         $submitUrl = url('submission/tesis');
                         break;
                     case 'Dosen':
                         $submitUrl = url('submission/jurnal');
                         break;
-                    case 'Mahasiswa Strata 1':
+                    case 'Mahasiswa Program Sarjana':
                     default:
                         $submitUrl = url('submission/skripsi');
                         break;

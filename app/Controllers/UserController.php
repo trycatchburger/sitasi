@@ -663,10 +663,10 @@ class UserController extends Controller
         if (strtolower($tipe_member) === 'dosen') {
             return 'Dosen';
         } elseif (strtolower($tipe_member) === 'mahasiswa') {
-            if (strtolower($prodi) === 's2 mpi') {
-                return 'Mahasiswa Pascasarjana';
+            if (strtolower($prodi) === 's2 manajemen pendidikan islam' || strtolower($prodi) === 'magister manajemen pendidikan islam' || strtolower($prodi) === 's2 mpi' || strtolower($prodi) === 'mpi') {
+                return 'Mahasiswa Program Magister';
             } else {
-                return 'Mahasiswa Strata 1';
+                return 'Mahasiswa Program Sarjana';
             }
         } else {
             return $tipe_member ?: 'Tidak diketahui';

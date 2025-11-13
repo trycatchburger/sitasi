@@ -163,8 +163,8 @@
                                             <label for="program_studi" class="form-label">Program Studi</label>
                                             <select id="program_studi" name="program_studi" required
                                                     class="form-control form-select">
-                                                <option value="Magister Manajemen Pendidikan Islam"
-                                                    <?= (isset($old_data['program_studi']) && $old_data['program_studi'] == 'Magister Manajemen Pendidikan Islam') ? 'selected' : ((isset($user_details['prodi']) && $user_details['prodi'] == 'Magister Manajemen Pendidikan Islam') ? 'selected' : '') ?>>Magister Manajemen Pendidikan Islam</option>
+                                                <option value="S2 Manajemen Pendidikan Islam"
+                                                    <?= (isset($old_data['program_studi']) && $old_data['program_studi'] == 'S2 Manajemen Pendidikan Islam') ? 'selected' : ((isset($user_details['prodi']) && $user_details['prodi'] == 'S2 Manajemen Pendidikan Islam') ? 'selected' : '') ?>>S2 Manajemen Pendidikan Islam</option>
                                             </select>
                                             <?php if (isset($errors['program_studi'])): ?>
                                                 <div class="text-red-500 text-sm mt-1">

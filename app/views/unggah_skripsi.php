@@ -173,7 +173,7 @@
                                                 "Tadris Bahasa Inggris" => "Tadris Bahasa Inggris (TBI)",
                                                 "Komunikasi Penyiaran Islam" => "Komunikasi Penyiaran Islam (KPI)",
                                                 "Manajemen Bisnis Syariah" => "Manajemen Bisnis Syariah (MBS)",
-                                                "Manajemen Pendidikan Islam" => "Manajemen Pendidikan Islam (MPI)",
+                                                "S2 Manajemen Pendidikan Islam" => "S2 Manajemen Pendidikan Islam",
                                                 "Pendidikan Agama Islam" => "Pendidikan Agama Islam (PAI)",
                                                 "Pendidikan Bahasa Arab" => "Pendidikan Bahasa Arab",
                                                 "Pendidikan Islam Anak Usia Dini" => "Pendidikan Islam Anak Usia Dini (PIAUD)"
