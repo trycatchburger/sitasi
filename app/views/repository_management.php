@@ -40,8 +40,24 @@
             <?php foreach ($submissions as $submission): ?>
               <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4">
-                  <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($submission['nama_mahasiswa']) ?></div>
-                  <div class="text-sm text-gray-500"><?= htmlspecialchars($submission['nim']) ?></div>
+                  <div class="text-sm font-medium text-gray-900">
+                    <?= htmlspecialchars($submission['nama_mahasiswa']) ?>
+                  </div>
+                  <?php
+                  // Display additional authors if they exist (for journal submissions)
+                  $additional_authors = [];
+                  if (!empty($submission['author_2'])) $additional_authors[] = htmlspecialchars($submission['author_2']);
+                  if (!empty($submission['author_3'])) $additional_authors[] = htmlspecialchars($submission['author_3']);
+                  if (!empty($submission['author_4'])) $additional_authors[] = htmlspecialchars($submission['author_4']);
+                  if (!empty($submission['author_5'])) $additional_authors[] = htmlspecialchars($submission['author_5']);
+                  
+                  if (!empty($additional_authors)): ?>
+                  <div class="text-sm text-gray-600 mt-1">
+                      <span class="font-medium">Additional Authors:</span>
+                      <span class="ml-1"><?= implode(', ', $additional_authors) ?></span>
+                  </div>
+                  <?php endif; ?>
+                  <div class="text-sm text-gray-500"><?= htmlspecialchars($submission['nim'] ?? '') ?></div>
                 </td>
                 <td class="px-6 py-4">
                   <div class="text-sm text-gray-900 max-w-xs truncate"><?= htmlspecialchars($submission['judul_skripsi']) ?></div>
