@@ -805,9 +805,35 @@ class SubmissionController extends Controller {
             $allSubmissions = $submissionModel->findApproved();
             
             // Filter for journal submissions only
+            // Use the same logic as the dashboard view to identify journal submissions
             $journalSubmissions = [];
             foreach ($allSubmissions as $submission) {
-                if ($submission['submission_type'] === 'journal') {
+                $submission_type = $submission['submission_type'] ?? 'bachelor'; // Default to bachelor if not set
+                
+                // Check if this submission belongs to a user with tipe_member "Dosen"
+                // If the submission has a user_id and the user's tipe_member is "Dosen", set submission type to journal
+                if (isset($submission['user_id']) && !empty($submission['user_id']) &&
+                    isset($submission['tipe_member']) && strtolower($submission['tipe_member']) === 'dosen') {
+                    $submission_type = 'journal';
+                }
+                
+                // Fallback logic to detect journal submissions based on presence of additional authors
+                // This handles cases where submission_type might be incorrectly set
+                if ($submission_type === 'bachelor' || $submission_type === 'master') {
+                    // Check if this submission has additional authors which is typical for journal submissions
+                    $has_additional_authors = !empty($submission['author_2']) ||
+                                            !empty($submission['author_3']) ||
+                                            !empty($submission['author_4']) ||
+                                            !empty($submission['author_5']);
+                    
+                    // If it has additional authors but is marked as bachelor/master, it might be a journal submission
+                    // This is a fallback to handle data inconsistency
+                    if ($has_additional_authors && empty($submission['nim'])) {
+                        $submission_type = 'journal';
+                    }
+                }
+                
+                if ($submission_type === 'journal') {
                     $journalSubmissions[] = $submission;
                 }
             }

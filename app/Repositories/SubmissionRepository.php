@@ -25,7 +25,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Build SQL query with optional pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member";
             
             // Add ORDER BY clause based on sort parameter
             $sql .= $this->buildOrderByClause($sort, $order);
@@ -105,7 +105,7 @@ class SubmissionRepository extends BaseRepository
             $offset = ($page - 1) * $perPage;
             
             // First get pending submissions only with pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Pending'";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.status = 'Pending'";
             
             // Add ORDER BY clause based on sort parameter
             $sql .= $this->buildOrderByClause($sort, $order);
@@ -169,7 +169,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // First get approved submissions only
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.status = 'Diterima' ORDER BY s.created_at DESC";
             $result = $this->conn->query($sql);
             if ($result === false) {
                 throw new DatabaseException("Database query failed: " . $this->conn->error);
@@ -204,7 +204,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Get recent approved submissions with limit
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' ORDER BY s.created_at DESC LIMIT ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.status = 'Diterima' ORDER BY s.created_at DESC LIMIT ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -242,7 +242,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Get recent approved journal submissions with limit
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' AND s.submission_type = 'journal' ORDER BY s.created_at DESC LIMIT ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.status = 'Diterima' AND s.submission_type = 'journal' ORDER BY s.created_at DESC LIMIT ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -279,7 +279,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Get submissions with status 'Diterima' or 'Pending'
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.status IN ('Diterima', 'Pending') ORDER BY s.created_at DESC";
             $result = $this->conn->query($sql);
             if ($result === false) {
                 throw new DatabaseException("Database query failed: " . $this->conn->error);
@@ -320,7 +320,7 @@ class SubmissionRepository extends BaseRepository
             $offset = ($page - 1) * $perPage;
             
             // Get journal submissions only with pagination
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.submission_type = 'journal'";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.submission_type = 'journal'";
             
             // Add ORDER BY clause based on sort parameter
             $sql .= $this->buildOrderByClause($sort, $order);
@@ -384,7 +384,7 @@ class SubmissionRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s WHERE s.id = ?");
+            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -468,7 +468,7 @@ class SubmissionRepository extends BaseRepository
     public function getSubmissionWithEmail(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id = ?");
+            $stmt = $this->conn->prepare("SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -494,7 +494,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Search recent approved submissions with limit
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' AND (s.judul_skripsi LIKE ? OR s.nama_mahasiswa LIKE ?) ORDER BY s.created_at DESC LIMIT ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.status = 'Diterima' AND (s.judul_skripsi LIKE ? OR s.nama_mahasiswa LIKE ?) ORDER BY s.created_at DESC LIMIT ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -544,7 +544,7 @@ class SubmissionRepository extends BaseRepository
             $offset = ($page - 1) * $perPage;
             
             // Build SQL query with all fields including abstract and submission_type
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id ";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member ";
             
             // Build WHERE clause based on parameters
             $whereClause = "";
@@ -704,7 +704,7 @@ class SubmissionRepository extends BaseRepository
     {
         try {
             // Search recent approved journal submissions with limit
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.status = 'Diterima' AND s.submission_type = 'journal' AND (s.judul_skripsi LIKE ? OR s.nama_mahasiswa LIKE ?) ORDER BY s.created_at DESC LIMIT ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.status = 'Diterima' AND s.submission_type = 'journal' AND (s.judul_skripsi LIKE ? OR s.nama_mahasiswa LIKE ?) ORDER BY s.created_at DESC LIMIT ?";
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
@@ -737,7 +737,7 @@ class SubmissionRepository extends BaseRepository
     public function findByUserId(int $userId, string $sort = null, string $order = 'asc'): array
     {
         try {
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.user_id = ?";
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.user_id = ?";
             
             // Add ORDER BY clause based on sort parameter
             $sql .= $this->buildOrderByClause($sort, $order);
@@ -883,7 +883,7 @@ class SubmissionRepository extends BaseRepository
             // Find submissions that have only the original files (typically 4 for bachelor/master, 2 for journal)
             // We'll use a subquery to find submissions that have a specific number of files that matches
             // the expected number of original files only
-            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.id IN (
+            $sql = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, s.user_id, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type, anggota.tipe_member FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id LEFT JOIN users_login ul ON s.user_id = ul.id LEFT JOIN anggota ON ul.id_member = anggota.id_member WHERE s.id IN (
                 SELECT sf.submission_id FROM submission_files sf GROUP BY sf.submission_id HAVING COUNT(*) <= 4
             )";
             

@@ -113,7 +113,7 @@ class Submission
             $author_4 = $data['author_4'] ?? null;
             $author_5 = $data['author_5'] ?? null;
             
-            $stmt_submission->bind_param("isssssisiii", $data['user_id'], $data['nama_penulis'], $author_2, $author_3, $author_4, $author_5, $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
+            $stmt_submission->bind_param("isssssssiii", $data['user_id'], $data['nama_penulis'], $author_2, $author_3, $author_4, $author_5, $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Journal submission execution failed: " . $stmt_submission->error);
@@ -282,7 +282,7 @@ class Submission
                 $author_4 = $data['author_4'] ?? null;
                 $author_5 = $data['author_5'] ?? null;
                 
-                $stmt_update->bind_param("isssssisiii", $data['user_id'], $data['nama_penulis'], $author_2, $author_3, $author_4, $author_5, $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_id);
+                $stmt_update->bind_param("isssssssiii", $data['user_id'], $data['nama_penulis'], $author_2, $author_3, $author_4, $author_5, $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_id);
                 
                 if (!$stmt_update->execute()) {
                     throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);
