@@ -33,7 +33,7 @@
   <!-- Gambar di kanan -->
    
   <div class="md:w-1/2 relative animate-fade-in-right">
-    <img src="<?= url('public/images/char.png') ?>" alt="Karakter Unggah" class="w-full max-w-md mx-auto drop-shadow-2xl">
+    <img src="<?= url('public/images/char.png') ?>" alt="Karakter Unggah" class="w-full max-w-md scale-150 mx-auto drop-shadow-2xl">
         <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-2/3 h-4 bg-green-100 rounded-full blur-2xl opacity-70"></div>
 
   
