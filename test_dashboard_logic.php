@@ -73,7 +73,7 @@ try {
     }
     
     // Now test the findByUserId method to see what actual submissions are associated
-    $sql3 = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.user_id = ? ORDER BY s.created_at DESC";
+    $sql3 = "SELECT s.id, s.admin_id, s.serial_number, s.nama_mahasiswa, s.nim, s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract, s.program_studi, s.tahun_publikasi, s.status, s.keterangan, s.notifikasi, s.created_at, s.updated_at, a.username as admin_username, (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type FROM submissions s LEFT JOIN admins a ON s.admin_id = a.id WHERE s.user_id = ? ORDER BY s.created_at DESC";
     $stmt3 = $conn->prepare($sql3);
     $stmt3->bind_param("i", $_SESSION['user_id']);
     $stmt3->execute();

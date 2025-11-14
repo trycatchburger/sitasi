@@ -172,7 +172,7 @@ class UserReferenceRepository extends BaseRepository
                            s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract,
                            s.program_studi, s.tahun_publikasi, s.status, s.keterangan,
                            s.notifikasi, s.created_at, s.updated_at, a.username as admin_username,
-                           (s.created_at != s.updated_at) as is_resubmission, s.submission_type
+                           (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type
                     FROM user_references ur
                     JOIN submissions s ON ur.submission_id = s.id
                     LEFT JOIN admins a ON s.admin_id = a.id
@@ -232,7 +232,7 @@ class UserReferenceRepository extends BaseRepository
                            s.email, s.dosen1, s.dosen2, s.judul_skripsi, s.abstract,
                            s.program_studi, s.tahun_publikasi, s.status, s.keterangan,
                            s.notifikasi, s.created_at, s.updated_at, a.username as admin_username,
-                           (s.created_at != s.updated_at) as is_resubmission, s.submission_type
+                           (s.created_at != s.updated_at AND s.updated_at > DATE_ADD(s.created_at, INTERVAL 1 SECOND)) as is_resubmission, s.submission_type
                      FROM user_references ur
                      JOIN submissions s ON ur.submission_id = s.id
                      LEFT JOIN admins a ON s.admin_id = a.id
