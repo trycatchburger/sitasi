@@ -141,7 +141,7 @@ class Submission
     public function submissionExists(string $nim): bool
     {
         try {
-            $stmt_check = $this->database->prepareWithProfiling("SELECT id FROM submissions WHERE nim = ?");
+            $stmt_check = $this->database->prepareWithProfiling("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nim = ?");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -161,7 +161,7 @@ class Submission
     public function journalSubmissionExists(string $author_name): bool
     {
         try {
-            $stmt_check = $this->database->prepareWithProfiling("SELECT id FROM submissions WHERE nama_mahasiswa = ? AND submission_type = 'journal'");
+            $stmt_check = $this->database->prepareWithProfiling("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nama_mahasiswa = ? AND s.submission_type = 'journal'");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -186,7 +186,7 @@ class Submission
 
         try {
             // Check if submission already exists for this NIM
-            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nim = ?");
+            $stmt_check = $this->conn->prepare("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nim = ?");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -257,7 +257,7 @@ class Submission
 
         try {
             // Check if journal submission already exists for this author
-            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nama_mahasiswa = ? AND submission_type = 'journal'");
+            $stmt_check = $this->conn->prepare("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nama_mahasiswa = ? AND s.submission_type = 'journal'");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -334,7 +334,7 @@ class Submission
 
         try {
             // Check if submission already exists for this NIM
-            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nim = ?");
+            $stmt_check = $this->conn->prepare("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nim = ?");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
