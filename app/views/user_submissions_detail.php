@@ -28,7 +28,32 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Jenis Pengunggahan</p>
-                        <p class="text-lg font-semibold text-gray-90 capitalize"><?= htmlspecialchars($submission['submission_type'] ?? 'skripsi') ?></p>
+                        <p class="text-lg font-semibold text-gray-90 capitalize">
+                        <?php
+                        // Determine submission type based on available data
+                        $displayType = $submission['submission_type'] ?? '';
+                        
+                        // If submission_type is empty, try to determine from other fields
+                        if (empty($displayType)) {
+                            // Check if this looks like a journal submission based on multiple authors
+                            if (!empty($submission['author_2']) || !empty($submission['author_3']) ||
+                                !empty($submission['author_4']) || !empty($submission['author_5']) ||
+                                !empty($submission['abstract'])) {
+                                $displayType = 'journal';
+                            }
+                            // Check if the user is a Dosen which typically submits journals
+                            elseif (!empty($submission['tipe_member']) && $submission['tipe_member'] === 'Dosen') {
+                                $displayType = 'journal';
+                            }
+                            elseif (!empty($submission['nim'])) {
+                                $displayType = 'bachelor'; // Has NIM, likely a bachelor thesis
+                            } else {
+                                $displayType = 'skripsi'; // Default fallback
+                            }
+                        }
+                        echo htmlspecialchars(ucfirst($displayType));
+                        ?>
+                        </p>
                     </div>
                     <div>
                         <p class="text-sm font-medium text-gray-500">Status</p>

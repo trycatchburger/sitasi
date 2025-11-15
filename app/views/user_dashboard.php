@@ -93,7 +93,30 @@
                         </td>
                         <td class="px-6 py-4 whitespace-normal">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-10 text-blue-800 break-words">
-                                <?= htmlspecialchars($submission['submission_type'] ?? 'skripsi') ?>
+                                <?php
+                                // Determine submission type based on available data
+                                $displayType = $submission['submission_type'] ?? '';
+                                
+                                // If submission_type is empty, try to determine from other fields
+                                if (empty($displayType)) {
+                                    // Check if this looks like a journal submission based on multiple authors
+                                    if (!empty($submission['author_2']) || !empty($submission['author_3']) ||
+                                        !empty($submission['author_4']) || !empty($submission['author_5']) ||
+                                        !empty($submission['abstract'])) {
+                                        $displayType = 'journal';
+                                    }
+                                    // Check if the user is a Dosen which typically submits journals
+                                    elseif (!empty($submission['tipe_member']) && $submission['tipe_member'] === 'Dosen') {
+                                        $displayType = 'journal';
+                                    }
+                                    elseif (!empty($submission['nim'])) {
+                                        $displayType = 'bachelor'; // Has NIM, likely a bachelor thesis
+                                    } else {
+                                        $displayType = 'skripsi'; // Default fallback
+                                    }
+                                }
+                                echo htmlspecialchars(ucfirst($displayType));
+                                ?>
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">

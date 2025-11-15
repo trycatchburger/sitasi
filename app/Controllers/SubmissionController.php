@@ -28,6 +28,13 @@ class SubmissionController extends Controller {
             }
         }
         
+        // Check if user is Dosen - they should not access skripsi form
+        if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+            // Redirect Dosen to journal submission instead
+            header('Location: ' . url('submission/jurnal'));
+            exit;
+        }
+        
         $this->render('unggah_skripsi', [
             'user_details' => $userDetails
         ]);
@@ -49,6 +56,13 @@ class SubmissionController extends Controller {
                 $userDetails = $result->fetch_assoc() ?: null;
                 $stmt->close();
             }
+        }
+        
+        // Check if user is Dosen - they should not access tesis form
+        if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+            // Redirect Dosen to journal submission instead
+            header('Location: ' . url('submission/jurnal'));
+            exit;
         }
         
         $this->render('unggah_tesis', [
@@ -81,6 +95,25 @@ class SubmissionController extends Controller {
 
     public function create() {
         try {
+            // Get user details to check if they're allowed to submit skripsi
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
+            
+            // Check if user is Dosen - they should not submit skripsi
+            if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+                throw new ValidationException([], "Dosen users cannot submit skripsi. Please use the journal submission form instead.");
+            }
+
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
             
@@ -141,6 +174,25 @@ class SubmissionController extends Controller {
 
     public function createMaster() {
         try {
+            // Get user details to check if they're allowed to submit tesis
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
+            
+            // Check if user is Dosen - they should not submit tesis
+            if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+                throw new ValidationException([], "Dosen users cannot submit tesis. Please use the journal submission form instead.");
+            }
+
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
             
@@ -201,6 +253,26 @@ class SubmissionController extends Controller {
 
     public function createJournal() {
         try {
+            // Get user details to verify user type
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
+            
+            // Get user ID to associate with journal submission
+            $userId = $_SESSION['user_id'] ?? null;
+            
+            // Add user ID to POST data for journal creation
+            $_POST['user_id'] = $userId;
+
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
             
@@ -275,6 +347,20 @@ class SubmissionController extends Controller {
      */
     public function resubmit() {
         try {
+            // Get user details to check user type restrictions
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
+            
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
             
@@ -287,6 +373,19 @@ class SubmissionController extends Controller {
                 $existingSubmission = $submissionModel->findById((int)$submissionId);
                 if ($existingSubmission) {
                     $submissionType = $existingSubmission['submission_type'] ?? 'bachelor';
+                }
+            }
+            
+            // Check user type restrictions before processing
+            if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+                // Dosen users can only resubmit journals
+                if ($submissionType !== 'journal') {
+                    throw new ValidationException([], "Dosen users can only resubmit journal submissions. Please use the journal submission form instead.");
+                }
+            } else {
+                // Non-Dosen users cannot resubmit journals
+                if ($submissionType === 'journal') {
+                    throw new ValidationException([], "Only Dosen users can resubmit journal submissions. Please use the appropriate form for your submission type.");
                 }
             }
             

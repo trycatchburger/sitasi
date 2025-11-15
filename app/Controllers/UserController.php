@@ -846,108 +846,88 @@ class UserController extends Controller
                 $submission['files'] = [];
             }
 
-            // Determine which form to show based on submission type
-            switch ($submission['submission_type']) {
-                case 'journal':
-                    // Get user details from anggota table if user is logged in
-                    $userDetails = null;
-                    if (isset($_SESSION['user_library_card_number'])) {
-                        $db = \App\Models\Database::getInstance();
-                        $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
-                        if ($stmt) {
-                            $stmt->bind_param("s", $_SESSION['user_library_card_number']);
-                            $stmt->execute();
-                            $result = $stmt->get_result();
-                            $userDetails = $result->fetch_assoc() ?: null;
-                            $stmt->close();
-                        }
-                    }
+            // Get user details to determine their type for resubmission form
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
 
-                    // Render the journal resubmission form with existing data
-                    $this->render('unggah_jurnal', [
-                        'old_data' => [
-                            'nama_penulis' => $submission['nama_mahasiswa'] ?? '',
-                            'email' => $submission['email'] ?? '',
-                            'judul_jurnal' => $submission['judul_skripsi'] ?? '',
-                            'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
-                            'abstrak' => $submission['abstract'] ?? '',
-                            'author_2' => $submission['author_2'] ?? '',
-                            'author_3' => $submission['author_3'] ?? '',
-                            'author_4' => $submission['author_4'] ?? '',
-                            'author_5' => $submission['author_5'] ?? '',
-                        ],
-                        'user_details' => $userDetails,
-                        'is_resubmission' => true,
-                        'submission_id' => $id
-                    ]);
-                    break;
-                    
-                case 'master':
-                    // Get user details from anggota table if user is logged in
-                    $userDetails = null;
-                    if (isset($_SESSION['user_library_card_number'])) {
-                        $db = \App\Models\Database::getInstance();
-                        $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
-                        if ($stmt) {
-                            $stmt->bind_param("s", $_SESSION['user_library_card_number']);
-                            $stmt->execute();
-                            $result = $stmt->get_result();
-                            $userDetails = $result->fetch_assoc() ?: null;
-                            $stmt->close();
-                        }
-                    }
-
-                    // Render the tesis resubmission form with existing data
-                    $this->render('unggah_tesis', [
-                        'old_data' => [
-                            'nama_mahasiswa' => $submission['nama_mahasiswa'] ?? '',
-                            'nim' => $submission['nim'] ?? '',
-                            'email' => $submission['email'] ?? '',
-                            'judul_skripsi' => $submission['judul_skripsi'] ?? '',
-                            'dosen1' => $submission['dosen1'] ?? '',
-                            'dosen2' => $submission['dosen2'] ?? '',
-                            'program_studi' => $submission['program_studi'] ?? '',
-                            'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
-                        ],
-                        'user_details' => $userDetails,
-                        'is_resubmission' => true,
-                        'submission_id' => $id
-                    ]);
-                    break;
-                    
-                case 'bachelor':
-                default:
-                    // Get user details from anggota table if user is logged in
-                    $userDetails = null;
-                    if (isset($_SESSION['user_library_card_number'])) {
-                        $db = \App\Models\Database::getInstance();
-                        $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
-                        if ($stmt) {
-                            $stmt->bind_param("s", $_SESSION['user_library_card_number']);
-                            $stmt->execute();
-                            $result = $stmt->get_result();
-                            $userDetails = $result->fetch_assoc() ?: null;
-                            $stmt->close();
-                        }
-                    }
-
-                    // Render the skripsi resubmission form with existing data
-                    $this->render('unggah_skripsi', [
-                        'old_data' => [
-                            'nama_mahasiswa' => $submission['nama_mahasiswa'] ?? '',
-                            'nim' => $submission['nim'] ?? '',
-                            'email' => $submission['email'] ?? '',
-                            'judul_skripsi' => $submission['judul_skripsi'] ?? '',
-                            'dosen1' => $submission['dosen1'] ?? '',
-                            'dosen2' => $submission['dosen2'] ?? '',
-                            'program_studi' => $submission['program_studi'] ?? '',
-                            'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
-                        ],
-                        'user_details' => $userDetails,
-                        'is_resubmission' => true,
-                        'submission_id' => $id
-                    ]);
-                    break;
+            // Determine user status to decide which form to show
+            $userStatus = $this->determineUserStatus($userDetails ?? []);
+            
+            // Determine submission type from the database
+            $submissionType = $submission['submission_type'] ?? 'bachelor';
+            
+            // Check user type restrictions for resubmission
+            if ($userStatus === 'Dosen') {
+                // Dosen users can only resubmit journals
+                // Even if the database has an incorrect submission_type, force journal type for Dosen
+                $this->render('unggah_jurnal', [
+                    'old_data' => [
+                        'nama_penulis' => $submission['nama_mahasiswa'] ?? '',
+                        'email' => $submission['email'] ?? '',
+                        'judul_jurnal' => $submission['judul_skripsi'] ?? '',
+                        'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
+                        'abstrak' => $submission['abstract'] ?? '',
+                        'author_2' => $submission['author_2'] ?? '',
+                        'author_3' => $submission['author_3'] ?? '',
+                        'author_4' => $submission['author_4'] ?? '',
+                        'author_5' => $submission['author_5'] ?? '',
+                    ],
+                    'user_details' => $userDetails,
+                    'is_resubmission' => true,
+                    'submission_id' => $id
+                ]);
+            } elseif ($submissionType === 'journal') {
+                // Non-Dosen users should not be able to resubmit journals
+                $this->render('user_submissions_detail', [
+                    'error' => 'Only Dosen users can resubmit journal submissions.',
+                    'submission' => null
+                ]);
+                return;
+            } elseif ($submissionType === 'master') {
+                // Render the tesis resubmission form with existing data
+                $this->render('unggah_tesis', [
+                    'old_data' => [
+                        'nama_mahasiswa' => $submission['nama_mahasiswa'] ?? '',
+                        'nim' => $submission['nim'] ?? '',
+                        'email' => $submission['email'] ?? '',
+                        'judul_skripsi' => $submission['judul_skripsi'] ?? '',
+                        'dosen1' => $submission['dosen1'] ?? '',
+                        'dosen2' => $submission['dosen2'] ?? '',
+                        'program_studi' => $submission['program_studi'] ?? '',
+                        'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
+                    ],
+                    'user_details' => $userDetails,
+                    'is_resubmission' => true,
+                    'submission_id' => $id
+                ]);
+            } else {
+                // Default to skripsi form for bachelor submissions
+                // Render the skripsi resubmission form with existing data
+                $this->render('unggah_skripsi', [
+                    'old_data' => [
+                        'nama_mahasiswa' => $submission['nama_mahasiswa'] ?? '',
+                        'nim' => $submission['nim'] ?? '',
+                        'email' => $submission['email'] ?? '',
+                        'judul_skripsi' => $submission['judul_skripsi'] ?? '',
+                        'dosen1' => $submission['dosen1'] ?? '',
+                        'dosen2' => $submission['dosen2'] ?? '',
+                        'program_studi' => $submission['program_studi'] ?? '',
+                        'tahun_publikasi' => $submission['tahun_publikasi'] ?? '',
+                    ],
+                    'user_details' => $userDetails,
+                    'is_resubmission' => true,
+                    'submission_id' => $id
+                ]);
             }
         } catch (DatabaseException $e) {
             $this->render('user_submissions_detail', [
