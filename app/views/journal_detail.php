@@ -32,7 +32,7 @@ if (empty($_SESSION['csrf_token'])) {
           <!-- First Column: Title, Info, Abstract, Files -->
           <div>
             <!-- Title -->
-            <h1 class="text-2xl font-bold text-gray-900 mb-2"><?= htmlspecialchars($submission['judul_skripsi']) ?></h1>
+            <h1 class="text-2xl font-bold text-gray-90 mb-2"><?= htmlspecialchars($submission['judul_skripsi'] ?? $submission['judul_jurnal'] ?? 'Untitled') ?></h1>
 
             <!-- Abstract -->
 
@@ -41,7 +41,7 @@ if (empty($_SESSION['csrf_token'])) {
               <span>
                 Oleh
                 <strong>
-                  <?= htmlspecialchars($submission['nama_mahasiswa']) ?>
+                  <?= htmlspecialchars($submission['nama_mahasiswa'] ?? $submission['nama_penulis'] ?? 'Unknown') ?>
                   <?php
                   $additional_authors = [];
                   if (!empty($submission['author_2'])) $additional_authors[] = htmlspecialchars($submission['author_2']);
@@ -55,7 +55,7 @@ if (empty($_SESSION['csrf_token'])) {
                   ?>
                 </strong>
               </span>
-              <span><?= htmlspecialchars($submission['tahun_publikasi']) ?></span>
+              <span><?= htmlspecialchars($submission['tahun_publikasi'] ?? 'N/A') ?></span>
             </div>
               <?php
             $abstract = '';
@@ -79,7 +79,7 @@ if (empty($_SESSION['csrf_token'])) {
               <ul class="text-sm text-gray-700 space-y-3">
                 <li><span class="block text-gray-500">Nama Penulis</span>
                   <strong>
-                    <?= htmlspecialchars($submission['nama_mahasiswa']) ?>
+                    <?= htmlspecialchars($submission['nama_mahasiswa'] ?? $submission['nama_penulis'] ?? 'Unknown') ?>
                     <?php
                     $additional_authors = [];
                     if (!empty($submission['author_2'])) $additional_authors[] = htmlspecialchars($submission['author_2']);
@@ -94,14 +94,44 @@ if (empty($_SESSION['csrf_token'])) {
                   </strong>
                 </li>
                 <li><span
-                    class="block text-gray-500">Email</span><strong><?= htmlspecialchars($submission['email']) ?></strong>
+                    class="block text-gray-500">Email</span><strong><?= htmlspecialchars($submission['email'] ?? 'N/A') ?></strong>
                 </li>
                 <li><span class="block text-gray-500">Tahun
-                    Publikasi</span><strong><?= htmlspecialchars($submission['tahun_publikasi']) ?></strong></li>
+                    Publikasi</span><strong><?= htmlspecialchars($submission['tahun_publikasi'] ?? 'N/A') ?></strong></li>
                 <li><span class="block text-gray-500">Tanggal
-                    Unggah</span><strong><?= format_datetime($submission['created_at'], 'F j, Y') ?></strong></li>
+                    Unggah</span><strong><?= $submission['created_at'] ? format_datetime($submission['created_at'], 'F j, Y') : 'N/A' ?></strong></li>
               </ul>
             </div>  
+             <!-- Cover Image - Use second uploaded file -->
+             <?php if (!empty($submission['files']) && count($submission['files']) >= 2): ?>
+               <?php
+               // Get the second file (index 1) as the cover image
+               $coverFile = $submission['files'][1]; // Second file (0-indexed)
+               $fileExtension = strtolower(pathinfo($coverFile['file_name'], PATHINFO_EXTENSION));
+               $isImage = in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+               ?>
+               <?php if ($isImage): ?>
+                 <div class="mb-8">
+                   <h3 class="text-lg font-semibold text-gray-800 mb-3">Cover Jurnal</h3>
+                   <div class="flex justify-center">
+                     <img src="<?= url('file/publicView/' . $coverFile['id']) ?>" alt="Cover Jurnal"
+                       class="max-w-full max-h-96 object-contain rounded-lg border border-gray-300">
+                   </div>
+                 </div>
+               <?php else: ?>
+                 <!-- Display as a file link if it's not an image -->
+                 <div class="mb-8 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                   <h3 class="text-lg font-semibold text-gray-800 mb-3">Cover Jurnal</h3>
+                   <div class="text-center">
+                     <a href="<?= url('file/publicView/' . $coverFile['id']) ?>" target="_blank"
+                       class="inline-block text-orange-700 hover:text-orange-900 font-medium">
+                       Download Cover File
+                     </a>
+                   </div>
+                 </div>
+               <?php endif; ?>
+             <?php endif; ?>
+
             <!-- Files -->
             <div>
               <h3 class="text-lg font-semibold text-gray-800 mb-4">Files</h3>
@@ -161,39 +191,6 @@ if (empty($_SESSION['csrf_token'])) {
 
         <!-- Sidebar -->
         <aside class="space-y-6">
-          <div>
-            <!-- Cover Image - Use second uploaded file -->
-            <?php if (!empty($submission['files']) && count($submission['files']) >= 2): ?>
-              <?php
-              // Get the second file (index 1) as the cover image
-              $coverFile = $submission['files'][1]; // Second file (0-indexed)
-              $fileExtension = strtolower(pathinfo($coverFile['file_name'], PATHINFO_EXTENSION));
-              $isImage = in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-              ?>
-              <?php if ($isImage): ?>
-                <div class="mb-8 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                  <h3 class="text-lg font-semibold text-gray-800 mb-3">Cover Jurnal</h3>
-                  <div class="flex justify-center">
-                    <a href="<?= url('file/publicView/' . $coverFile['id']) ?>" target="_blank" class="block">
-                      <img src="<?= url('file/publicView/' . $coverFile['id']) ?>" alt="Cover Jurnal"
-                        class="max-w-full max-h-96 object-contain rounded-lg border border-gray-300 cursor-pointer hover:opacity-90 transition-opacity">
-                    </a>
-                  </div>
-                </div>
-              <?php else: ?>
-                <!-- Display as a file link if it's not an image -->
-                <div class="mb-8 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 shadow-sm">
-                  <h3 class="text-lg font-semibold text-gray-800 mb-3">Cover Jurnal</h3>
-                  <div class="text-center">
-                    <a href="<?= url('file/publicView/' . $coverFile['id']) ?>" target="_blank"
-                      class="inline-block text-orange-700 hover:text-orange-900 font-medium">
-                      Download Cover File
-                    </a>
-                  </div>
-                </div>
-              <?php endif; ?>
-            <?php endif; ?>
-          </div>
 
           <!-- Add to Reference Button -->
           <?php if (isset($_SESSION['user_id'])): ?>

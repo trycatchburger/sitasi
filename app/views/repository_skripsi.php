@@ -110,7 +110,9 @@
         $firstName = implode(' ', $firstNames);
         $formattedName = $lastName . ', ' . $firstName;
 
-        $titleLink = '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-green-70 hover:text-green-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
+        // Determine the correct detail route based on submission type
+        $detailRoute = ($submission['submission_type'] ?? 'bachelor') === 'journal' ? 'journalDetail' : 'detail';
+        $titleLink = '<a href="' . url('submission/' . $detailRoute . '/' . $submission['id']) . '" class="text-green-70 hover:text-green-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
       ?>
 
       <div class="submission-item bg-white rounded-xl shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 overflow-hidden">

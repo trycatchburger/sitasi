@@ -1025,6 +1025,14 @@ class SubmissionController extends Controller {
                 return;
             }
             
+            // Check if the submission is actually a journal submission
+            if (($submission['submission_type'] ?? null) !== 'journal') {
+                // If it's not a journal submission, show 404 error
+                http_response_code(404);
+                require_once __DIR__ . '/../views/errors/404.php';
+                return;
+            }
+            
             // Check if user is logged in and if submission is in their references
             $isReference = false;
             if (isset($_SESSION['user_id'])) {

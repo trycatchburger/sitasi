@@ -107,8 +107,10 @@ try {
           }
 
           // Bentuk sitasi (sama seperti sebelumnya)
+          // Use appropriate detail route based on submission type
+          $detailRoute = ($tipe === 'journal') ? 'journalDetail' : 'detail';
           $citation = $formattedName . '. (' . htmlspecialchars($submission['tahun_publikasi']) . '). ' .
-                      '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-green-900 font-semibold hover:text-green-600 hover:underline">' .
+                      '<a href="' . url('submission/' . $detailRoute . '/' . $submission['id']) . '" class="text-green-900 font-semibold hover:text-green-600 hover:underline">' .
                       htmlspecialchars($submission['judul_skripsi']) . '</a>. ' .
                       $jenisKarya;
         ?>
