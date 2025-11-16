@@ -10,6 +10,7 @@ use App\Exceptions\AuthenticationException;
 use App\Exceptions\ValidationException;
 use App\Exceptions\DatabaseException;
 use Exception;
+use App\Models\User as UserModel;
 
 class UserController extends Controller
 {
@@ -20,7 +21,6 @@ class UserController extends Controller
 
     public function login()
     {
-        // Check if user is already logged in
         if (SessionManager::isUserLoggedIn()) {
             header('Location: ' . url('user/dashboard'));
             exit;
@@ -112,9 +112,29 @@ class UserController extends Controller
                 ]
             ]);
         } catch (DatabaseException $e) {
-            $this->render('user_dashboard', ['error' => "Database error occurred while loading dashboard."]);
+            $this->render('user_dashboard', [
+                'error' => "Database error occurred while loading dashboard.",
+                'user' => [
+                    'name' => $_SESSION['user_name'] ?? 'User',
+                    'library_card_number' => $_SESSION['user_library_card_number'] ?? '',
+                    'tipe_member' => 'Tidak diketahui',
+                    'status_display' => 'Tidak diketahui',
+                    'prodi' => ''
+                ],
+                'submissions' => []
+            ]);
         } catch (Exception $e) {
-            $this->render('user_dashboard', ['error' => "An error occurred: " . $e->getMessage()]);
+            $this->render('user_dashboard', [
+                'error' => "An error occurred: " . $e->getMessage(),
+                'user' => [
+                    'name' => $_SESSION['user_name'] ?? 'User',
+                    'library_card_number' => $_SESSION['user_library_card_number'] ?? '',
+                    'tipe_member' => 'Tidak diketahui',
+                    'status_display' => 'Tidak diketahui',
+                    'prodi' => ''
+                ],
+                'submissions' => []
+            ]);
         }
     }
 
@@ -520,8 +540,9 @@ class UserController extends Controller
 
     /**
      * Get details from anggota table for the given ID member
+     * Made public to allow access from templates
      */
-    private function getAnggotaDetails(string $id_member): array
+    public function getAnggotaDetails(string $id_member): array
     {
         try {
             $db = \App\Models\Database::getInstance();
@@ -880,7 +901,7 @@ class UserController extends Controller
                         'author_2' => $submission['author_2'] ?? '',
                         'author_3' => $submission['author_3'] ?? '',
                         'author_4' => $submission['author_4'] ?? '',
-                        'author_5' => $submission['author_5'] ?? '',
+                        'author_5' => $subscription['author_5'] ?? '',
                     ],
                     'user_details' => $userDetails,
                     'is_resubmission' => true,
