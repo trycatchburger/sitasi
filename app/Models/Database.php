@@ -10,17 +10,24 @@ class Database
 {
     private static ?self $instance = null;
     public readonly mysqli $conn;
+    private string $host;
+    private string $user;
+    private string $pass;
+    private string $name;
 
-    private function __construct(
-        private string $host = 'localhost',
-        private string $user = 'root',
-        private string $pass = '',
-        private string $name = 'skripsi_db'
-    ) {
+    private function __construct()
+    {
+        // Load database configuration from config file
+        $config = $this->loadConfig();
+        $this->host = $config['host'] ?? 'localhost';
+        $this->user = $config['username'] ?? 'root';
+        $this->pass = $config['password'] ?? '';
+        $this->name = $config['dbname'] ?? 'skripsi_db';
+
         try {
             $this->conn = new mysqli($this->host, $this->user, $this->pass, $this->name);
 
-            if ($this->conn->connect_error) {
+            if ($this->connect_error) {
                 throw new DatabaseException("Connection failed: " . $this->conn->connect_error);
             }
             
@@ -46,6 +53,43 @@ class Database
     public function getConnection(): mysqli
     {
         return $this->conn;
+    }
+    
+    /**
+     * Load database configuration from config file
+     */
+    private function loadConfig(): array
+    {
+        $config = [];
+        $configFile = __DIR__ . '/../../config.php';
+        $cpanelConfigFile = __DIR__ . '/../../config_cpanel.php';
+        $productionConfigFile = __DIR__ . '/../../config.production.php';
+
+        // Try to load from different possible config files
+        if (file_exists($cpanelConfigFile)) {
+            $config = require $cpanelConfigFile;
+        } elseif (file_exists($productionConfigFile)) {
+            $config = require $productionConfigFile;
+        } elseif (file_exists($configFile)) {
+            $config = require $configFile;
+        }
+
+        // If config has 'db' section, use it, otherwise use root level
+        if (isset($config['db']) && is_array($config['db'])) {
+            return $config['db'];
+        } elseif (isset($config['database'])) {
+            // For backward compatibility with older config format
+            return $config['database'];
+        } else {
+            // Return default config if none found
+            return [
+                'host' => $_ENV['DB_HOST'] ?? 'localhost',
+                'username' => $_ENV['DB_USERNAME'] ?? 'root',
+                'password' => $_ENV['DB_PASSWORD'] ?? '',
+                'dbname' => $_ENV['DB_NAME'] ?? 'skripsi_db',
+                'charset' => 'utf8mb4'
+            ];
+        }
     }
     
     /**
