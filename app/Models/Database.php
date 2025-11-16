@@ -27,7 +27,7 @@ class Database
         try {
             $this->conn = new mysqli($this->host, $this->user, $this->pass, $this->name);
 
-            if ($this->connect_error) {
+            if ($this->conn->connect_error) {
                 throw new DatabaseException("Connection failed: " . $this->conn->connect_error);
             }
             
