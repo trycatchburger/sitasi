@@ -28,12 +28,50 @@ if (empty($_SESSION['csrf_token'])) {
             Salin
           </button>
         </div>
-        <?php 
+        <?php
           $nameParts = explode(' ', htmlspecialchars($submission['nama_mahasiswa']));
           $firstName = $nameParts[0];
           $lastName = count($nameParts) > 1 ? end($nameParts) : $firstName;
           $formattedName = $lastName . ', ' . $firstName;
-          $citation = $formattedName . '. (' . htmlspecialchars($submission['tahun_publikasi']) . '). ' . htmlspecialchars($submission['judul_skripsi']) . '. Skripsi, STAIN
+          
+          // Determine submission type for citation display
+          $displayType = $submission['submission_type'] ?? '';
+          
+          // If submission_type is empty, try to determine from other fields
+          if (empty($displayType)) {
+              // Check if this looks like a journal submission based on multiple authors
+              if (!empty($submission['author_2']) || !empty($submission['author_3']) ||
+                  !empty($submission['author_4']) || !empty($submission['author_5']) ||
+                  !empty($submission['abstract'])) {
+                  $displayType = 'journal';
+              }
+              // Check if the user is a Dosen which typically submits journals
+              elseif (!empty($submission['tipe_member']) && $submission['tipe_member'] === 'Dosen') {
+                  $displayType = 'journal';
+              }
+              elseif (!empty($submission['nim'])) {
+                  $displayType = 'bachelor'; // Has NIM, likely a bachelor thesis
+              } else {
+                  $displayType = 'skripsi'; // Default fallback
+              }
+          }
+          
+          // Map the submission type to the appropriate display term
+          switch (strtolower($displayType)) {
+              case 'journal':
+                  $citationType = 'Jurnal Ilmiah';
+                  break;
+              case 'master':
+                  $citationType = 'Tesis';
+                  break;
+              case 'bachelor':
+                  $citationType = 'Skripsi';
+                  break;
+              default:
+                  $citationType = 'Skripsi'; // Default fallback
+          }
+          
+          $citation = $formattedName . '. (' . htmlspecialchars($submission['tahun_publikasi']) . '). ' . htmlspecialchars($submission['judul_skripsi']) . '. ' . $citationType . ', STAIN
            Sultan Abdurrahman Kepulauan Riau.';
         ?>
         <p id="citationText" class="text-gray-700 leading-relaxed"><?= $citation ?></p>

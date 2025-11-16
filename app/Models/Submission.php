@@ -216,13 +216,14 @@ class Submission
                 $this->deleteExistingFiles($submission_id);
             } else {
                 // No existing submission, create new one
-                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt_submission = $this->conn->prepare($sql_submission);
                 if (!$stmt_submission) {
                     throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
                 }
                 
-                $stmt_submission->bind_param("sssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi']);
+                $submission_type = 'bachelor';
+                $stmt_submission->bind_param("sssssssii", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
                 
                 if (!$stmt_submission->execute()) {
                     throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);

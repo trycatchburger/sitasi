@@ -23,6 +23,73 @@ if (empty($_SESSION['csrf_token'])) {
     <div class="p-8">
 
       <!-- Citation -->
+      <div class="mb-8 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-lg font-bold text-gray-800">Sitasi</h2>
+          <button id="copyCitation" class="text-sm text-orange-700 hover:text-orange-900 font-medium flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Salin
+          </button>
+        </div>
+        <?php
+          $nameParts = explode(' ', htmlspecialchars($submission['nama_mahasiswa'] ?? $submission['nama_penulis'] ?? 'Unknown'));
+          $firstName = $nameParts[0];
+          $lastName = count($nameParts) > 1 ? end($nameParts) : $firstName;
+          $formattedName = $lastName . ', ' . $firstName;
+          
+          // Additional authors for journals
+          $additional_authors = [];
+          if (!empty($submission['author_2'])) $additional_authors[] = htmlspecialchars($submission['author_2']);
+          if (!empty($submission['author_3'])) $additional_authors[] = htmlspecialchars($submission['author_3']);
+          if (!empty($submission['author_4'])) $additional_authors[] = htmlspecialchars($submission['author_4']);
+          if (!empty($submission['author_5'])) $additional_authors[] = htmlspecialchars($submission['author_5']);
+          
+          if (!empty($additional_authors)) {
+              $formattedName .= ', ' . implode(', ', $additional_authors);
+          }
+          
+          // Determine submission type for citation display
+          $displayType = $submission['submission_type'] ?? '';
+          
+          // If submission_type is empty, try to determine from other fields
+          if (empty($displayType)) {
+              // Check if this looks like a journal submission based on multiple authors
+              if (!empty($submission['author_2']) || !empty($submission['author_3']) ||
+                  !empty($submission['author_4']) || !empty($submission['author_5']) ||
+                  !empty($submission['abstract'])) {
+                  $displayType = 'journal';
+              }
+              // Check if the user is a Dosen which typically submits journals
+              elseif (!empty($submission['tipe_member']) && $submission['tipe_member'] === 'Dosen') {
+                  $displayType = 'journal';
+              }
+              elseif (!empty($submission['nim'])) {
+                  $displayType = 'bachelor'; // Has NIM, likely a bachelor thesis
+              } else {
+                  $displayType = 'journal'; // Default for journal detail page
+              }
+          }
+          
+          // Map the submission type to the appropriate display term
+          switch (strtolower($displayType)) {
+              case 'journal':
+                  $citationType = 'Jurnal Ilmiah';
+                  break;
+              case 'master':
+                  $citationType = 'Tesis';
+                  break;
+              case 'bachelor':
+                  $citationType = 'Skripsi';
+                  break;
+              default:
+                  $citationType = 'Jurnal Ilmiah'; // Default for journal detail page
+          }
+          
+          $citation = $formattedName . '. (' . htmlspecialchars($submission['tahun_publikasi'] ?? 'N/A') . '). ' . htmlspecialchars($submission['judul_skripsi'] ?? $submission['judul_jurnal'] ?? 'Untitled') . '. ' . $citationType . ', STAIN
+           Sultan Abdurrahman Kepulauan Riau.';
+        ?>
+        <p id="citationText" class="text-gray-700 leading-relaxed"><?= $citation ?></p>
+      </div>
 
       <!-- Content & Sidebar -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">

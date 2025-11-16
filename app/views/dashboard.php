@@ -148,6 +148,11 @@
                     <?php
                       $submission_type = $submission['submission_type'] ?? 'bachelor'; // Default to bachelor if not set
                       
+                      // Handle empty submission_type values
+                      if (empty($submission_type)) {
+                          $submission_type = 'bachelor'; // Default to bachelor for empty values
+                      }
+                      
                       // Check if this submission belongs to a user with tipe_member "Dosen"
                       // If the submission has a user_id and the user's tipe_member is "Dosen", set submission type to journal
                       if (isset($submission['user_id']) && !empty($submission['user_id']) &&

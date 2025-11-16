@@ -155,6 +155,12 @@
                   <td class="px-6 py-4 whitespace-nowrap">
                     <?php
                       $submission_type = $submission['submission_type'] ?? 'bachelor'; // Default to bachelor if not set
+                      
+                      // Handle empty submission_type values
+                      if (empty($submission_type)) {
+                          $submission_type = 'bachelor'; // Default to bachelor for empty values
+                      }
+                      
                       $type_label = '';
                       $type_color = 'bg-gray-100 text-gray-800'; // Default color
                       
