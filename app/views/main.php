@@ -59,9 +59,19 @@
     <link href="<?php echo url('css/style.css'); ?>" rel="stylesheet">
 </head>
 <body class="bg-gradient-to-b from-green-50 to-white text-gray-800 antialiased">
-
- 
 <body class="font-sans text-gray-800 bg-gradient-to-b from-green-50 to-white antialiased min-h-screen flex flex-col">
+
+  <?php
+  // Load maintenance helper and show notifications
+  require_once __DIR__ . '/../../app/Utils/MaintenanceHelper.php';
+  use App\Utils\MaintenanceHelper;
+  
+  // Show maintenance or online notifications
+  MaintenanceHelper::showMaintenanceNotification();
+  MaintenanceHelper::showOnlineNotification();
+  ?>
+
+  
     <?php
     // Check if we're on an admin page and user is logged in as admin
     $isAdminPage = isset($_SESSION['admin_id']) && (

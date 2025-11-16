@@ -125,14 +125,14 @@ When deploying via Git, make sure to set the deployment path to match your subdo
 
 ## Setting Up a Subdirectory (Alternative to Subdomain)
 
-If you prefer to run the Skripsi Submission System in a subdirectory of your main domain (e.g., `yourdomain.com/skripsi`) instead of a subdomain, follow these steps:
+If you prefer to run the Skripsi Submission System in a subdirectory of your main domain (e.g., `yourdomain.com/sitasi`) instead of a subdomain, follow these steps:
 
 ### Step 1: Create the Subdirectory
 
 1. In cPanel, go to the "Files" section
 2. Click on "File Manager"
 3. Navigate to your `public_html` directory
-4. Create a new directory for your application (e.g., `skripsi`)
+4. Create a new directory for your application (e.g., `sitasi`)
 5. This will be the base directory for your application
 
 ### Step 2: Deploy to the Subdirectory
@@ -141,12 +141,12 @@ When deploying via Git, set the deployment path to your subdirectory:
 1. In the Git Version Control interface, find your repository
 2. Click "Manage"
 3. In the "Deployment Path" field, enter the path to your subdirectory:
-   - For example: `/home/username/public_html/skripsi`
+   - For example: `/home/username/public_html/sitasi`
 4. Click "Deploy" to copy files to your subdirectory
 
 ### Step 3: Configure the Application for Subdirectory
 
-You need to update the `base_path` configuration in `config.php` to match your subdirectory:
+You need to update the `base_path` configuration in `config.php` to match your subdirectory and add database configuration as well. Also, make sure to update the database configuration for cPanel deployment. The configuration should include database connection settings specific to your cPanel hosting environment. Here's an updated example that includes both the mail configuration and the database configuration for cPanel deployment, with the base_path set to '/sitasi' to match your subdirectory name:
 
 ```php
 <?php
@@ -160,7 +160,14 @@ return [
         'from_name' => 'Skripsi App',
         'admin_email' => 'admin@yourdomain.com'
     ],
-    'base_path' => '/skripsi' // Set this to match your subdirectory name
+    'db' => [
+        'host' => 'localhost',  // Usually localhost in cPanel
+        'dbname' => 'your_database_name',  // Replace with your actual database name
+        'username' => 'your_db_username',  // Replace with your database username
+        'password' => 'your_db_password',  // Replace with your database password
+        'charset' => 'utf8mb4'
+    ],
+    'base_path' => '/sitasi' // Set this to match your subdirectory name
 ];
 ?>
 ```
@@ -171,31 +178,38 @@ The application's URL rewriting needs to be adjusted for subdirectory deployment
 
 1. In cPanel File Manager, navigate to your subdirectory
 2. Edit the `.htaccess` file in the root of your application (not in the `public` directory)
-3. Update the RewriteBase directive to match your subdirectory:
+3. Update the RewriteBase directive to match your subdirectory (change /sitasi/ to match your subdirectory name):
 
 ```apache
-RewriteEngine On
-RewriteBase /skripsi/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /sitasi/  # Change this to match your subdirectory name
 
-# Redirect to public directory
-RewriteRule ^(.*)$ public/$1 [L]
+    # Redirect to public directory
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
 ```
 
-Also update the `.htaccess` file in the `public` directory:
+Also update the `.htaccess` file in the `public` directory (change /sitasi/public/ to match your subdirectory name):
 
 1. Navigate to the `public` directory
 2. Edit the `.htaccess` file
-3. Update the RewriteBase directive:
+3. Update the RewriteBase directive (change /sitasi/public/ to match your subdirectory name):
 
 ```apache
-RewriteEngine On
-RewriteBase /skripsi/public/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /sitasi/public/  # Change this to match your subdirectory name
 
-# Handle PHP files
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . index.php [L]
+</IfModule>
 ```
+
+### Step 5: Database Configuration for cPanel
+
+When deploying to cPanel, you need to update the database configuration to match your cPanel database settings. The database configuration should match your cPanel MySQL database settings that you created during the database setup step. Make sure to replace 'your_database_name', 'your_db_username', and 'your_db_password' with the actual values from your cPanel database setup.
 
 ## Setting Up the Database
 

@@ -90,6 +90,33 @@ The script will:
 
 Once the database is updated successfully, you can:
 
-1. Access the application at `http://localhost/sitasi/`
+1. Access the application at `http://localhost/sitasi/` (or the appropriate URL for your local setup)
 2. Use all the latest features including journal submissions and user accounts
 3. The application will now have all the functionality of the latest version
+
+## Deployment to cPanel as Subdirectory
+
+If you want to deploy this application to a cPanel hosting environment as a subdirectory (e.g., `yourdomain.com/sitasi`), follow these additional steps after updating the database locally and committing your changes to the repository:
+
+### 1. Prepare Configuration for Production
+- Create a production-ready `config.php` file with your cPanel database credentials and email settings
+- Ensure your `base_path` in `config.php` matches your subdirectory name (e.g., `/sitasi`)
+- Update the `.htaccess` files to match your subdirectory path
+
+### 2. Update Database Schema for Production
+- Import the updated `database.sql` file to your cPanel MySQL database using phpMyAdmin
+- Or run the update scripts directly on your cPanel database if they exist
+
+### 3. Deploy Files to cPanel
+- Use cPanel's Git Version Control feature to deploy your codebase from your repository
+- Or upload files via cPanel File Manager or FTP
+- Make sure to set the deployment path to your subdirectory (e.g., `/home/username/public_html/sitasi`)
+
+### 4. Set File Permissions
+- Set appropriate permissions for directories and files (typically 755 for directories, 644 for files)
+- Ensure the `public/uploads` directory has write permissions for file uploads
+
+### 5. Test Your Deployment
+- Access your application at `https://yourdomain.com/sitasi/` (or your subdirectory path)
+- Verify that all functionality works as expected
+- Test database operations, file uploads, and email notifications
