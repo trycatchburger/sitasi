@@ -3,7 +3,7 @@
 
 return [
     // Aktifkan maintenance mode (true/false)
-    'enabled' => true,
+    'enabled' => false,
     
     // Deteksi apakah aplikasi berjalan di lingkungan online
     'is_online' => function() {
