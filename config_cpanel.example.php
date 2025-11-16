@@ -19,10 +19,5 @@ return [
         'password' => 'your_db_password',       // Ganti dengan password database Anda
         'charset' => 'utf8mb4'
     ],
-    'base_path' => '/sitasi', // Ganti dengan nama subdirektori Anda jika berbeda
-    'maintenance' => [
-        'enabled' => false, // Set ke true jika ingin maintenance mode
-        'message' => 'Sistem sedang dalam perawatan. Silakan kembali lagi nanti.',
-        'allowed_ips' => [] // IP yang diizinkan mengakses saat maintenance
-    ]
+    'base_path' => '/sitasi' // Ganti dengan nama subdirektori Anda jika berbeda
 ];

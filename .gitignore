@@ -1,5 +1,6 @@
 # Configuration files
 config.php
+config_cpanel.php
 
 # Upload directories
 public/uploads/
