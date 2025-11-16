@@ -9,7 +9,7 @@ class UserRepository extends BaseRepository
     public function findByIdMember(string $idMember): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT id, id_member, password FROM users_login WHERE id_member = ?");
+            $stmt = $this->conn->prepare("SELECT id, id_member, password, status, username, email, name FROM users_login WHERE id_member = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -40,7 +40,7 @@ class UserRepository extends BaseRepository
     public function findById(int $id): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT id, id_member FROM users_login WHERE id = ?");
+            $stmt = $this->conn->prepare("SELECT id, id_member, status, username, email, name FROM users_login WHERE id = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -56,7 +56,7 @@ class UserRepository extends BaseRepository
     public function getAll(): array
     {
         try {
-            $result = $this->conn->query("SELECT id, id_member, created_at FROM users_login ORDER BY created_at DESC");
+            $result = $this->conn->query("SELECT id, id_member, username, email, name, created_at, status FROM users_login ORDER BY created_at DESC");
             if (!$result) {
                 throw new DatabaseException("Query failed: " . $this->conn->error);
             }

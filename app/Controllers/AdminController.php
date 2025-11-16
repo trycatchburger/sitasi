@@ -710,11 +710,57 @@ class AdminController extends Controller {
             // Fetch users from users_login table and match with anggota table
             $db = \App\Models\Database::getInstance();
             
-            // Join users_login with anggota table to get complete user information
-           $sql = "SELECT ul.id, ul.id_member as library_card_number, a.nama as name, a.email, ul.created_at, ul.status
-                   FROM users_login ul
-                   LEFT JOIN anggota a ON ul.id_member = a.id_member
-                   ORDER BY ul.created_at DESC";
+            // Check if the id_member column exists in users_login table
+            $checkColumnSql = "SHOW COLUMNS FROM users_login LIKE 'id_member'";
+            $columnResult = $db->getConnection()->query($checkColumnSql);
+            
+            if (!$columnResult) {
+                throw new DatabaseException("SHOW COLUMNS query failed: " . $db->getConnection()->error);
+            }
+            
+            if ($columnResult->num_rows > 0) {
+                // Join users_login with anggota table to get complete user information
+                $sql = "SELECT ul.id, ul.id_member as library_card_number, COALESCE(a.nama, ul.name, 'N/A') as name, COALESCE(a.email, ul.email, 'N/A') as email, ul.created_at, COALESCE(ul.status, 'active') as status
+                        FROM users_login ul
+                        LEFT JOIN anggota a ON ul.id_member = a.nim_nip
+                        ORDER BY ul.created_at DESC";
+            } else {
+                // Fallback query if id_member column doesn't exist
+                // Check if username and name fields exist instead
+                $checkUsernameColumnSql = "SHOW COLUMNS FROM users_login LIKE 'username'";
+                $usernameColumnResult = $db->getConnection()->query($checkUsernameColumnSql);
+                
+                if (!$usernameColumnResult) {
+                    throw new DatabaseException("SHOW COLUMNS query failed: " . $db->getConnection()->error);
+                }
+                
+                if ($usernameColumnResult->num_rows > 0) {
+                    // Check if name field exists
+                    $checkNameColumnSql = "SHOW COLUMNS FROM users_login LIKE 'name'";
+                    $nameColumnResult = $db->getConnection()->query($checkNameColumnSql);
+                    
+                    if (!$nameColumnResult) {
+                        throw new DatabaseException("SHOW COLUMNS query failed: " . $db->getConnection()->error);
+                    }
+                    
+                    if ($nameColumnResult->num_rows > 0) {
+                        // Username and name fields exist
+                        $sql = "SELECT ul.id, ul.username as library_card_number, ul.name as name, ul.email, ul.created_at, COALESCE(ul.status, 'active') as status
+                                FROM users_login ul
+                                ORDER BY ul.created_at DESC";
+                    } else {
+                        // Only username exists, use it as name too
+                        $sql = "SELECT ul.id, ul.username as library_card_number, ul.username as name, ul.email, ul.created_at, COALESCE(ul.status, 'active') as status
+                                FROM users_login ul
+                                ORDER BY ul.created_at DESC";
+                    }
+                } else {
+                    // If no username field, just use id as identifier
+                    $sql = "SELECT ul.id, ul.id as library_card_number, 'N/A' as name, 'N/A' as email, ul.created_at, COALESCE(ul.status, 'active') as status
+                            FROM users_login ul
+                            ORDER BY ul.created_at DESC";
+                }
+            }
             
             $result = $db->getConnection()->query($sql);
             if (!$result) {
@@ -722,8 +768,10 @@ class AdminController extends Controller {
             }
 
             $users = [];
-            while ($row = $result->fetch_assoc()) {
-                $users[] = $row;
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $users[] = $row;
+                }
             }
             
             $this->render('admin/user_management', ['users' => $users]);
@@ -792,13 +840,16 @@ class AdminController extends Controller {
                     exit;
                 }
                 
-                // Get user email from anggota table using id_member
-                $db = \App\Models\Database::getInstance();
-                $stmt = $db->getConnection()->prepare("SELECT email FROM anggota WHERE id_member = ?");
-                $stmt->bind_param("s", $userDetails['id_member']);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                $anggota = $result->fetch_assoc();
+                // Get user email from anggota table using id_member if it exists and is not null
+                $anggota = null;
+                if (isset($userDetails['id_member']) && !empty($userDetails['id_member'])) {
+                    $db = \App\Models\Database::getInstance();
+                    $stmt = $db->getConnection()->prepare("SELECT email FROM anggota WHERE id_member = ?");
+                    $stmt->bind_param("s", $userDetails['id_member']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $anggota = $result->fetch_assoc();
+                }
                 
                 // Generate a random password
                 $randomPassword = $this->generateRandomPassword();
@@ -866,6 +917,13 @@ class AdminController extends Controller {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $userId = (int)$_POST['user_id'];
                 $action = $_POST['action'] ?? 'suspend'; // 'suspend' or 'activate'
+                
+                // Validate action parameter
+                if (!in_array($action, ['suspend', 'activate'])) {
+                    $_SESSION['error_message'] = "Invalid action specified.";
+                    header('Location: ' . url('admin/userManagement'));
+                    exit;
+                }
                 
                 // Update user's status in the database
                 $user = new User();
