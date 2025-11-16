@@ -5,9 +5,9 @@
 return [
     'db' => [
         'host' => 'localhost',                  // Usually localhost in cPanel
-        'dbname' => 'your_username_sitasi_db',  // Replace with your database name in cPanel
-        'username' => 'your_db_username',       // Replace with your database username
-        'password' => 'your_db_password',       // Replace with your database password
+        'dbname' => 'lib_skripsi_db',               // Database name for thesis submission system
+        'username' => 'root',                   // Database username (adjust as needed)
+        'password' => '',                       // Database password (adjust as needed)
         'charset' => 'utf8mb4'
     ],
     'mail' => [

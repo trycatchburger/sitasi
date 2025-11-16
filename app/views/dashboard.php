@@ -37,8 +37,8 @@
       <div class="flex items-center space-x-4">
         <span class="text-gray-700">Filter:</span>
         <select id="filterSelect" class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          <option value="pending" <?= (empty($showAll) && !isset($_GET['type'])) ? 'selected' : '' ?>>Tampilkan Hanya yang Belum Diverifikasi (Default)</option>
-          <option value="all" <?= (!empty($showAll) && !isset($_GET['type'])) ? 'selected' : '' ?>>Tampilkan Semua Pengajuan</option>
+          <option value="all" <?= (!empty($showAll) || (!isset($_GET['show']) && !isset($_GET['type']))) ? 'selected' : '' ?>>Tampilkan Semua Pengajuan (Default)</option>
+          <option value="pending" <?= (isset($_GET['show']) && $_GET['show'] === 'pending') ? 'selected' : '' ?>>Tampilkan Hanya yang Belum Diverifikasi</option>
           <option value="journal" <?= (isset($_GET['type']) && $_GET['type'] === 'journal') ? 'selected' : '' ?>>Tampilkan Pengajuan Jurnal Saja</option>
         </select>
       </div>
@@ -49,7 +49,7 @@
           <?php if (isset($_GET['type']) && $_GET['type'] === 'journal'): ?>
             <input type="hidden" name="type" value="journal">
           <?php else: ?>
-            <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'all' : 'pending') ?>">
+            <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : 'all' ?>">
           <?php endif; ?>
           <?php if (isset($_GET['sort'])): ?>
             <input type="hidden" name="sort" value="<?= htmlspecialchars($_GET['sort']) ?>">
@@ -69,7 +69,7 @@
             </svg>
           </button>
           <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
-            <a href="<?= url('admin/dashboard') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : (isset($showAll) && $showAll ? 'show=all' : '') ?>&page=1<?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>"
+            <a href="<?= url('admin/dashboard') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : 'show=all' ?>&page=1<?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>"
                class="ml-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -95,33 +95,33 @@
         <table class="w-full divide-y divide-gray-200 max-w-full">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('type', '<?= isset($_GET['sort']) && $_GET['sort'] === 'type' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-50 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('type', '<?= isset($_GET['sort']) && $_GET['sort'] === 'type' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'all') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
                 Tipe
                 <?php if (isset($_GET['sort']) && $_GET['sort'] === 'type'): ?>
                   <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
                 <?php endif; ?>
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('student_name', '<?= isset($_GET['sort']) && $_GET['sort'] === 'student_name' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('student_name', '<?= isset($_GET['sort']) && $_GET['sort'] === 'student_name' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'all') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
                 Nama Mahasiswa
                 <?php if (isset($_GET['sort']) && $_GET['sort'] === 'student_name'): ?>
                   <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
                 <?php endif; ?>
               </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('title', '<?= isset($_GET['sort']) && $_GET['sort'] === 'title' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('title', '<?= isset($_GET['sort']) && $_GET['sort'] === 'title' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'all') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
                 Judul Skripsi
                 <?php if (isset($_GET['sort']) && $_GET['sort'] === 'title'): ?>
                   <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
                 <?php endif; ?>
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Berkas</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('status', '<?= isset($_GET['sort']) && $_GET['sort'] === 'status' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('status', '<?= isset($_GET['sort']) && $_GET['sort'] === 'status' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'all') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
                 Status
                 <?php if (isset($_GET['sort']) && $_GET['sort'] === 'status'): ?>
                   <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>
                 <?php endif; ?>
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alasan</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('date', '<?= isset($_GET['sort']) && $_GET['sort'] === 'date' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'pending') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200" onclick="sortTable('date', '<?= isset($_GET['sort']) && $_GET['sort'] === 'date' && isset($_GET['order']) && $_GET['order'] === 'asc' ? 'desc' : 'asc' ?>', '<?= isset($_GET['type']) ? $_GET['type'] : (isset($showAll) && $showAll ? 'all' : 'all') ?>', '<?= isset($_GET['search']) ? urlencode($_GET['search']) : '' ?>')">
                 Tanggal Pengajuan
                 <?php if (isset($_GET['sort']) && $_GET['sort'] === 'date'): ?>
                   <span class="ml-1"><?= $_GET['order'] === 'asc' ? '↑' : '↓' ?></span>

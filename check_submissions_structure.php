@@ -1,17 +1,25 @@
 <?php
-require_once 'config.php';
+require_once 'vendor/autoload.php';
 require_once 'app/Models/Database.php';
 
-$db = \App\Models\Database::getInstance();
-$conn = $db->getConnection();
+use App\Models\Database;
 
-// Check the structure of the submissions table
-$result = $conn->query("DESCRIBE submissions");
-if ($result) {
+try {
+    $db = Database::getInstance();
+    $conn = $db->getConnection();
+    
+    // Check table structure
+    $result = $conn->query("DESCRIBE submissions");
+    
     echo "Submissions table structure:\n";
-    while ($row = $result->fetch_assoc()) {
-        echo "Field: " . $row['Field'] . ", Type: " . $row['Type'] . ", Null: " . $row['Null'] . ", Key: " . $row['Key'] . ", Default: " . $row['Default'] . ", Extra: " . $row['Extra'] . "\n";
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            echo "Field: " . $row['Field'] . " | Type: " . $row['Type'] . " | Null: " . $row['Null'] . " | Key: " . $row['Key'] . " | Default: " . $row['Default'] . " | Extra: " . $row['Extra'] . "\n";
+        }
+    } else {
+        echo "Error getting table structure: " . $conn->error . "\n";
     }
-} else {
-    echo "Error describing table: " . $conn->error . "\n";
+    
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
 }

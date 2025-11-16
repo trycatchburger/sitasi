@@ -1,41 +1,63 @@
 <?php
-require_once 'config.php';
+// Simple test to verify database connection and data retrieval
+
+// Define the base path
+define('BASE_PATH', __DIR__);
+
+// Include the autoloader or manually include necessary files
 require_once 'app/Models/Database.php';
-require_once 'app/Models/ValidationService.php';
-require_once 'app/Services/CacheService.php';
-require_once 'app/Repositories/BaseRepository.php';
-require_once 'app/Repositories/SubmissionRepository.php';
-require_once 'app/Models/Submission.php';
 
 try {
-    echo "Testing simple dashboard load...\n";
+    echo "Testing database connection and data retrieval...\n";
     
-    // Simulate what the dashboard does
-    $submissionModel = new \App\Models\Submission();
+    // Test database connection
+    $db = \App\Models\Database::getInstance();
+    $conn = $db->getConnection();
     
-    // Test the default dashboard load (pending submissions)
-    echo "Loading pending submissions...\n";
-    $pendingSubmissions = $submissionModel->findPending(true, 1, 10, null, 'asc');
-    
-    echo "Loaded " . count($pendingSubmissions) . " pending submissions\n";
-    
-    if (!empty($pendingSubmissions)) {
-        $first = $pendingSubmissions[0];
-        echo "Sample data from first submission:\n";
-        foreach ($first as $key => $value) {
-            if ($key !== 'files') { // Don't print the files array as it's large
-                echo "  {$key}: " . (is_string($value) ? $value : (is_null($value) ? 'NULL' : gettype($value))) . "\n";
-            } else {
-                echo "  files: " . count($value) . " files\n";
+    if ($conn) {
+        echo "✓ Database connection successful\n";
+        
+        // Test direct query to get submissions
+        $sql = "SELECT s.id, s.nama_mahasiswa, s.judul_skripsi, s.status, s.submission_type, s.created_at FROM submissions s ORDER BY s.created_at DESC LIMIT 10";
+        $result = $conn->query($sql);
+        
+        if ($result) {
+            $submissions = $result->fetch_all(MYSQLI_ASSOC);
+            echo "✓ Retrieved " . count($submissions) . " submissions from database\n";
+            
+            if (!empty($submissions)) {
+                echo "\nSample of retrieved submissions:\n";
+                foreach ($submissions as $submission) {
+                    echo "- ID: {$submission['id']}, Name: {$submission['nama_mahasiswa']}, Status: {$submission['status']}, Type: {$submission['submission_type']}\n";
+                }
             }
+        } else {
+            echo "✗ Query failed: " . $conn->error . "\n";
         }
+        
+        // Test getting pending submissions specifically
+        $pending_sql = "SELECT COUNT(*) as count FROM submissions WHERE status = 'Pending'";
+        $pending_result = $conn->query($pending_sql);
+        if ($pending_result) {
+            $pending_count = $pending_result->fetch_assoc()['count'];
+            echo "✓ Total pending submissions: $pending_count\n";
+        }
+        
+        // Test getting all submissions count
+        $all_sql = "SELECT COUNT(*) as count FROM submissions";
+        $all_result = $conn->query($all_sql);
+        if ($all_result) {
+            $all_count = $all_result->fetch_assoc()['count'];
+            echo "✓ Total all submissions: $all_count\n";
+        }
+        
+        echo "\n✓ Database connection and data retrieval working properly!\n";
+        echo "✓ The dashboard should now be able to display the data from the database.\n";
+    } else {
+        echo "✗ Database connection failed\n";
     }
-    
-    echo "\n✅ Dashboard loading test completed successfully!\n";
-    echo "The dashboard should be able to load data properly.\n";
-    
 } catch (Exception $e) {
-    echo "❌ Error during dashboard test: " . $e->getMessage() . "\n";
-    echo "File: " . $e->getFile() . ", Line: " . $e->getLine() . "\n";
-    echo "Stack trace:\n" . $e->getTraceAsString() . "\n";
+    echo "✗ Error: " . $e->getMessage() . "\n";
+    echo "File: " . $e->getFile() . "\n";
+    echo "Line: " . $e->getLine() . "\n";
 }

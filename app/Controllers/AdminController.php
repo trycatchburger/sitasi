@@ -73,7 +73,7 @@ class AdminController extends Controller {
                   exit;
               }
               
-              $submissionModel = new Submission();
+              $submission = new Submission();
               
               // Get query parameters
               $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
@@ -89,20 +89,20 @@ class AdminController extends Controller {
               // Determine which method to use based on parameters
               if (!empty($search)) {
                   // Use search functionality
-                  $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, false, $page, $perPage, $sort, $order);
-                  $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal, false);
+                  $submissions = $submission->searchSubmissions($search, $showAll, $showJournal, false, $page, $perPage, $sort, $order);
+                  $totalResults = $submission->countSearchResults($search, $showAll, $showJournal, false);
               } else if ($showJournal) {
                   // Show only journal submissions
-                  $submissions = $submissionModel->findJournalSubmissions($page, $perPage, $sort, $order);
-                  $totalResults = $submissionModel->countJournalSubmissions();
+                  $submissions = $submission->findJournalSubmissions($page, $perPage, $sort, $order);
+                  $totalResults = $submission->countJournalSubmissions();
               } else if ($showAll) {
                   // Show all submissions
-                  $submissions = $submissionModel->findAll($page, $perPage, $sort, $order);
-                  $totalResults = $submissionModel->countAll();
+                  $submissions = $submission->findAll($page, $perPage, $sort, $order);
+                  $totalResults = $submission->countAll();
               } else {
-                  // Show only pending submissions (default)
-                  $submissions = $submissionModel->findPending(true, $page, $perPage, $sort, $order);
-                  $totalResults = $submissionModel->countPending();
+                  // Show all submissions (default) - changed from showing only pending
+                  $submissions = $submission->findAll($page, $perPage, $sort, $order);
+                  $totalResults = $submission->countAll();
               }
               
               // Calculate pagination values

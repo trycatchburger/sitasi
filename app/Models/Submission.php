@@ -40,7 +40,7 @@ class Submission
             }
 
             $submission_type = 'bachelor';
-            $stmt_submission->bind_param("sssii", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
+            $stmt_submission->bind_param("sssssssis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
