@@ -15,25 +15,32 @@ class CsrfMiddleware extends BaseMiddleware
      */
     public function handle(array $params = []): bool
     {
-        // Only check CSRF for POST requests
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        // Check CSRF for requests that modify data (POST, PUT, PATCH, DELETE)
+        $requestMethod = $_SERVER['REQUEST_METHOD'];
+        if (!in_array($requestMethod, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
             return true;
         }
         
-        // Get CSRF token from request
-        $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        // Get CSRF token from request (check both POST data and header)
+        $token = '';
+        if ($requestMethod === 'POST') {
+            $token = $_POST['csrf_token'] ?? '';
+        } else {
+            // For non-POST requests (PUT, PATCH, DELETE), check header
+            $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_SERVER['HTTP_X_CSRFTOKEN'] ?? '';
+        }
         
         // Validate token
         if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
             // Check if this is an AJAX request
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                 strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                 // For AJAX requests, return JSON error
-                $this->json(['success' => false, 'message' => 'Invalid CSRF token.'], 400);
+                $this->json(['success' => false, 'message' => 'Invalid or expired CSRF token. Please refresh the page and try again.'], 400);
             } else {
                 // For regular requests, show error page
                 http_response_code(400);
-                echo "Invalid CSRF token.";
+                echo "Invalid or expired CSRF token. Please refresh the page and try again.";
                 exit;
             }
             

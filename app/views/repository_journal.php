@@ -13,7 +13,6 @@
       <a href="<?= url('submission/repository_journal') ?>" class="px-5 py-2 bg-blue-600 text-white rounded-full shadow-md">Jurnal</a>
     </div>
   </header>
-
   
   <!-- Statistik -->
   <section class="max-w-5xl mx-auto mt-8 text-center text-gray-600">
@@ -21,10 +20,10 @@
   </section>
   
   <!-- Filter Box -->
-<!-- Filter Box -->
+ <!-- Filter Box -->
 <div class="bg-white shadow-md border border-gray-100 rounded-2xl p-6 mt-6 mb-6"> <!-- tambahkan mb-6 -->
   <div class="flex items-center mb-4">
-    <div class="w-9 h-9 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full mr-3">
+    <div class="w-9 h-9 flex items-center justify-center bg-blue-10 text-blue-700 rounded-full mr-3">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2l-6 7v5l-6 3v-8L3 6V4z" />
       </svg>
@@ -51,7 +50,7 @@
     <div class="md:col-span-3 sm:col-span-1 col-span-1">
       <label class="block text-sm font-medium text-gray-600 mb-1">Tahun</label>
       <select name="year" 
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-50 transition duration-150">
         <option value="">Semua Tahun</option>
         <?php
           $years = [];
@@ -107,13 +106,15 @@
         $firstName = implode(' ', $firstNames);
         $formattedName = $lastName . ', ' . $firstName;
 
-        $titleLink = '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-blue-70 hover:text-blue-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
+        // Determine the correct detail route based on submission type
+        $detailRoute = ($submission['submission_type'] ?? 'bachelor') === 'journal' ? 'journalDetail' : 'detail';
+        $titleLink = '<a href="' . url('submission/' . $detailRoute . '/' . $submission['id']) . '" class="text-blue-700 hover:text-blue-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
       ?>
 
       <div class="submission-item bg-white rounded-xl shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 overflow-hidden">
         <div class="p-5">
           <div class="text-lg font-semibold text-gray-800"><?= $formattedName ?> (<?= htmlspecialchars($submission['tahun_publikasi']) ?>)</div>
-          <div class="mt-1 text-gray-70"><?= $titleLink ?></div>
+          <div class="mt-1 text-gray-700"><?= $titleLink ?></div>
           <div class="flex gap-3 mt-3 text-sm">
             <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
               Journal
@@ -218,7 +219,7 @@
         // Show page numbers in range
         for ($i = $startPage; $i <= $endPage; $i++) {
           if ($i == $currentPage) {
-            echo '<span class="px-4 py-2 bg-blue-600 text-white border border-blue-600 rounded-lg">' . $i . '</span>';
+            echo '<span class="px-4 py-2 bg-blue-600 text-white border-blue-600 rounded-lg">' . $i . '</span>';
           } else {
             echo '<a href="' . url('submission/repository_journal?page=' . $i . ($search ? '&search=' . urlencode($search) : '') . ($year ? '&year=' . urlencode($year) : '')) . '" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">' . $i . '</a>';
           }
@@ -265,7 +266,7 @@
   
   <!-- Optional Scroll to Top Button -->
   <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="fixed bottom-6 right-6 z-50 bg-green-600 hover:bg-green-700 text-white p-3 rounded-full shadow-lg" title="Back to Top">
-    ↑
+     ↑
  </button>
 
 

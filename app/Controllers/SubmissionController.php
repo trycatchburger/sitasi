@@ -14,25 +14,106 @@ class SubmissionController extends Controller {
      * Displays the new submission form.
      */
     public function skripsi() {
-        $this->render('unggah_skripsi');
+        // Get user details from anggota table if user is logged in
+        $userDetails = null;
+        if (isset($_SESSION['user_library_card_number'])) {
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+            if ($stmt) {
+                $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $userDetails = $result->fetch_assoc() ?: null;
+                $stmt->close();
+            }
+        }
+        
+        // Check if user is Dosen - they should not access skripsi form
+        if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+            // Redirect Dosen to journal submission instead
+            header('Location: ' . url('submission/jurnal'));
+            exit;
+        }
+        
+        $this->render('unggah_skripsi', [
+            'user_details' => $userDetails
+        ]);
     }
     
     /**
      * Displays the new master's degree submission form.
      */
     public function tesis() {
-        $this->render('unggah_tesis');
+        // Get user details from anggota table if user is logged in
+        $userDetails = null;
+        if (isset($_SESSION['user_library_card_number'])) {
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+            if ($stmt) {
+                $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $userDetails = $result->fetch_assoc() ?: null;
+                $stmt->close();
+            }
+        }
+        
+        // Check if user is Dosen - they should not access tesis form
+        if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+            // Redirect Dosen to journal submission instead
+            header('Location: ' . url('submission/jurnal'));
+            exit;
+        }
+        
+        $this->render('unggah_tesis', [
+            'user_details' => $userDetails
+        ]);
     }
 
     /**
      * Displays the new journal submission form.
      */
     public function jurnal() {
-        $this->render('unggah_jurnal');
+        // Get user details from anggota table if user is logged in
+        $userDetails = null;
+        if (isset($_SESSION['user_library_card_number'])) {
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+            if ($stmt) {
+                $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $userDetails = $result->fetch_assoc() ?: null;
+                $stmt->close();
+            }
+        }
+        
+        $this->render('unggah_jurnal', [
+            'user_details' => $userDetails
+        ]);
     }
 
     public function create() {
         try {
+            // Get user details to check if they're allowed to submit skripsi
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
+            
+            // Check if user is Dosen - they should not submit skripsi
+            if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+                throw new ValidationException([], "Dosen users cannot submit skripsi. Please use the journal submission form instead.");
+            }
+
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
             
@@ -93,6 +174,25 @@ class SubmissionController extends Controller {
 
     public function createMaster() {
         try {
+            // Get user details to check if they're allowed to submit tesis
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
+            
+            // Check if user is Dosen - they should not submit tesis
+            if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+                throw new ValidationException([], "Dosen users cannot submit tesis. Please use the journal submission form instead.");
+            }
+
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
             
@@ -153,6 +253,26 @@ class SubmissionController extends Controller {
 
     public function createJournal() {
         try {
+            // Get user details to verify user type
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
+            
+            // Get user ID to associate with journal submission
+            $userId = $_SESSION['user_id'] ?? null;
+            
+            // Add user ID to POST data for journal creation
+            $_POST['user_id'] = $userId;
+
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
             
@@ -168,6 +288,20 @@ class SubmissionController extends Controller {
             // NORMALISASI INPUT (huruf besar di awal kata)
             $_POST['nama_penulis'] = ucwords(strtolower($_POST['nama_penulis']));
             $_POST['judul_jurnal']  = ucwords(strtolower($_POST['judul_jurnal']));
+            
+            // Normalisasi penulis tambahan jika ada
+            if (!empty($_POST['author_2'])) {
+                $_POST['author_2'] = ucwords(strtolower($_POST['author_2']));
+            }
+            if (!empty($_POST['author_3'])) {
+                $_POST['author_3'] = ucwords(strtolower($_POST['author_3']));
+            }
+            if (!empty($_POST['author_4'])) {
+                $_POST['author_4'] = ucwords(strtolower($_POST['author_4']));
+            }
+            if (!empty($_POST['author_5'])) {
+                $_POST['author_5'] = ucwords(strtolower($_POST['author_5']));
+            }
 
             $submissionModel = new Submission();
             // Check if submission already exists for this author (using name as identifier)
@@ -207,51 +341,219 @@ class SubmissionController extends Controller {
     }
 
     /**
-     * Handles resubmission of files.
+     * Handles resubmission of files from the dedicated resubmit page.
      * If a user resubmits, the previously uploaded files will be overwritten
      * with new ones based on their unique ID (name and NIM).
      */
     public function resubmit() {
         try {
+            // Get user details to check user type restrictions
+            $userDetails = null;
+            if (isset($_SESSION['user_library_card_number'])) {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT id_member, nama as name, email, no_hp, prodi, tipe_member, member_since, expired FROM anggota WHERE id_member = ?");
+                if ($stmt) {
+                    $stmt->bind_param("s", $_SESSION['user_library_card_number']);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $userDetails = $result->fetch_assoc() ?: null;
+                    $stmt->close();
+                }
+            }
+            
             // Use ValidationService for detailed validation
             $validationService = new ValidationService();
             
-            // Validate form data and files
-            $isFormValid = $validationService->validateSubmissionForm($_POST);
-            $areFilesValid = $validationService->validateSubmissionFiles($_FILES);
+            // Determine submission type from form data or by checking the submission ID in the database
+            $submissionId = $_POST['submission_id'] ?? null;
+            $submissionModel = new Submission();
+            $submissionType = 'bachelor'; // Default type
+            
+            if ($submissionId) {
+                $existingSubmission = $submissionModel->findById((int)$submissionId);
+                if ($existingSubmission) {
+                    $submissionType = $existingSubmission['submission_type'] ?? 'bachelor';
+                }
+            }
+            
+            // Check user type restrictions before processing
+            if ($userDetails && strtolower($userDetails['tipe_member']) === 'dosen') {
+                // Dosen users can only resubmit journals
+                if ($submissionType !== 'journal') {
+                    throw new ValidationException([], "Dosen users can only resubmit journal submissions. Please use the journal submission form instead.");
+                }
+            } else {
+                // Non-Dosen users cannot resubmit journals
+                if ($submissionType === 'journal') {
+                    throw new ValidationException([], "Only Dosen users can resubmit journal submissions. Please use the appropriate form for your submission type.");
+                }
+            }
+            
+            // Validate form data and files based on submission type
+            $isFormValid = false;
+            $areFilesValid = false;
+            
+            switch ($submissionType) {
+                case 'journal':
+                    $isFormValid = $validationService->validateJournalSubmissionForm($_POST);
+                    $areFilesValid = $validationService->validateJournalSubmissionFiles($_FILES);
+                    break;
+                case 'master':
+                    $isFormValid = $validationService->validateSubmissionForm($_POST);
+                    $areFilesValid = $validationService->validateMasterSubmissionFiles($_FILES);
+                    break;
+                case 'bachelor':
+                default:
+                    $isFormValid = $validationService->validateSubmissionForm($_POST);
+                    $areFilesValid = $validationService->validateSubmissionFiles($_FILES);
+                    break;
+            }
 
             if (!$isFormValid || !$areFilesValid) {
                 $errors = $validationService->getErrors();
                 throw new ValidationException($errors, "There were issues with the information you provided. Please check your input and try again.");
             }
 
-            $submissionModel = new Submission();
-            $submissionModel->resubmit($_POST, $_FILES);
+            // NORMALISASI INPUT (huruf besar di awal kata)
+            if (isset($_POST['nama_mahasiswa']) || isset($_POST['nama_penulis'])) {
+                $_POST['nama_mahasiswa'] = ucwords(strtolower($_POST['nama_mahasiswa'] ?? $_POST['nama_penulis']));
+            }
+            if (isset($_POST['judul_skripsi']) || isset($_POST['judul_jurnal'])) {
+                $_POST['judul_skripsi'] = ucwords(strtolower($_POST['judul_skripsi'] ?? $_POST['judul_jurnal']));
+            }
+            if (isset($_POST['dosen1'])) {
+                $_POST['dosen1'] = ucwords(strtolower($_POST['dosen1']));
+            }
+            if (isset($_POST['dosen2'])) {
+                $_POST['dosen2'] = ucwords(strtolower($_POST['dosen2']));
+            }
+
+            // Normalisasi penulis tambahan jika ada
+            if (!empty($_POST['author_2'])) {
+                $_POST['author_2'] = ucwords(strtolower($_POST['author_2']));
+            }
+            if (!empty($_POST['author_3'])) {
+                $_POST['author_3'] = ucwords(strtolower($_POST['author_3']));
+            }
+            if (!empty($_POST['author_4'])) {
+                $_POST['author_4'] = ucwords(strtolower($_POST['author_4']));
+            }
+            if (!empty($_POST['author_5'])) {
+                $_POST['author_5'] = ucwords(strtolower($_POST['author_5']));
+            }
+
+            // Process resubmission based on submission type
+            if ($submissionType === 'journal') {
+                $submissionModel->resubmitJournal($_POST, $_FILES);
+            } elseif ($submissionType === 'master') {
+                $submissionModel->resubmitMaster($_POST, $_FILES);
+            } else {
+                $submissionModel->resubmit($_POST, $_FILES);
+            }
+
             // Set a session variable to show the popup on the homepage
             $_SESSION['submission_success'] = true;
             header('Location: ' . url());
             exit;
         } catch (ValidationException $e) {
-            $this->render('unggah_skripsi', [
-                'error' => $e->getMessage(),
-                'errors' => $e->getErrors(),
-                'old_data' => $_POST // Pass the submitted data back to the form
-            ]);
+            // Determine which form to show based on submission type for error display
+            $submissionType = $_POST['submission_type'] ?? 'bachelor';
+            switch ($submissionType) {
+                case 'journal':
+                    $this->render('unggah_jurnal', [
+                        'error' => $e->getMessage(),
+                        'errors' => $e->getErrors(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+                case 'master':
+                    $this->render('unggah_tesis', [
+                        'error' => $e->getMessage(),
+                        'errors' => $e->getErrors(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+                case 'bachelor':
+                default:
+                    $this->render('unggah_skripsi', [
+                        'error' => $e->getMessage(),
+                        'errors' => $e->getErrors(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+            }
         } catch (FileUploadException $e) {
-            $this->render('unggah_skripsi', [
-                'error' => $e->getMessage(),
-                'old_data' => $_POST // Pass the submitted data back to the form
-            ]);
+            // Determine which form to show based on submission type for error display
+            $submissionType = $_POST['submission_type'] ?? 'bachelor';
+            switch ($submissionType) {
+                case 'journal':
+                    $this->render('unggah_jurnal', [
+                        'error' => $e->getMessage(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+                case 'master':
+                    $this->render('unggah_tesis', [
+                        'error' => $e->getMessage(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+                case 'bachelor':
+                default:
+                    $this->render('unggah_skripsi', [
+                        'error' => $e->getMessage(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+            }
         } catch (DatabaseException $e) {
-            $this->render('unggah_skripsi', [
-                'error' => "Terjadi kesalahan database. Silakan coba lagi.",
-                'old_data' => $_POST // Pass the submitted data back to the form
-            ]);
+            // Determine which form to show based on submission type for error display
+            $submissionType = $_POST['submission_type'] ?? 'bachelor';
+            switch ($submissionType) {
+                case 'journal':
+                    $this->render('unggah_jurnal', [
+                        'error' => "Terjadi kesalahan database. Silakan coba lagi.",
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+                case 'master':
+                    $this->render('unggah_tesis', [
+                        'error' => "Terjadi kesalahan database. Silakan coba lagi.",
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+                case 'bachelor':
+                default:
+                    $this->render('unggah_skripsi', [
+                        'error' => "Terjadi kesalahan database. Silakan coba lagi.",
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+            }
         } catch (Exception $e) {
-            $this->render('unggah_skripsi', [
-                'error' => "Terjadi kesalahan: " . $e->getMessage(),
-                'old_data' => $_POST // Pass the submitted data back to the form
-            ]);
+            // Determine which form to show based on submission type for error display
+            $submissionType = $_POST['submission_type'] ?? 'bachelor';
+            switch ($submissionType) {
+                case 'journal':
+                    $this->render('unggah_jurnal', [
+                        'error' => "Terjadi kesalahan: " . $e->getMessage(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+                case 'master':
+                    $this->render('unggah_tesis', [
+                        'error' => "Terjadi kesalahan: " . $e->getMessage(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+                case 'bachelor':
+                default:
+                    $this->render('unggah_skripsi', [
+                        'error' => "Terjadi kesalahan: " . $e->getMessage(),
+                        'old_data' => $_POST // Pass the submitted data back to the form
+                    ]);
+                    break;
+            }
         }
     }
 
@@ -315,6 +617,24 @@ class SubmissionController extends Controller {
                 $submissions = array_slice($allSubmissions, $offset, $perPage);
             }
             
+            // Get statistics for the repository with error handling
+            try {
+                $statsData = $submissionModel->countAllApprovedByType();
+                // Map the keys to the expected names in the view
+                $stats = [
+                    'skripsi' => $statsData['bachelor'] ?? 0,
+                    'tesis' => $statsData['master'] ?? 0,
+                    'jurnal' => $statsData['journal'] ?? 0
+                ];
+            } catch (DatabaseException $e) {
+                // Provide default values if there's a database error
+                $stats = [
+                    'skripsi' => 0,
+                    'tesis' => 0,
+                    'jurnal' => 0
+                ];
+            }
+            
             $this->render('repository', [
                 'submissions' => $submissions,
                 'totalSubmissions' => $totalSubmissions,
@@ -322,7 +642,8 @@ class SubmissionController extends Controller {
                 'totalPages' => $totalPages,
                 'search' => $search,
                 'year' => $year,
-                'program' => $program
+                'program' => $program,
+                'stats' => $stats
             ]);
         } catch (DatabaseException $e) {
             $this->render('repository', ['error' => "Terjadi kesalahan database saat memuat repository."]);
@@ -549,7 +870,14 @@ class SubmissionController extends Controller {
                 return;
             }
             
-            $this->render('detail', ['submission' => $submission]);
+            // Check if user is logged in and if submission is in their references
+            $isReference = false;
+            if (isset($_SESSION['user_id'])) {
+                $userReferenceModel = new \App\Models\UserReference();
+                $isReference = $userReferenceModel->isReference($_SESSION['user_id'], (int)$id);
+            }
+            
+            $this->render('detail', ['submission' => $submission, 'isReference' => $isReference]);
         } catch (DatabaseException $e) {
             http_response_code(500);
             require_once __DIR__ . '/../views/errors/500.php';
@@ -576,9 +904,35 @@ class SubmissionController extends Controller {
             $allSubmissions = $submissionModel->findApproved();
             
             // Filter for journal submissions only
+            // Use the same logic as the dashboard view to identify journal submissions
             $journalSubmissions = [];
             foreach ($allSubmissions as $submission) {
-                if ($submission['submission_type'] === 'journal') {
+                $submission_type = $submission['submission_type'] ?? 'bachelor'; // Default to bachelor if not set
+                
+                // Check if this submission belongs to a user with tipe_member "Dosen"
+                // If the submission has a user_id and the user's tipe_member is "Dosen", set submission type to journal
+                if (isset($submission['user_id']) && !empty($submission['user_id']) &&
+                    isset($submission['tipe_member']) && strtolower($submission['tipe_member']) === 'dosen') {
+                    $submission_type = 'journal';
+                }
+                
+                // Fallback logic to detect journal submissions based on presence of additional authors
+                // This handles cases where submission_type might be incorrectly set
+                if ($submission_type === 'bachelor' || $submission_type === 'master') {
+                    // Check if this submission has additional authors which is typical for journal submissions
+                    $has_additional_authors = !empty($submission['author_2']) ||
+                                            !empty($submission['author_3']) ||
+                                            !empty($submission['author_4']) ||
+                                            !empty($submission['author_5']);
+                    
+                    // If it has additional authors but is marked as bachelor/master, it might be a journal submission
+                    // This is a fallback to handle data inconsistency
+                    if ($has_additional_authors && empty($submission['nim'])) {
+                        $submission_type = 'journal';
+                    }
+                }
+                
+                if ($submission_type === 'journal') {
                     $journalSubmissions[] = $submission;
                 }
             }
@@ -671,7 +1025,22 @@ class SubmissionController extends Controller {
                 return;
             }
             
-            $this->render('journal_detail', ['submission' => $submission]);
+            // Check if the submission is actually a journal submission
+            if (($submission['submission_type'] ?? null) !== 'journal') {
+                // If it's not a journal submission, show 404 error
+                http_response_code(404);
+                require_once __DIR__ . '/../views/errors/404.php';
+                return;
+            }
+            
+            // Check if user is logged in and if submission is in their references
+            $isReference = false;
+            if (isset($_SESSION['user_id'])) {
+                $userReferenceModel = new \App\Models\UserReference();
+                $isReference = $userReferenceModel->isReference($_SESSION['user_id'], (int)$id);
+            }
+            
+            $this->render('journal_detail', ['submission' => $submission, 'isReference' => $isReference]);
         } catch (DatabaseException $e) {
             http_response_code(500);
             require_once __DIR__ . '/../views/errors/500.php';
@@ -682,17 +1051,134 @@ class SubmissionController extends Controller {
     }
     
     /**
-     * Search recent approved journal submissions for homepage preview
-     * @param string $search Search term
-     * @param int $limit Number of submissions to fetch
-     * @return array
-     * @throws DatabaseException
+     * Toggle a submission in user's references (add/remove)
      */
-    public function searchRecentApprovedJournals(string $search, int $limit = 6): array
-    {
-        return $this->repository->searchRecentApprovedJournals($search, $limit);
+    public function toggleReference() {
+        // Check if user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'message' => 'User not authenticated']);
+            return;
+        }
+        
+        // Check if request method is valid (POST for adding, DELETE for removing)
+        $method = $_SERVER['REQUEST_METHOD'];
+        if ($method !== 'POST' && $method !== 'DELETE') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            return;
+        }
+        
+        // Get the submission ID from the request body
+        $input = json_decode(file_get_contents('php://input'), true);
+        $submissionId = $input['submission_id'] ?? null;
+        
+        if (!$submissionId || !is_numeric($submissionId)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid submission ID']);
+            return;
+        }
+        
+        
+        try {
+            // Initialize the UserReference model
+            $userReferenceModel = new \App\Models\UserReference();
+            $userId = $_SESSION['user_id'];
+            
+            if ($method === 'POST') {
+                // Add to references
+                $result = $userReferenceModel->addReference($userId, (int)$submissionId);
+                if ($result['success']) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Submission added to references successfully'
+                    ]);
+                } else {
+                    // Check if it's a duplicate entry
+                    if (isset($result['error']) && $result['error'] === 'already_exists') {
+                        http_response_code(400);
+                        echo json_encode([
+                            'success' => false,
+                            'message' => 'Submission already exists in references'
+                        ]);
+                    } else {
+                        http_response_code(400);
+                        echo json_encode([
+                            'success' => false,
+                            'message' => 'Failed to add submission to references: ' . ($result['error'] ?? 'Unknown error')
+                        ]);
+                    }
+                }
+            } elseif ($method === 'DELETE') {
+                // Remove from references
+                $result = $userReferenceModel->removeReference($userId, (int)$submissionId);
+                if ($result['success']) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Submission removed from references successfully'
+                    ]);
+                } else {
+                    http_response_code(400);
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Failed to remove submission from references: ' . ($result['error'] ?? 'Unknown error')
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'An error occurred: ' . $e->getMessage()
+            ]);
+        }
     }
     
+    /**
+     * Get user's references
+     */
+    public function getReferences() {
+        // Check if user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            $this->render('errors/401', ['message' => 'Silakan login untuk mengakses referensi']);
+            return;
+        }
+        
+        try {
+            $userReferenceModel = new \App\Models\UserReference();
+            $userId = $_SESSION['user_id'];
+            
+            $references = $userReferenceModel->getReferencesByUser($userId);
+            
+            $this->render('referensi', ['references' => $references]);
+        } catch (\Exception $e) {
+            $this->render('referensi', ['error' => 'Terjadi kesalahan saat memuat referensi: ' . $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Check if a submission is in user's references
+     */
+    public function checkReference($submissionId) {
+        // Check if user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['is_reference' => false]);
+            return;
+        }
+        
+        try {
+            $userReferenceModel = new \App\Models\UserReference();
+            $userId = $_SESSION['user_id'];
+            
+            $isReference = $userReferenceModel->isReference($userId, (int)$submissionId);
+            
+            echo json_encode(['is_reference' => $isReference]);
+        } catch (\Exception $e) {
+            echo json_encode(['is_reference' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     /**
      * Displays the repository comparison page to show the difference between current and improved layouts.
      */
@@ -713,4 +1199,4 @@ class SubmissionController extends Controller {
         }
     }
     
-    }
+}

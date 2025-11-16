@@ -40,7 +40,7 @@ class Submission
             }
 
             $submission_type = 'bachelor';
-            $stmt_submission->bind_param("sssssii", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
+            $stmt_submission->bind_param("sssii", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -101,16 +101,19 @@ class Submission
         $this->conn->begin_transaction();
 
         try {
-            $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql_submission = "INSERT INTO submissions (user_id, nama_mahasiswa, author_2, author_3, author_4, author_5, email, judul_skripsi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?)";
             $stmt_submission = $this->conn->prepare($sql_submission);
             if (!$stmt_submission) {
                 throw new DatabaseException("Journal submission statement preparation failed: " . $this->conn->error);
             }
 
             $submission_type = 'journal';
-            // For journal submissions, we'll use empty values for fields that don't apply
-            $empty_value = '';
-            $stmt_submission->bind_param("sssssissis", $data['nama_penulis'], $empty_value, $data['email'], $empty_value, $empty_value, $data['judul_jurnal'], $empty_value, $data['abstrak'], $data['tahun_publikasi'], $submission_type);
+            $author_2 = $data['author_2'] ?? null;
+            $author_3 = $data['author_3'] ?? null;
+            $author_4 = $data['author_4'] ?? null;
+            $author_5 = $data['author_5'] ?? null;
+            
+            $stmt_submission->bind_param("isssssssiii", $data['user_id'], $data['nama_penulis'], $author_2, $author_3, $author_4, $author_5, $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
 
             if (!$stmt_submission->execute()) {
                 throw new DatabaseException("Journal submission execution failed: " . $stmt_submission->error);
@@ -138,7 +141,7 @@ class Submission
     public function submissionExists(string $nim): bool
     {
         try {
-            $stmt_check = $this->database->prepareWithProfiling("SELECT id FROM submissions WHERE nim = ?");
+            $stmt_check = $this->database->prepareWithProfiling("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nim = ?");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -158,7 +161,7 @@ class Submission
     public function journalSubmissionExists(string $author_name): bool
     {
         try {
-            $stmt_check = $this->database->prepareWithProfiling("SELECT id FROM submissions WHERE nama_mahasiswa = ? AND submission_type = 'journal'");
+            $stmt_check = $this->database->prepareWithProfiling("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nama_mahasiswa = ? AND s.submission_type = 'journal'");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -183,7 +186,7 @@ class Submission
 
         try {
             // Check if submission already exists for this NIM
-            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nim = ?");
+            $stmt_check = $this->conn->prepare("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nim = ?");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -197,13 +200,13 @@ class Submission
                 $submission_id = $existing_submission['id'];
                 
                 // Update submission data and reset status and reason to initial state, also updated_at to mark as resubmitted
-                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, nim = ?, email = ?, dosen1 = ?, dosen2 = ?, judul_skripsi = ?, program_studi = ?, tahun_publikasi = ?, status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, nim = ?, email = ?, dosen1 = ?, dosen2 = ?, judul_skripsi = ?, program_studi = ?, tahun_publikasi = ?, submission_type = 'bachelor', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
                 $stmt_update = $this->conn->prepare($sql_update);
                 if (!$stmt_update) {
                     throw new DatabaseException("Submission update statement preparation failed: " . $this->conn->error);
                 }
                 
-                $stmt_update->bind_param("ssssssssi", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_id);
+                $stmt_update->bind_param("sssssssii", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_id);
                 
                 if (!$stmt_update->execute()) {
                     throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);
@@ -220,7 +223,7 @@ class Submission
                 }
                 
                 $submission_type = 'bachelor';
-                $stmt_submission->bind_param("sssssis", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
+                $stmt_submission->bind_param("sssssssii", $data['nama_mahasiswa'], $data['nim'], $data['email'], $data['dosen1'], $data['dosen2'], $data['judul_skripsi'], $data['program_studi'], $data['tahun_publikasi'], $submission_type);
                 
                 if (!$stmt_submission->execute()) {
                     throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
@@ -255,7 +258,7 @@ class Submission
 
         try {
             // Check if journal submission already exists for this author
-            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nama_mahasiswa = ? AND submission_type = 'journal'");
+            $stmt_check = $this->conn->prepare("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nama_mahasiswa = ? AND s.submission_type = 'journal'");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -269,16 +272,18 @@ class Submission
                 $submission_id = $existing_submission['id'];
                 
                 // Update submission data and reset status and reason to initial state, also updated_at to mark as resubmitted
-                $sql_update = "UPDATE submissions SET nama_mahasiswa = ?, nim = ?, email = ?, dosen1 = ?, dosen2 = ?, judul_skripsi = ?, program_studi = ?, abstract = ?, tahun_publikasi = ?, submission_type = ?, status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+                $sql_update = "UPDATE submissions SET user_id = ?, nama_mahasiswa = ?, author_2 = ?, author_3 = ?, author_4 = ?, author_5 = ?, email = ?, judul_skripsi = ?, abstract = ?, tahun_publikasi = ?, submission_type = 'journal', status = 'Pending', keterangan = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
                 $stmt_update = $this->conn->prepare($sql_update);
                 if (!$stmt_update) {
                     throw new DatabaseException("Submission update statement preparation failed: " . $this->conn->error);
                 }
                 
-                // For journal submissions, we'll use empty values for fields that don't apply
-                $empty_value = '';
-                $submission_type = 'journal';
-                $stmt_update->bind_param("ssssssisii", $data['nama_penulis'], $empty_value, $data['email'], $empty_value, $empty_value, $data['judul_jurnal'], $empty_value, $data['abstrak'], $data['tahun_publikasi'], $submission_type, $submission_id);
+                $author_2 = $data['author_2'] ?? null;
+                $author_3 = $data['author_3'] ?? null;
+                $author_4 = $data['author_4'] ?? null;
+                $author_5 = $data['author_5'] ?? null;
+                
+                $stmt_update->bind_param("isssssssiii", $data['user_id'], $data['nama_penulis'], $author_2, $author_3, $author_4, $author_5, $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_id);
                 
                 if (!$stmt_update->execute()) {
                     throw new DatabaseException("Submission update execution failed: " . $stmt_update->error);
@@ -288,21 +293,19 @@ class Submission
                 $this->deleteExistingFiles($submission_id);
             } else {
                 // No existing submission, create new one
-                $sql_submission = "INSERT INTO submissions (nama_mahasiswa, nim, email, dosen1, dosen2, judul_skripsi, program_studi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $sql_submission = "INSERT INTO submissions (user_id, nama_mahasiswa, email, judul_skripsi, abstract, tahun_publikasi, submission_type) VALUES (?, ?, ?, ?, ?, ?)";
                 $stmt_submission = $this->conn->prepare($sql_submission);
                 if (!$stmt_submission) {
                     throw new DatabaseException("Submission statement preparation failed: " . $this->conn->error);
                 }
 
                 $submission_type = 'journal';
-                // For journal submissions, we'll use empty values for fields that don't apply
-                $empty_value = '';
-                $stmt_submission->bind_param("ssssssssis", $data['nama_penulis'], $empty_value, $data['email'], $empty_value, $empty_value, $data['judul_jurnal'], $empty_value, $data['abstrak'], $data['tahun_publikasi'], $submission_type);
-                
+                $stmt_submission->bind_param("issisii", $data['user_id'], $data['nama_penulis'], $data['email'], $data['judul_jurnal'], $data['abstrak'], $data['tahun_publikasi'], $submission_type);
+
                 if (!$stmt_submission->execute()) {
                     throw new DatabaseException("Submission execution failed: " . $stmt_submission->error);
                 }
-                
+
                 $submission_id = $this->conn->insert_id;
             }
             
@@ -332,7 +335,7 @@ class Submission
 
         try {
             // Check if submission already exists for this NIM
-            $stmt_check = $this->conn->prepare("SELECT id FROM submissions WHERE nim = ?");
+            $stmt_check = $this->conn->prepare("SELECT s.id, s.nama_mahasiswa, s.author_2, s.author_3, s.author_4, s.author_5 FROM submissions s WHERE s.nim = ?");
             if (!$stmt_check) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -438,7 +441,7 @@ class Submission
         try {
             $upload_dir = __DIR__ . '/../../public/uploads/';
             if (!is_dir($upload_dir)) {
-                if (!mkdir($upload_dir, 0755, true)) {
+                if (!mkdir($upload_dir, 075, true)) {
                     throw new FileUploadException("Failed to create upload directory: " . $upload_dir);
                 }
             }
@@ -698,9 +701,9 @@ class Submission
         }
     }
 
-    public function findAll(int $page = 1, int $perPage = 0): array
+    public function findAll(int $page = 1, int $perPage = 0, string $sort = null, string $order = 'asc'): array
     {
-        return $this->repository->findAll($page, $perPage);
+        return $this->repository->findAll($page, $perPage, $sort, $order);
     }
     
     /**
@@ -711,14 +714,14 @@ class Submission
         return $this->repository->countAll();
     }
 
-    public function findPending(bool $useCache = true, int $page = 1, int $perPage = 10): array
+    public function findPending(bool $useCache = true, int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
         $cacheService = CacheService::getInstance();
-        $cacheKey = 'pending_submissions_page_' . $page . '_per_' . $perPage;
+        $cacheKey = 'pending_submissions_page_' . $page . '_per_' . $perPage . '_' . ($sort ?? 'default') . '_' . $order;
         $cacheTtl = 300; // 5 minutes
         
         // Try to get from cache first
-        if ($useCache) {
+        if ($useCache && $sort === null && $order === 'asc') { // Only use cache when no sorting is applied
             $cachedData = $cacheService->get($cacheKey, $cacheTtl);
             if ($cachedData !== null) {
                 return $cachedData;
@@ -726,10 +729,10 @@ class Submission
         }
         
         // Get data from repository
-        $submissions = $this->repository->findPending($page, $perPage);
+        $submissions = $this->repository->findPending($page, $perPage, $sort, $order);
         
-        // Cache the results
-        if ($useCache) {
+        // Cache the results only when no sorting is applied
+        if ($useCache && $sort === null && $order === 'asc') {
             $cacheService->set($cacheKey, $submissions, $cacheTtl);
         }
         
@@ -753,11 +756,13 @@ class Submission
      * Find journal submissions with pagination
      * @param int $page Page number
      * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      */
-    public function findJournalSubmissions(int $page = 1, int $perPage = 10): array
+    public function findJournalSubmissions(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
-        return $this->repository->findJournalSubmissions($page, $perPage);
+        return $this->repository->findJournalSubmissions($page, $perPage, $sort, $order);
     }
 
     /**
@@ -881,14 +886,17 @@ class Submission
      * @param string $search Search term
      * @param bool $showAll Whether to show all submissions or only pending ones
      * @param bool $showJournal Whether to show only journal submissions
+     * @param bool $showUnconverted Whether to show only unconverted submissions
      * @param int $page Page number
      * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
      * @return array
      * @throws DatabaseException
      */
-    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, int $page = 1, int $perPage = 10): array
+    public function searchSubmissions(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false, int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
     {
-        return $this->repository->searchSubmissions($search, $showAll, $showJournal, $page, $perPage);
+        return $this->repository->searchSubmissions($search, $showAll, $showJournal, $showUnconverted, $page, $perPage, $sort, $order);
     }
     
     /**
@@ -896,12 +904,13 @@ class Submission
      * @param string $search Search term
      * @param bool $showAll Whether to count all submissions or only pending ones
      * @param bool $showJournal Whether to count only journal submissions
+     * @param bool $showUnconverted Whether to count only unconverted submissions
      * @return int
      * @throws DatabaseException
      */
-    public function countSearchResults(string $search, bool $showAll = false, bool $showJournal = false): int
+    public function countSearchResults(string $search, bool $showAll = false, bool $showJournal = false, bool $showUnconverted = false): int
     {
-        return $this->repository->countSearchResults($search, $showAll, $showJournal);
+        return $this->repository->countSearchResults($search, $showAll, $showJournal, $showUnconverted);
     }
     
     /**
@@ -911,8 +920,89 @@ class Submission
      * @return array
      * @throws DatabaseException
      */
-    public function searchRecentApprovedJournals(string $search, int $limit = 6): array
-    {
-        return $this->repository->searchRecentApprovedJournals($search, $limit);
-    }
+     public function searchRecentApprovedJournals(string $search, int $limit = 6): array
+     {
+         return $this->repository->searchRecentApprovedJournals($search, $limit);
+     }
+
+     public function findByUserId(int $userId, string $sort = null, string $order = 'asc'): array
+     {
+         return $this->repository->findByUserId($userId, $sort, $order);
+     }
+
+     public function associateSubmissionToUser(int $submissionId, int $userId): bool
+     {
+         try {
+             $stmt = $this->conn->prepare("UPDATE submissions SET user_id = ? WHERE id = ?");
+             if (!$stmt) {
+                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+             }
+             $stmt->bind_param("ii", $userId, $submissionId);
+             $result = $stmt->execute();
+             
+             if (!$result) {
+                 throw new DatabaseException("Statement execution failed: " . $stmt->error);
+             }
+             
+             $stmt->close();
+             return $result;
+         } catch (\Exception $e) {
+             throw new DatabaseException("Error while associating submission to user: " . $e->getMessage());
+         }
+     }
+
+     public function findUnassociatedSubmissionsByUserDetails(string $name, string $email, string $nim = null): array
+     {
+         return $this->repository->findUnassociatedSubmissionsByUserDetails($name, $email, $nim);
+     }
+
+     /**
+      * Count approved submissions by type
+      * @param string $type Submission type ('bachelor', 'master', 'journal')
+      * @return int
+      */
+     public function countApprovedByType(string $type): int
+     {
+         return $this->repository->countApprovedByType($type);
+     }
+
+     /**
+      * Count all approved submissions
+      * @return int
+      */
+     public function countAllApproved(): int
+     {
+         return $this->repository->countAllApproved();
+     }
+ /**
+  * Count all approved submissions by type (bachelor, master, journal)
+  * @return array
+  */
+ public function countAllApprovedByType(): array
+ {
+     return $this->repository->countAllApprovedByType();
+ }
+
+ /**
+  * Find submissions that have not been converted (no additional files beyond initial submission)
+  * @param int $page Page number
+  * @param int $perPage Items per page
+  * @param string|null $sort Sort column
+  * @param string $order Sort order ('asc' or 'desc')
+  * @return array
+  */
+ public function findUnconverted(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
+ {
+     return $this->repository->findUnconverted($page, $perPage, $sort, $order);
+ }
+
+ /**
+  * Count submissions that have not been converted (no additional files beyond initial submission)
+  * @return int
+  */
+ public function countUnconverted(): int
+ {
+     return $this->repository->countUnconverted();
+ }
+
 }

@@ -4,7 +4,7 @@
 <!-- Header -->
   <header class="text-center py-10 bg-green-100/70">
     <h1 class="text-4xl font-extrabold text-green-900 tracking-wide">REPOSITORY SKRIPSI</h1>
-    <p class="mt-2 text-gray-700 max-w-2xl mx-auto">
+    <p class="mt-2 text-gray-70 max-w-2xl mx-auto">
       Telusuri koleksi skripsi sarjana STAIN Sultan Abdurrahman Kepulauan Riau.
       Semua dokumen tersedia untuk keperluan penelitian dan pendidikan.
     </p>
@@ -22,12 +22,11 @@
     <p>📚 <strong> <?= $totalSubmissions ?> Skripsi</strong> terdaftar • Terbaru diunggah: <strong><?= $lastUpload ?></strong></p>
   </section>
 
-  
 
 <!-- Filter Box -->
 <div class="bg-white shadow-md border border-gray-100 rounded-2xl p-6 mt-6 mb-6"> <!-- tambahkan mb-6 -->
   <div class="flex items-center mb-4">
-    <div class="w-9 h-9 flex items-center justify-center bg-green-100 text-green-700 rounded-full mr-3">
+    <div class="w-9 h-9 flex items-center justify-center bg-green-10 text-green-700 rounded-full mr-3">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2l-6 7v5l-6 3v-8L3 6V4z" />
       </svg>
@@ -35,9 +34,9 @@
     <h2 class="text-lg font-semibold text-gray-800 tracking-wide">Filter Pencarian</h2>
   </div>
 
-  <form method="GET" action="<?= url('submission/repository_journal') ?>"
-  
-        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4">
+  <form method="GET" action="<?= url('submission/repository_skripsi') ?>"
+    
+         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4">
     <input type="hidden" name="page" value="1">
 
     <!-- Search -->
@@ -74,7 +73,7 @@
               class="w-full sm:w-auto px-6 py-2.5 bg-green-600 text-white font-medium rounded-xl shadow hover:bg-green-700 transition transform hover:-translate-y-0.5 duration-200">
         Filter
       </button>
-      <a href="<?= url('submission/repository_journal') ?>" 
+      <a href="<?= url('submission/repository_skripsi') ?>"
          class="w-full sm:w-auto px-6 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">
         Bersihkan
       </a>
@@ -110,19 +109,21 @@
         $firstName = implode(' ', $firstNames);
         $formattedName = $lastName . ', ' . $firstName;
 
-        $titleLink = '<a href="' . url('submission/detail/' . $submission['id']) . '" class="text-green-70 hover:text-green-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
+        // Determine the correct detail route based on submission type
+        $detailRoute = ($submission['submission_type'] ?? 'bachelor') === 'journal' ? 'journalDetail' : 'detail';
+        $titleLink = '<a href="' . url('submission/' . $detailRoute . '/' . $submission['id']) . '" class="text-green-700 hover:text-green-900 font-medium hover:underline">' . htmlspecialchars($submission['judul_skripsi']) . '</a>';
       ?>
 
       <div class="submission-item bg-white rounded-xl shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 overflow-hidden">
         <div class="p-5">
           <div class="text-lg font-semibold text-gray-800"><?= $formattedName ?> (<?= htmlspecialchars($submission['tahun_publikasi']) ?>)</div>
-          <div class="mt-1 text-gray-70"><?= $titleLink ?></div>
+          <div class="mt-1 text-gray-700"><?= $titleLink ?></div>
           <div class="flex gap-3 mt-3 text-sm">
             <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs font-medium">
-              Journal
+              Skripsi
             </span>
           </div>
-          <?php if (!empty($submission['abstract'])): ?>
+          <?php if (!empty($submission['abstract']) && $submission['submission_type'] === 'journal'): ?>
             <div class="mt-3 text-sm text-gray-600 italic line-clamp-3">
               <?= htmlspecialchars(substr($submission['abstract'], 0, 300)) . (strlen($submission['abstract']) > 300 ? '...' : '') ?>
             </div>

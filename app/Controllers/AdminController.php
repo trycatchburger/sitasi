@@ -5,10 +5,14 @@ namespace App\Controllers;
 use App\Models\Admin;
 use App\Models\Submission;
 use App\Models\ValidationService;
+use App\Services\SessionManager;
 use App\Exceptions\AuthenticationException;
 use App\Exceptions\ValidationException;
 use App\Exceptions\DatabaseException;
 use Exception;
+use App\Models\User;
+use PhpOffice\PhpSpreadsheet\IOFactory; 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class AdminController extends Controller {
     
@@ -18,7 +22,7 @@ class AdminController extends Controller {
 
 
     public function login() {
-        if ($this->isLoggedIn()) {
+        if (SessionManager::isAdminLoggedIn()) {
             header('Location: ' . url('admin/dashboard'));
             exit;
         }
@@ -41,9 +45,7 @@ class AdminController extends Controller {
                 if ($admin && isset($admin['password_hash']) && $admin['password_hash'] &&
                     password_verify($_POST['password'], $admin['password_hash'])) {
                     // Regenerate session ID after successful login
-                    session_regenerate_id(true);
-                    $_SESSION['admin_id'] = $admin['id'];
-                    $_SESSION['admin_username'] = $admin['username'];
+                    SessionManager::setAdminSession($admin['id'], $admin['username']);
                     header('Location: ' . url('admin/dashboard'));
                     exit;
                 } else {
@@ -53,8 +55,6 @@ class AdminController extends Controller {
                 $this->render('login', ['error' => $e->getMessage()]);
             } catch (ValidationException $e) {
                 $this->render('login', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
-            } catch (AuthenticationException $e) {
-                $this->render('login', ['error' => $e->getMessage()]);
             } catch (DatabaseException $e) {
                 $this->render('login', ['error' => "Database error occurred. Please try again."]);
             } catch (Exception $e) {
@@ -67,78 +67,240 @@ class AdminController extends Controller {
     }
 
     public function dashboard() {
-         try {
-             if (!$this->isLoggedIn()) {
-                 header('Location: ' . url('admin/login'));
-                 exit;
-             }
-             
-             $submissionModel = new Submission();
-             
-             // Get query parameters
-             $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
-             $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
-             $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-             $perPage = 10; // Default items per page
-             
-             // Determine which method to use based on parameters
-             if (!empty($search)) {
-                 // Use search functionality
-                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $page, $perPage);
-                 $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal);
-             } else if ($showJournal) {
-                 // Show only journal submissions
-                 $submissions = $submissionModel->findJournalSubmissions($page, $perPage);
-                 $totalResults = $submissionModel->countJournalSubmissions();
-             } else if ($showAll) {
-                 // Show all submissions
-                 $submissions = $submissionModel->findAll($page, $perPage);
-                 $totalResults = $submissionModel->countAll();
-             } else {
-                 // Show only pending submissions (default)
-                 $submissions = $submissionModel->findPending(true, $page, $perPage);
-                 $totalResults = $submissionModel->countPending();
-             }
-             
-             // Calculate pagination values
-             $totalPages = ceil($totalResults / $perPage);
-             
-             // Get query profiling stats if enabled
-             $queryStats = null;
-             if (class_exists('\App\Services\QueryProfiler')) {
-                 $profiler = \App\Services\QueryProfiler::getInstance();
-                 if ($profiler->isEnabled()) {
-                     $queryStats = $profiler->getStats();
-                 }
-             }
-             
-             $this->render('dashboard', [
-                 'submissions' => $submissions,
-                 'showAll' => $showAll,
-                 'search' => $search,
-                 'currentPage' => $page,
-                 'totalPages' => $totalPages,
-                 'totalResults' => $totalResults,
-                 'queryStats' => $queryStats
-             ]);
-         } catch (DatabaseException $e) {
-             $this->render('dashboard', ['error' => "Database error occurred while loading dashboard."]);
-         } catch (Exception $e) {
-             $this->render('dashboard', ['error' => "An error occurred: " . $e->getMessage()]);
-         }
-     }
+          try {
+              if (!$this->isAdminLoggedIn()) {
+                  header('Location: ' . url('admin/login'));
+                  exit;
+              }
+              
+              $submissionModel = new Submission();
+              
+              // Get query parameters
+              $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
+              $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
+              $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+              $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+              $perPage = 10; // Default items per page
+              
+              // Get sort parameters
+              $sort = isset($_GET['sort']) ? $_GET['sort'] : null;
+              $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
+              
+              // Determine which method to use based on parameters
+              if (!empty($search)) {
+                  // Use search functionality
+                  $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, false, $page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal, false);
+              } else if ($showJournal) {
+                  // Show only journal submissions
+                  $submissions = $submissionModel->findJournalSubmissions($page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countJournalSubmissions();
+              } else if ($showAll) {
+                  // Show all submissions
+                  $submissions = $submissionModel->findAll($page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countAll();
+              } else {
+                  // Show only pending submissions (default)
+                  $submissions = $submissionModel->findPending(true, $page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countPending();
+              }
+              
+              // Calculate pagination values
+              $totalPages = ceil($totalResults / $perPage);
+              
+              // Get query profiling stats if enabled
+              $queryStats = null;
+              if (class_exists('\App\Services\QueryProfiler')) {
+                  $profiler = \App\Services\QueryProfiler::getInstance();
+                  if ($profiler->isEnabled()) {
+                      $queryStats = $profiler->getStats();
+                  }
+              }
+              
+              $this->render('dashboard', [
+                  'submissions' => $submissions,
+                  'showAll' => $showAll,
+                  'search' => $search,
+                  'currentPage' => $page,
+                  'totalPages' => $totalPages,
+                  'totalResults' => $totalResults,
+                  'queryStats' => $queryStats,
+                  'sort' => $sort,
+                  'order' => $order
+              ]);
+          } catch (DatabaseException $e) {
+              $this->render('dashboard', ['error' => "Database error occurred while loading dashboard."]);
+          } catch (Exception $e) {
+              $this->render('dashboard', ['error' => "An error occurred: " . $e->getMessage()]);
+          }
+      }
 
     public function logout() {
-        session_destroy();
-        header('Location: ' . url('admin/login'));
+        SessionManager::logout();
+        header('Location: ' . url());
         exit;
     }
 
+    /**
+     * Handles CSRF validation and status update
+     */
+    public function updateStatusWithCsrf() {
+        try {
+            // Check if user is authenticated manually to handle AJAX requests properly
+            if (!$this->isAdminLoggedIn()) {
+                // Return JSON error for AJAX requests
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Authentication required.']);
+                    exit;
+                } else {
+                    // Regular request - redirect to login
+                    header('Location: ' . url('admin/login'));
+                    exit;
+                }
+            }
+            
+            // Validate CSRF token manually to have better control over error handling
+            $token = $_POST['csrf_token'] ?? '';
+            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+                // Check if this is an AJAX request
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    // For AJAX requests, return JSON error
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Invalid or expired CSRF token. Please refresh the page and try again.']);
+                    exit;
+                } else {
+                    // For regular requests, redirect with error
+                    $_SESSION['error_message'] = 'Invalid or expired CSRF token. Please refresh the page and try again.';
+                    header('Location: ' . url('admin/dashboard'));
+                    exit;
+                }
+            }
+            
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+               $submissionId = (int)$_POST['submission_id'];
+               $status = $_POST['status'];
+               $reason = $_POST['reason'] ?? '';
+               $serialNumber = $_POST['serial_number'] ?? '';
+
+               // Validate status
+               if (!in_array($status, ['Pending', 'Diterima', 'Ditolak'])) {
+                   throw new ValidationException(['status' => "Invalid status value."]);
+               }
+
+               $submissionModel = new Submission();
+               $adminId = $_SESSION['admin_id'];
+               
+               // Update serial number in database first
+               $submissionModel->updateSerialNumber($submissionId, $serialNumber);
+               
+               // Update status in database
+               $result = $submissionModel->updateStatus($submissionId, $status, $reason, $adminId);
+               
+               // Clear cache after updating status
+               $submissionModel->clearCache();
+               
+               if ($result) {
+                   // Send email notification
+                   $submission = $submissionModel->getSubmissionWithEmail($submissionId);
+                   if ($submission) {
+                       try {
+                           $emailService = new \App\Models\EmailService();
+                           $emailService->sendStatusUpdateNotification($submission);
+                           // Set success message
+                           $message = 'Status updated and email sent successfully to ' . $submission['nama_mahasiswa'] . '.';
+                       } catch (\Exception $e) {
+                           // If email sending fails, still consider the status update successful
+                           // Log the error but don't fail the entire operation
+                           error_log("Email notification failed: " . $e->getMessage());
+                           $message = 'Status updated successfully, but email notification failed.';
+                       }
+                   } else {
+                       $message = 'Status updated successfully.';
+                   }
+                   
+                   // Return JSON success for AJAX requests
+                   if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                       header('Content-Type: application/json');
+                       echo json_encode(['success' => true, 'message' => $message]);
+                       exit;
+                   } else {
+                       // Regular form submission - set success message and redirect
+                       $_SESSION['success_message'] = $message;
+                       header('Location: ' . url('admin/dashboard'));
+                       exit;
+                   }
+               } else {
+                   // Create a more descriptive error message
+                   $error_message = "Failed to update submission status.";
+                   // Return JSON error for AJAX requests
+                   if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                       header('Content-Type: application/json');
+                       echo json_encode(['success' => false, 'message' => $error_message]);
+                       exit;
+                   } else {
+                       // Regular form submission
+                       $_SESSION['error_message'] = $error_message;
+                       header('Location: ' . url('admin/dashboard'));
+                       exit;
+                   }
+               }
+           } else {
+               // Redirect back for non-POST requests
+               header('Location: ' . url('admin/dashboard'));
+               exit;
+           }
+       } catch (ValidationException $e) {
+           $error_message = $e->getMessage();
+           // Return JSON error for AJAX requests
+           if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+               header('Content-Type: application/json');
+               echo json_encode(['success' => false, 'message' => $error_message]);
+               exit;
+           } else {
+               // Regular form submission
+               $_SESSION['error_message'] = $error_message;
+               header('Location: ' . url('admin/dashboard'));
+               exit;
+           }
+       } catch (DatabaseException $e) {
+           $error_message = "Database error occurred while updating status.";
+           // Return JSON error for AJAX requests
+           if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+               header('Content-Type: application/json');
+               echo json_encode(['success' => false, 'message' => $error_message]);
+               exit;
+           } else {
+               // Regular form submission
+               $_SESSION['error_message'] = $error_message;
+               header('Location: ' . url('admin/dashboard'));
+               exit;
+           }
+       } catch (Exception $e) {
+           $error_message = "An error occurred: " . $e->getMessage();
+           // Return JSON error for AJAX requests
+           if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+               header('Content-Type: application/json');
+               echo json_encode(['success' => false, 'message' => $error_message]);
+               exit;
+           } else {
+               // Regular form submission
+               $_SESSION['error_message'] = $error_message;
+               header('Location: ' . url('admin/dashboard'));
+               exit;
+           }
+       }
+    }
+    
+    /**
+     * Legacy updateStatus method (kept for backward compatibility)
+     * This method is deprecated, use updateStatusWithCsrf instead
+     */
     public function updateStatus() {
          try {
              // Check if user is authenticated manually to handle AJAX requests properly
-             if (!$this->isLoggedIn()) {
+             if (!$this->isAdminLoggedIn()) {
                  // Return JSON error for AJAX requests
                  if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                      header('Content-Type: application/json');
@@ -150,9 +312,6 @@ class AdminController extends Controller {
                      exit;
                  }
              }
-             
-             // Run CSRF middleware for security
-             $this->runMiddleware(['csrf']);
              
              if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $submissionId = (int)$_POST['submission_id'];
@@ -235,6 +394,7 @@ class AdminController extends Controller {
                 echo json_encode(['success' => false, 'message' => $error_message]);
                 exit;
             } else {
+                // Regular form submission
                 $_SESSION['error_message'] = $error_message;
                 header('Location: ' . url('admin/dashboard'));
                 exit;
@@ -247,6 +407,7 @@ class AdminController extends Controller {
                 echo json_encode(['success' => false, 'message' => $error_message]);
                 exit;
             } else {
+                // Regular form submission
                 $_SESSION['error_message'] = $error_message;
                 header('Location: ' . url('admin/dashboard'));
                 exit;
@@ -259,6 +420,7 @@ class AdminController extends Controller {
                 echo json_encode(['success' => false, 'message' => $error_message]);
                 exit;
             } else {
+                // Regular form submission
                 $_SESSION['error_message'] = $error_message;
                 header('Location: ' . url('admin/dashboard'));
                 exit;
@@ -538,4 +700,483 @@ class AdminController extends Controller {
             exit;
         }
     }
+
+    public function userManagement()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            // Fetch users from users_login table and match with anggota table
+            $db = \App\Models\Database::getInstance();
+            
+            // Join users_login with anggota table to get complete user information
+           $sql = "SELECT ul.id, ul.id_member as library_card_number, a.nama as name, a.email, ul.created_at, ul.status
+                   FROM users_login ul
+                   LEFT JOIN anggota a ON ul.id_member = a.id_member
+                   ORDER BY ul.created_at DESC";
+            
+            $result = $db->getConnection()->query($sql);
+            if (!$result) {
+                throw new DatabaseException("Query failed: " . $db->getConnection()->error);
+            }
+
+            $users = [];
+            while ($row = $result->fetch_assoc()) {
+                $users[] = $row;
+            }
+            
+            $this->render('admin/user_management', ['users' => $users]);
+        } catch (DatabaseException $e) {
+            $this->render('admin/user_management', ['error' => "Database error occurred while loading user management."]);
+        } catch (Exception $e) {
+            $this->render('admin/user_management', ['error' => "An error occurred: " . $e->getMessage()]);
+        }
+    }
+
+    public function deleteUser()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $userId = (int)$_POST['user_id'];
+                
+                // Delete from users_login table
+                $db = \App\Models\Database::getInstance();
+                
+                $stmt = $db->getConnection()->prepare("DELETE FROM users_login WHERE id = ?");
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+                }
+                $stmt->bind_param("i", $userId);
+                $result = $stmt->execute();
+                
+                if ($result && $stmt->affected_rows > 0) {
+                    $_SESSION['success_message'] = 'User account deleted successfully!';
+                } else {
+                    $_SESSION['error_message'] = "Failed to delete user account.";
+                }
+            }
+            
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred while deleting user account.";
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        }
+    }
+
+    public function resetUserPassword()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $userId = (int)$_POST['user_id'];
+                
+                // Get user details to access email
+                $user = new User();
+                $userDetails = $user->findById($userId);
+                
+                if (!$userDetails) {
+                    $_SESSION['error_message'] = "User not found.";
+                    header('Location: ' . url('admin/userManagement'));
+                    exit;
+                }
+                
+                // Get user email from anggota table using id_member
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare("SELECT email FROM anggota WHERE id_member = ?");
+                $stmt->bind_param("s", $userDetails['id_member']);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $anggota = $result->fetch_assoc();
+                
+                // Generate a random password
+                $randomPassword = $this->generateRandomPassword();
+                $hashedPassword = password_hash($randomPassword, PASSWORD_DEFAULT);
+                
+                // Update user's password in the database
+                // Note: We're not updating status here, just password
+                $result = $user->update($userId, ['password' => $hashedPassword]);
+                
+                if ($result) {
+                    // Send email notification if email exists
+                    if ($anggota && !empty($anggota['email'])) {
+                        try {
+                            $emailService = new \App\Models\EmailService();
+                            $emailService->sendPasswordResetNotification($anggota['email'], $randomPassword);
+                            $_SESSION['success_message'] = 'Kata sandi pengguna telah direset berhasil dan pemberitahuan telah dikirim ke pengguna!';
+                        } catch (\Exception $e) {
+                            // If email sending fails, still consider the password reset successful
+                            // Log the error but don't fail the entire operation
+                            error_log("Password reset notification failed: " . $e->getMessage());
+                            $_SESSION['success_message'] = 'Kata sandi pengguna telah direset berhasil, tetapi pemberitahuan email gagal dikirim.';
+                        }
+                    } else {
+                        $_SESSION['success_message'] = 'Kata sandi pengguna telah direset berhasil!';
+                    }
+                    
+                    // Redirect with new password in URL parameters for modal display
+                    header('Location: ' . url('admin/userManagement') . '?reset_success=1&new_password=' . urlencode($randomPassword));
+                    exit;
+                } else {
+                    $_SESSION['error_message'] = "Failed to reset user password.";
+                    header('Location: ' . url('admin/userManagement'));
+                    exit;
+                }
+            }
+            
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred while resetting user password.";
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        }
+    }
+    
+    /**
+     * Generate a random password
+     */
+    private function generateRandomPassword($length = 12): string
+    {
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        return substr(str_shuffle($chars), 0, $length);
+    }
+
+    public function suspendUser()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $userId = (int)$_POST['user_id'];
+                $action = $_POST['action'] ?? 'suspend'; // 'suspend' or 'activate'
+                
+                // Update user's status in the database
+                $user = new User();
+                $result = $user->update($userId, ['status' => $action === 'suspend' ? 'suspended' : 'active']);
+                
+                if ($result) {
+                    if ($action === 'suspend') {
+                        $_SESSION['success_message'] = 'Akun pengguna telah berhasil disuspend!';
+                    } else {
+                        $_SESSION['success_message'] = 'Akun pengguna telah berhasil diaktifkan kembali!';
+                    }
+                } else {
+                    if ($action === 'suspend') {
+                        $_SESSION['error_message'] = "Gagal untuk mensuspend akun pengguna.";
+                    } else {
+                        $_SESSION['error_message'] = "Gagal untuk mengaktifkan kembali akun pengguna.";
+                    }
+                }
+            }
+            
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred while updating user status.";
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/userManagement'));
+            exit;
+        }
+    }
+
+    public function importDataAnggota()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+
+        // Get search and sort parameters
+        $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $sort = isset($_GET['sort']) ? $_GET['sort'] : 'nama';
+        $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'DESC' : 'ASC';
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $perPage = 10; // Number of records per page
+        $offset = ($page - 1) * $perPage;
+
+        // Validate sort column to prevent SQL injection
+        $allowedSortColumns = ['id_member', 'nama', 'prodi', 'email', 'no_hp', 'tipe_member', 'member_since', 'expired'];
+        if (!in_array($sort, $allowedSortColumns)) {
+            $sort = 'id_member'; // Default sort column to show most recent first (assuming higher ID = more recent)
+            $order = 'DESC'; // Default to descending order for most recent first
+        }
+
+        // Fetch members from the anggota table with search, sort and pagination
+        $db = \App\Models\Database::getInstance();
+        $connection = $db->getConnection();
+        
+        // Build the WHERE clause for search
+        $whereClause = "";
+        $searchParam = "";
+        $countParams = [];
+        $dataParams = [];
+        
+        if (!empty($search)) {
+            $whereClause = "WHERE id_member LIKE ? OR nama LIKE ? OR prodi LIKE ? OR email LIKE ?";
+            $searchParam = "%{$search}%";
+            $countParams = [$searchParam, $searchParam];
+            $dataParams = [$searchParam, $searchParam];
+        }
+
+        // Get total count for pagination
+        $countSql = "SELECT COUNT(*) as total FROM anggota ";
+        $countSql .= $whereClause;
+        
+        if (!empty($search)) {
+            $countStmt = $connection->prepare($countSql);
+            $countStmt->bind_param("ssss", $searchParam, $searchParam, $searchParam, $searchParam);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+        } else {
+            $countResult = $connection->query($countSql);
+        }
+        
+        $totalCount = $countResult->fetch_assoc()['total'];
+        $totalPages = ceil($totalCount / $perPage);
+        
+        $sql = "SELECT id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired FROM anggota ";
+        $sql .= $whereClause;
+        $sql .= " ORDER BY {$sort} {$order} LIMIT ? OFFSET ?";
+        
+        $stmt = $connection->prepare($sql);
+        if (!empty($search)) {
+            $stmt->bind_param("ssi", $searchParam, $searchParam, $perPage, $offset);
+        } else {
+            $stmt->bind_param("ii", $perPage, $offset);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $members = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $members[] = $row;
+            }
+        }
+
+        $this->render('admin/import_data_anggota', [
+            'csrf_token' => $this->generateCsrfToken(),
+            'members' => $members,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalCount' => $totalCount,
+            'search' => $search,
+            'sort' => $sort,
+            'order' => $order
+        ]);
+    }
+    
+    public function prosesImportAnggota()
+    {
+        // Run authentication middleware
+        $this->runMiddleware(['auth']);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // CSRF protection
+            $this->runMiddleware(['csrf']);
+
+            if (!isset($_FILES['file_excel']) || $_FILES['file_excel']['error'] !== UPLOAD_ERR_OK) {
+                $_SESSION['error_message'] = 'Error uploading file.';
+                header('Location: ' . url('admin/importDataAnggota'));
+                exit;
+            }
+
+            $file = $_FILES['file_excel'];
+            
+            // Validate file type
+            $fileExtension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            if (!in_array(strtolower($fileExtension), ['xls', 'xlsx'])) {
+                $_SESSION['error_message'] = 'Invalid file type. Please upload an Excel file (.xls or .xlsx).';
+                header('Location: ' . url('admin/importDataAnggota'));
+                exit;
+            }
+
+            try {
+                // Load PhpSpreadsheet
+                $inputFileName = $file['tmp_name'];
+                $spreadsheet = IOFactory::load($inputFileName);
+                $worksheet = $spreadsheet->getActiveSheet();
+                $rows = $worksheet->toArray(null, true, true, true);
+
+                // Skip header row (assuming first row is header)
+                array_shift($rows); // Remove header row
+
+                $db = \App\Models\Database::getInstance();
+                $connection = $db->getConnection();
+                
+                $successCount = 0;
+                $errorCount = 0;
+                $errors = [];
+
+                foreach ($rows as $rowIndex => $row) {
+                    // Assuming columns are: id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired
+                    
+                    $id_member = trim($row['A'] ?? $row[0] ?? '');
+                    $nama = trim($row['B'] ?? $row[1] ?? '');
+                    $prodi = trim($row['C'] ?? $row[2] ?? '');
+                    $email = trim($row['D'] ?? $row[3] ?? '');
+                    $no_hp = trim($row['E'] ?? $row[4] ?? '');
+                    $tipe_member = trim($row['F'] ?? $row[5] ?? '');
+                    $member_since = trim($row['G'] ?? $row[6] ?? '');
+                    $expired = trim($row['H'] ?? $row[7] ?? '');
+                    
+                    // Skip empty rows
+                    if (empty($id_member) && empty($nama) && empty($email)) {
+                        continue;
+                    }
+                    
+
+                    // Validate required fields
+                    if (empty($id_member) || empty($nama)) {
+                        $errorCount++;
+                        $errors[] = "Row " . ($rowIndex + 1) . ": Missing required fields (ID Member or Nama)";
+                        continue;
+                    }
+
+                    // Check if member already exists
+                    $checkStmt = $connection->prepare("SELECT id_member FROM anggota WHERE id_member = ?");
+                    $checkStmt->bind_param("s", $id_member);
+                    $checkStmt->execute();
+                    $result = $checkStmt->get_result();
+                    if ($result->num_rows > 0) {
+                        // Update existing member
+                        $updateStmt = $connection->prepare("UPDATE anggota SET nama = ?, prodi = ?, email = ?, no_hp = ?, tipe_member = ?, member_since = ?, expired = ? WHERE id_member = ?");
+                        $updateStmt->bind_param("ssssssss", $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired, $id_member);
+                    
+                        if ($updateStmt->execute()) {
+                            $successCount++;
+                        } else {
+                            $errorCount++;
+                            $errors[] = "Row " . ($rowIndex + 1) . ": Failed to update member with ID: $id_member";
+                        }
+                        $updateStmt->close();
+                    } else {
+                        // Insert new member
+                        $insertStmt = $connection->prepare("INSERT INTO anggota (id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                        $insertStmt->bind_param("ssssssss", $id_member, $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired);
+                        
+                        if ($insertStmt->execute()) {
+                            $successCount++;
+                        } else {
+                            $errorCount++;
+                            $errors[] = "Row " . ($rowIndex + 1) . ": Failed to insert member with ID: $id_member";
+                        }
+                        $insertStmt->close();
+                    }
+                    $checkStmt->close();
+                }
+
+                // Prepare success message
+                $message = "Import completed. $successCount record(s) processed successfully.";
+                if ($errorCount > 0) {
+                    $message .= " $errorCount error(s) occurred.";
+                    $_SESSION['error_message'] = $message . " Errors: " . implode("; ", $errors);
+                } else {
+                    $_SESSION['success_message'] = $message;
+                }
+
+                header('Location: ' . url('admin/importDataAnggota'));
+                exit;
+                
+            } catch (\Throwable $th) {
+                $_SESSION['error_message'] = "Error processing Excel file: " . $th->getMessage();
+                header('Location: ' . url('admin/importDataAnggota'));
+                exit;
+            }
+        } else {
+            header('Location: ' . url('admin/importDataAnggota'));
+            exit;
+        }
+    }
+
+    public function managementFile() {
+         try {
+             if (!$this->isAdminLoggedIn()) {
+                 header('Location: ' . url('admin/login'));
+                 exit;
+             }
+             
+             $submissionModel = new Submission();
+             
+             // Get query parameters
+             $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
+             $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
+             $showUnconverted = isset($_GET['converted']) && $_GET['converted'] === 'unconverted';
+             $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+             $perPage = 10; // Default items per page
+             
+             // Get sort parameters
+             $sort = isset($_GET['sort']) ? $_GET['sort'] : null;
+             $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
+             
+             // Determine which method to use based on parameters
+             if (!empty($search)) {
+                 // Use search functionality
+                 $submissions = $submissionModel->searchSubmissions($search, $showAll, $showJournal, $showUnconverted, $page, $perPage, $sort, $order);
+                 $totalResults = $submissionModel->countSearchResults($search, $showAll, $showJournal, $showUnconverted);
+             } else if ($showJournal) {
+                 // Show only journal submissions
+                 $submissions = $submissionModel->findJournalSubmissions($page, $perPage, $sort, $order);
+                 $totalResults = $submissionModel->countJournalSubmissions();
+             } else if ($showUnconverted) {
+                 // Show submissions that have not been converted (no additional files uploaded after initial submission)
+                 $submissions = $submissionModel->findUnconverted($page, $perPage, $sort, $order);
+                 $totalResults = $submissionModel->countUnconverted();
+             } else {
+                 // Show all submissions by default when no specific filter is selected
+                 $submissions = $submissionModel->findAll($page, $perPage, $sort, $order);
+                 $totalResults = $submissionModel->countAll();
+             }
+             
+             // Calculate pagination values
+             $totalPages = ceil($totalResults / $perPage);
+             
+             // Get query profiling stats if enabled
+             $queryStats = null;
+             if (class_exists('\App\Services\QueryProfiler')) {
+                 $profiler = \App\Services\QueryProfiler::getInstance();
+                 if ($profiler->isEnabled()) {
+                     $queryStats = $profiler->getStats();
+                 }
+             }
+             
+             $this->render('management_file', [
+                 'submissions' => $submissions,
+                 'showAll' => $showAll,
+                 'showUnconverted' => $showUnconverted,
+                 'search' => $search,
+                 'currentPage' => $page,
+                 'totalPages' => $totalPages,
+                 'totalResults' => $totalResults,
+                 'queryStats' => $queryStats,
+                 'sort' => $sort,
+                 'order' => $order
+             ]);
+         } catch (DatabaseException $e) {
+             $this->render('management_file', ['error' => "Database error occurred while loading management file page."]);
+         } catch (Exception $e) {
+             $this->render('management_file', ['error' => "An error occurred: " . $e->getMessage()]);
+         }
+     }
+
+
 }

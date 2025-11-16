@@ -43,16 +43,22 @@
                             </div>
                         <?php endif; ?>
 
-                        <form action="<?php echo url('submission/create_journal'); ?>" method="post" enctype="multipart/form-data">
+                        <?php if (isset($is_resubmission) && $is_resubmission): ?>
+                        <form action="<?php echo url('submission/resubmit'); ?>" method="post" enctype="multipart/form-data" id="journal-form">
+                            <input type="hidden" name="submission_id" value="<?= htmlspecialchars($submission_id) ?>">
+                            <input type="hidden" name="submission_type" value="journal">
+                        <?php else: ?>
+                        <form action="<?php echo url('submission/create_journal'); ?>" method="post" enctype="multipart/form-data" id="journal-form">
+                        <?php endif; ?>
                             <!-- Personal Information Section -->
                             <div class="mb-8">
                                 <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Informasi Penulis</h2>
                                 
                                 <div class="form-group">
-                                    <label for="nama_penulis" class="form-label">Nama Lengkap</label>
+                                    <label for="nama_penulis" class="form-label">Nama Penulis Utama</label>
                                     <input type="text" id="nama_penulis" name="nama_penulis" required
                                         class="form-control"
-                                        value="<?= isset($old_data['nama_penulis']) ? htmlspecialchars($old_data['nama_penulis']) : '' ?>">
+                                        value="<?= isset($old_data['nama_penulis']) ? htmlspecialchars($old_data['nama_penulis']) : (isset($user_details['name']) ? htmlspecialchars($user_details['name']) : '') ?>">
                                     <p class="text-xs text-gray-50 mt-1">Contoh: Iis Rahayu. Gunakan huruf kapital di awal kata.</p>
                                     
                                     <?php if (isset($errors['nama_penulis'])): ?>
@@ -62,6 +68,38 @@
                                             <?php endforeach; ?>
                                         </div>
                                     <?php endif; ?>
+                                </div>
+                                
+                                <div class="form-group mt-6">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" id="email" name="email" required class="form-control"
+                                           value="<?= isset($old_data['email']) ? htmlspecialchars($old_data['email']) : (isset($user_details['email']) ? htmlspecialchars($user_details['email']) : '') ?>">
+                                    <p class="text-xs text-gray-500 mt-1">Contoh: nama@domain.com</p>
+                                    <?php if (isset($errors['email'])): ?>
+                                        <div class="text-red-500 text-sm mt-1">
+                                            <?php foreach ($errors['email'] as $error): ?>
+                                                <div><?= htmlspecialchars($error) ?></div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- Additional Authors Section -->
+                                <div class="mt-8">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h3 class="text-lg font-medium text-gray-700">Penulis Tambahan (Opsional)</h3>
+                                        <button type="button" id="add-author-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Tambah Penulis
+                                        </button>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mb-4">Jika jurnal memiliki lebih dari satu penulis, tambahkan nama-nama penulis tambahan di bawah ini:</p>
+                                    
+                                    <div id="authors-container" class="space-y-4">
+                                        <!-- Dynamic author fields will be added here -->
+                                    </div>
                                 </div>
                             </div>
 
@@ -282,6 +320,30 @@
 </div>
             </div>
 
+<style>
+.author-field {
+  position: relative;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  transition: all 0.3s ease;
+}
+
+.author-field:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.author-field .form-label {
+  margin-bottom: 0.5rem;
+}
+
+.author-field .form-control {
+  margin-bottom: 0;
+}
+</style>
+
 <!-- Script animasi scroll -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -295,6 +357,97 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   observer.observe(section);
+
+  // Dynamic author fields functionality
+  let authorCount = 0;
+  
+  // Add author button functionality
+  document.getElementById('add-author-btn').addEventListener('click', function() {
+    authorCount++;
+    const authorsContainer = document.getElementById('authors-container');
+    
+    // Create author field container
+    const authorDiv = document.createElement('div');
+    authorDiv.className = 'form-group author-field';
+    authorDiv.id = `author-field-${authorCount}`;
+    
+    // Get the current value if we're re-populating from old data
+    const currentValue = authorCount === 1 ? `<?= isset($old_data['author_2']) ? addslashes(htmlspecialchars($old_data['author_2'])) : '' ?>` :
+                        authorCount === 2 ? `<?= isset($old_data['author_3']) ? addslashes(htmlspecialchars($old_data['author_3'])) : '' ?>` :
+                        authorCount === 3 ? `<?= isset($old_data['author_4']) ? addslashes(htmlspecialchars($old_data['author_4'])) : '' ?>` :
+                        authorCount === 4 ? `<?= isset($old_data['author_5']) ? addslashes(htmlspecialchars($old_data['author_5'])) : '' ?>` : '';
+    
+    authorDiv.innerHTML = `
+      <div class="flex justify-between items-center mb-2">
+        <label for="author_${authorCount + 1}" class="form-label">Nama Penulis Ke-${authorCount + 1}</label>
+        <button type="button" class="remove-author-btn text-red-600 hover:text-red-800" data-id="${authorCount}">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <input type="text" id="author_${authorCount + 1}" name="author_${authorCount + 1}" class="form-control"
+             value="${currentValue}" placeholder="Contoh: John Doe">
+    `;
+    
+    authorsContainer.appendChild(authorDiv);
+    
+    // Add event listener to the remove button
+    authorDiv.querySelector('.remove-author-btn').addEventListener('click', function() {
+      const fieldId = this.getAttribute('data-id');
+      document.getElementById(`author-field-${fieldId}`).remove();
+    });
+  });
+
+  // Pre-populate with existing author fields if they exist in old_data
+  const existingAuthors = [
+    '<?= isset($old_data['author_2']) ? addslashes(htmlspecialchars($old_data['author_2'])) : '' ?>',
+    '<?= isset($old_data['author_3']) ? addslashes(htmlspecialchars($old_data['author_3'])) : '' ?>',
+    '<?= isset($old_data['author_4']) ? addslashes(htmlspecialchars($old_data['author_4'])) : '' ?>',
+    '<?= isset($old_data['author_5']) ? addslashes(htmlspecialchars($old_data['author_5'])) : '' ?>'
+  ];
+  
+  existingAuthors.forEach((author, index) => {
+    if (author) {
+      authorCount++;
+      const authorsContainer = document.getElementById('authors-container');
+      
+      const authorDiv = document.createElement('div');
+      authorDiv.className = 'form-group author-field';
+      authorDiv.id = `author-field-${authorCount}`;
+      
+      authorDiv.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+          <label for="author_${authorCount + 1}" class="form-label">Nama Penulis Ke-${authorCount + 1}</label>
+          <button type="button" class="remove-author-btn text-red-600 hover:text-red-800" data-id="${authorCount}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <input type="text" id="author_${authorCount + 1}" name="author_${authorCount + 1}" class="form-control"
+               value="${author}" placeholder="Contoh: John Doe">
+      `;
+      
+      authorsContainer.appendChild(authorDiv);
+      
+      // Add event listener to the remove button
+      authorDiv.querySelector('.remove-author-btn').addEventListener('click', function() {
+        const fieldId = this.getAttribute('data-id');
+        document.getElementById(`author-field-${fieldId}`).remove();
+      });
+    }
+  });
+
+  // Update author count on form submit to ensure all fields are included
+  document.getElementById('journal-form').addEventListener('submit', function(e) {
+    // Add hidden input to track total number of authors
+    const totalAuthorsInput = document.createElement('input');
+    totalAuthorsInput.type = 'hidden';
+    totalAuthorsInput.name = 'total_authors';
+    totalAuthorsInput.value = authorCount;
+    this.appendChild(totalAuthorsInput);
+  });
 });
 </script>
 </div>

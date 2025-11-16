@@ -110,7 +110,11 @@ class ValidationService
             'email' => 'required|email|maxLength:100',
             'judul_jurnal' => 'required|maxLength:500',
             'abstrak' => 'required|maxLength:2000',
-            'tahun_publikasi' => 'required|year'
+            'tahun_publikasi' => 'required|year',
+            'author_2' => 'maxLength:100',
+            'author_3' => 'maxLength:100',
+            'author_4' => 'maxLength:100',
+            'author_5' => 'maxLength:100'
         ];
 
         return $this->validate($data, $rules);
@@ -130,6 +134,49 @@ class ValidationService
         ];
 
         return $this->validate($data, $rules);
+    }
+
+    /**
+     * Validate user login form data
+     * @param array $data Form data
+     * @return bool True if validation passes
+     * @throws ValidationException
+     */
+    public function validateUserLoginForm(array $data): bool
+    {
+        $rules = [
+            'library_card_number' => 'required|maxLength:50',
+            'password' => 'required|minLength:6'
+        ];
+        
+        return $this->validate($data, $rules);
+    }
+
+    /**
+     * Validate user creation form data
+     * @param array $data Form data
+     * @return bool True if validation passes
+     * @throws ValidationException
+     */
+    public function validateCreateUserForm(array $data): bool
+    {
+        $rules = [
+            'library_card_number' => 'required|maxLength:50',
+            'name' => 'required|maxLength:255',
+            'email' => 'required|email|maxLength:255',
+            'password' => 'required|minLength:6',
+            'confirm_password' => 'required'
+        ];
+        
+        $isValid = $this->validate($data, $rules);
+        
+        // Additional validation for password confirmation
+        if ($isValid && $data['password'] !== $data['confirm_password']) {
+            $this->addError('confirm_password', 'The password confirmation does not match the password.');
+            $isValid = false;
+        }
+        
+        return $isValid;
     }
 
     /**

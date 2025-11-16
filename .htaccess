@@ -1,6 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /sitasi/
+    RewriteBase /sitasi/  # Sesuaikan dengan nama subdirektori Anda
 
     # Redirect to public directory
     RewriteRule ^(.*)$ public/$1 [L]

@@ -173,4 +173,74 @@ class EmailService
             // Don't throw exception, just log it to prevent the status update from failing
         }
     }
+    
+    /**
+     * Send password reset notification to user
+     */
+    public function sendPasswordResetNotification(string $email, string $password)
+    {
+        try {
+            $this->mailer->clearAddresses();
+            $this->mailer->clearAttachments();
+
+            $this->mailer->addAddress($email);
+
+            $this->mailer->isHTML(true);
+            $this->mailer->Subject = 'Pemberitahuan Reset Kata Sandi';
+            
+            $this->mailer->Body = '
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Pemberitahuan Reset Kata Sandi</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+                    .header { background-color: #4f46e5; color: white; padding: 20px; text-align: center; }
+                    .content { padding: 30px; }
+                    .password-box { background-color: #f8fafc; border: 2px dashed #4f46e5; padding: 15px; margin: 20px 0; text-align: center; border-radius: 8px; }
+                    .footer { background-color: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h2>Perpustakaan Digital</h2>
+                        <h3>Pemberitahuan Reset Kata Sandi</h3>
+                    </div>
+                    <div class="content">
+                        <p>Halo,</p>
+                        <p>Kata sandi akun Anda telah direset oleh administrator kami.</p>
+                        
+                        <div class="password-box">
+                            <p style="margin: 0; font-weight: bold; color: #4f46e5;">Kata Sandi Baru Anda:</p>
+                            <p style="margin: 10px 0; font-size: 18px; font-weight: bold; color: #1e293b;">' . htmlspecialchars($password, ENT_QUOTES, 'UTF-8') . '</p>
+                        </div>
+                        
+                        <p>Silakan login dengan kata sandi baru ini dan segera ganti untuk alasan keamanan.</p>
+                        
+                        <p>Jika Anda tidak meminta perubahan ini, harap segera hubungi administrator kami.</p>
+                        
+                        <p>Terima kasih,<br>Tim Administrator Perpustakaan</p>
+                    </div>
+                    <div class="footer">
+                        <p>Email ini dikirim secara otomatis. Mohon jangan membalas email ini.</p>
+                    </div>
+                </div>
+            </body>
+            </html>';
+            
+            $this->mailer->AltBody = "Pemberitahuan Reset Kata Sandi\n\n" .
+                                   "Kata sandi akun Anda telah direset oleh administrator.\n\n" .
+                                   "Kata sandi baru Anda adalah: " . $password . "\n\n" .
+                                   "Silakan login dengan kata sandi baru ini dan segera ganti untuk alasan keamanan.\n\n" .
+                                   "Jika Anda tidak meminta perubahan ini, harap segera hubungi administrator kami.";
+
+            $this->mailer->send();
+        } catch (PHPMailerException $e) {
+            error_log("Mailer Error (password reset notification): " . $this->mailer->ErrorInfo);
+            throw $e; // Re-throw to handle in controller
+        }
+    }
 }

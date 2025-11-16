@@ -43,7 +43,13 @@
                             </div>
                         <?php endif; ?>
 
+                        <?php if (isset($is_resubmission) && $is_resubmission): ?>
+                        <form action="<?php echo url('submission/resubmit'); ?>" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="submission_id" value="<?= htmlspecialchars($submission_id) ?>">
+                            <input type="hidden" name="submission_type" value="bachelor">
+                        <?php else: ?>
                         <form action="<?php echo url('submission/create'); ?>" method="post" enctype="multipart/form-data">
+                        <?php endif; ?>
                             <!-- Personal Information Section -->
                             <div class="mb-8">
                                 <h2 class="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Informasi Mahasiswa</h2>
@@ -54,7 +60,7 @@
                                             <label for="nama_mahasiswa" class="form-label">Nama Lengkap</label>
                                             <input type="text" id="nama_mahasiswa" name="nama_mahasiswa" required
                                                 class="form-control"
-                                                value="<?= isset($old_data['nama_mahasiswa']) ? htmlspecialchars($old_data['nama_mahasiswa']) : '' ?>">
+                                                value="<?= isset($old_data['nama_mahasiswa']) ? htmlspecialchars($old_data['nama_mahasiswa']) : (isset($user_details['name']) ? htmlspecialchars($user_details['name']) : '') ?>">
                                             <p class="text-xs text-gray-500 mt-1">Contoh: Iis Rahayu. Gunakan huruf kapital di awal kata.</p>
                                             
                                             <?php if (isset($errors['nama_mahasiswa'])): ?>
@@ -87,8 +93,8 @@
                                 <div class="form-group">
                                     <label for="email" class="form-label">Email</label>
                                     <input type="email" id="email" name="email" required
-                                        class="form-control"
-                                        value="<?= isset($old_data['email']) ? htmlspecialchars($old_data['email']) : '' ?>">
+                                class="form-control"
+                                value="<?= isset($old_data['email']) ? htmlspecialchars($old_data['email']) : (isset($user_details['email']) ? htmlspecialchars($user_details['email']) : '') ?>">
                                     <?php if (isset($errors['email'])): ?>
                                         <div class="text-red-500 text-sm mt-1">
                                             <?php foreach ($errors['email'] as $error): ?>
@@ -167,14 +173,14 @@
                                                 "Tadris Bahasa Inggris" => "Tadris Bahasa Inggris (TBI)",
                                                 "Komunikasi Penyiaran Islam" => "Komunikasi Penyiaran Islam (KPI)",
                                                 "Manajemen Bisnis Syariah" => "Manajemen Bisnis Syariah (MBS)",
-                                                "Manajemen Pendidikan Islam" => "Manajemen Pendidikan Islam (MPI)",
+                                                "S2 Manajemen Pendidikan Islam" => "S2 Manajemen Pendidikan Islam",
                                                 "Pendidikan Agama Islam" => "Pendidikan Agama Islam (PAI)",
                                                 "Pendidikan Bahasa Arab" => "Pendidikan Bahasa Arab",
                                                 "Pendidikan Islam Anak Usia Dini" => "Pendidikan Islam Anak Usia Dini (PIAUD)"
                                             ];
                                             foreach ($programStudiOptions as $value => $label): ?>
                                                 <option value="<?= htmlspecialchars($value) ?>"
-                                                    <?= (isset($old_data['program_studi']) && $old_data['program_studi'] == $value) ? 'selected' : '' ?>>
+                                                    <?= (isset($old_data['program_studi']) && $old_data['program_studi'] == $value) ? 'selected' : ((isset($user_details['prodi']) && $user_details['prodi'] == $value) ? 'selected' : '') ?>>
                                                     <?= htmlspecialchars($label) ?>
                                                 </option>
                                             <?php endforeach; ?>
