@@ -45,12 +45,7 @@ return [
         'from_name' => 'Sistem Pengumpulan Skripsi',
         'admin_email' => 'admin@yourdomain.com'
     ],
-    'base_path' => '/sitasi', // Change to your subdirectory name if different
-    'maintenance' => [
-        'enabled' => false,
-        'message' => 'System is under maintenance. Please come back later.',
-        'allowed_ips' => []
-    ]
+    'base_path' => '/sitasi' // Change to your subdirectory name if different
 ];
 ```
 
@@ -60,9 +55,6 @@ Alternatively, you can update the existing `config.php` file to include database
 
 ```php
 <?php
-
-// Load maintenance configuration
-require_once __DIR__ . '/app/Utils/MaintenanceHelper.php';
 
 return [
     'db' => [
@@ -81,8 +73,7 @@ return [
         'from_name' => 'Pustaka STAIN SAR',
         'admin_email' => 'repository@stainkepri.ac.id'
     ],
-    'base_path' => '/sitasi',
-    'maintenance' => \App\Utils\MaintenanceHelper::getConfig()
+    'base_path' => '/sitasi'
 ];
 ```
 

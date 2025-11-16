@@ -59,19 +59,10 @@
     <link href="<?php echo url('css/style.css'); ?>" rel="stylesheet">
 </head>
 <body class="bg-gradient-to-b from-green-50 to-white text-gray-800 antialiased">
-<body class="font-sans text-gray-800 bg-gradient-to-b from-green-50 to-white antialiased min-h-screen flex flex-col">
-
-  <?php
-  // Load maintenance helper and show notifications
-  require_once __DIR__ . '/../../app/Utils/MaintenanceHelper.php';
-  use App\Utils\MaintenanceHelper;
-  
-  // Show maintenance or online notifications
-  MaintenanceHelper::showMaintenanceNotification();
-  MaintenanceHelper::showOnlineNotification();
-  ?>
+<body class="font-sans text-gray-800 bg-gradient-to-b from-green-50 to-white antialiased min-h-screen flex-col">
 
   
+    
     <?php
     // Check if we're on an admin page and user is logged in as admin
     $isAdminPage = isset($_SESSION['admin_id']) && (
@@ -123,11 +114,11 @@
 
                 <?php if (!isset($_SESSION['admin_id'])): ?>
                     <a href="<?= url('/') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Beranda</a>
-                    <a href="<?= url('submission/repository') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Repository</a>
+                    <a href="<?= url('submission/repository') ?>" class="block px-4 py-2 md:p-0 hover:text-green-70 transition">Repository</a>
 
                     <!-- Dropdown Unggah Mandiri -->
                     <div class="relative group">
-                        <button class="block w-full text-left px-4 py-2 md:p-0 hover:text-green-700 flex items-center">
+                        <button class="block w-full text-left px-4 py-2 md:p-0 hover:text-green-70 flex items-center">
                             Unggah Mandiri
                             <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
                                  viewBox="0 24 24">
@@ -143,11 +134,11 @@
                 <?php endif; ?>
 
                 <?php if (isset($_SESSION['admin_id'])): ?>
-                    <a href="<?= url('admin/dashboard') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/dashboard') ? 'font-bold text-green-700' : '' ?>">Dashboard</a>
-                    <a href="<?= url('admin/management_file') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/management_file') ? 'font-bold text-green-70' : '' ?>">Management File</a>
+                    <a href="<?= url('admin/dashboard') ?>" class="block px-4 py-2 md:p-0 hover:text-green-70 <?= isActive('admin/dashboard') ? 'font-bold text-green-700' : '' ?>">Dashboard</a>
+                    <a href="<?= url('admin/management_file') ?>" class="block px-4 py-2 md:p-0 hover:text-green-70 <?= isActive('admin/management_file') ? 'font-bold text-green-70' : '' ?>">Management File</a>
                     <a href="<?= url('admin/repositoryManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/repositoryManagement') ? 'font-bold text-green-700' : '' ?>">Repository</a>
                     <a href="<?= url('admin/adminManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/adminManagement') ? 'font-bold text-green-700' : '' ?>">Admin Management</a>
-                    <a href="<?= url('admin/userManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/userManagement') ? 'font-bold text-green-700' : '' ?>">User Management</a>
+                    <a href="<?= url('admin/userManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/userManagement') ? 'font-bold text-green-70' : '' ?>">User Management</a>
                     
 
                     <!-- Dropdown Admin -->
@@ -163,7 +154,7 @@
                             <a href="<?= url('admin/logout') ?>" class="block px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-800 border-b border-gray-100 last:border-b-0 transition-colors duration-150 first:rounded-t-md last:rounded-b-md">
                                 <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                                 </svg>
                                 Logout
                             </a>
@@ -171,18 +162,18 @@
                     </div>
                  <?php elseif (isset($_SESSION['user_id'])): ?>
                      <!-- Referensi Menu -->
-                     <a href="<?= url('referensi') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 transition">Referensi</a>
+                     <a href="<?= url('referensi') ?>" class="block px-4 py-2 md:p-0 hover:text-green-70 transition">Referensi</a>
                      
                      <!-- Dropdown User -->
                      <div class="relative group">
                          <button class="bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-blue-800 transition flex items-center">
                              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 0-7 7h14a7 7 0 00-7-7z"></path>
                              </svg>
                              <?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?>
                          </button>
-                         <div class="hidden group-hover:block md:absolute right-0 mt-0 w-48 bg-white border border-gray-200 rounded shadow-lg z-50">
+                         <div class="hidden group-hover:block md:absolute right-0 mt-0 w-48 bg-white border-gray-20 rounded shadow-lg z-50">
                              <a href="<?= url('user/dashboard') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Dashboard</a>
                              <a href="<?= url('user/profile') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800">Profile</a>
                              <a href="<?= url('user/change_password') ?>" class="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-800 change-password-link">Ubah Password</a>
@@ -194,7 +185,6 @@
                                  Logout
                              </a>
                          </div>
-                     </div>
                      
                      <!-- Change Password Popup -->
                      <div id="change-password-popup"
@@ -202,7 +192,7 @@
                           <div class="bg-white rounded-2xl shadow-xl w-80 sm:w-96 p-6 relative animate-fadeIn">
                           
                           <!-- Close button -->
-                          <button id="close-change-password" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                          <button id="close-change-password" class="absolute top-3 right-3 text-gray-400 hover:text-gray-60">
                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M6 18L18 6M6 6l12 12" />
@@ -370,7 +360,7 @@
 
                 <div class="mt-6">
                     <button id="close-popup"
-                        class="w-full inline-flex justify-center rounded-xl px-4 py-2 bg-green-600 text-white font-medium hover:bg-green-700 transition focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        class="w-full inline-flex justify-center rounded-xl px-4 py-2 bg-green-600 text-white font-medium hover:bg-green-70 transition focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Close
                     </button>
                 </div>
@@ -419,7 +409,6 @@
                 <div class="ml-3">
                     <h3 class="text-lg font-medium text-gray-900">Error!</h3>
                 </div>
-            </div>
             <div class="mt-2">
                 <p class="text-sm text-gray-500"><?= htmlspecialchars($_SESSION['error_message']) ?></p>
             </div>
@@ -700,11 +689,11 @@
   }
 
   // Event tab
-  tabUser.addEventListener('click', () => {
+ tabUser.addEventListener('click', () => {
     activateTab(tabUser, tabAdmin, formUser, formAdmin);
   });
 tabAdmin.addEventListener('click', () => {
-  activateTab(tabAdmin, tabUser, formAdmin, formUser);
+ activateTab(tabAdmin, tabUser, formAdmin, formUser);
 });
 
 // Change Password Popup functionality
@@ -795,7 +784,7 @@ if (changePasswordForm) {
                 setTimeout(() => {
                     changePasswordPopup.classList.add('hidden');
                     location.reload();
-                }, 100);
+                }, 10);
             } else {
                 // If no clear error/success message found, assume success and reload
                 changePasswordPopup.classList.add('hidden');
