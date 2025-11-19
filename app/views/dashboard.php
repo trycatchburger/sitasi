@@ -37,8 +37,8 @@
       <div class="flex items-center space-x-4">
         <span class="text-gray-700">Filter:</span>
         <select id="filterSelect" class="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          <option value="all" <?= (!empty($showAll) || (!isset($_GET['show']) && !isset($_GET['type']))) ? 'selected' : '' ?>>Tampilkan Semua Pengajuan (Default)</option>
-          <option value="pending" <?= (isset($_GET['show']) && $_GET['show'] === 'pending') ? 'selected' : '' ?>>Tampilkan Hanya yang Belum Diverifikasi</option>
+          <option value="pending" <?= (!isset($_GET['show']) && !isset($_GET['type'])) ? 'selected' : ((isset($_GET['show']) && $_GET['show'] === 'pending') ? 'selected' : '') ?>>Tampilkan Hanya yang Belum Diverifikasi (Default)</option>
+          <option value="all" <?= (!empty($showAll) || (isset($_GET['show']) && $_GET['show'] === 'all')) ? 'selected' : '' ?>>Tampilkan Semua Pengajuan</option>
           <option value="journal" <?= (isset($_GET['type']) && $_GET['type'] === 'journal') ? 'selected' : '' ?>>Tampilkan Pengajuan Jurnal Saja</option>
         </select>
       </div>
@@ -49,7 +49,7 @@
           <?php if (isset($_GET['type']) && $_GET['type'] === 'journal'): ?>
             <input type="hidden" name="type" value="journal">
           <?php else: ?>
-            <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : 'all' ?>">
+            <input type="hidden" name="show" value="<?= isset($_GET['show']) ? htmlspecialchars($_GET['show']) : (isset($_GET['type']) ? '' : 'pending') ?>">
           <?php endif; ?>
           <?php if (isset($_GET['sort'])): ?>
             <input type="hidden" name="sort" value="<?= htmlspecialchars($_GET['sort']) ?>">
@@ -69,7 +69,7 @@
             </svg>
           </button>
           <?php if (isset($_GET['search']) && !empty($_GET['search'])): ?>
-            <a href="<?= url('admin/dashboard') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : 'show=all' ?>&page=1<?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>"
+            <a href="<?= url('admin/dashboard') ?>?<?= isset($_GET['show']) ? 'show=' . htmlspecialchars($_GET['show']) : (isset($_GET['type']) ? 'type=' . htmlspecialchars($_GET['type']) : '') ?>&page=1<?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>"
                class="ml-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -353,7 +353,7 @@
         <div class="mt-6 flex justify-center">
           <nav class="inline-flex rounded-md shadow">
             <?php if ($currentPage > 1): ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $currentPage - 1 ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($_GET['show']) && $_GET['show'] === 'all' ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 Previous
               </a>
             <?php endif; ?>
@@ -362,7 +362,7 @@
               // Show first page
               if ($currentPage > 3):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+              <a href="<?= url('admin/dashboard') ?>?page=1<?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($_GET['show']) && $_GET['show'] === 'all' ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                 1
               </a>
               <?php if ($currentPage > 4): ?>
@@ -378,7 +378,7 @@
               $end = min($totalPages, $currentPage + 2);
               for ($i = $start; $i <= $end; $i++):
             ?>
-              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
+              <a href="<?= url('admin/dashboard') ?>?page=<?= $i ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($_GET['show']) && $_GET['show'] === 'all' ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium <?= $i == $currentPage ? 'text-blue-600 border-blue-600' : 'text-gray-500 hover:bg-gray-50' ?>">
                 <?= $i ?>
               </a>
             <?php endfor; ?>
@@ -392,7 +392,7 @@
                     ...
                   </span>
                 <?php endif; ?>
-                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($showAll) && $showAll ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <a href="<?= url('admin/dashboard') ?>?page=<?= $totalPages ?><?= isset($_GET['type']) && $_GET['type'] === 'journal' ? '&type=journal' : (isset($_GET['show']) && $_GET['show'] === 'all' ? '&show=all' : '') ?><?= isset($search) && !empty($search) ? '&search=' . urlencode($search) : '' ?><?= isset($sort) ? '&sort=' . htmlspecialchars($sort) : '' ?><?= isset($order) ? '&order=' . htmlspecialchars($order) : '' ?>" class="px-3 py-2 border-t border-b border-gray-30 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                   <?= $totalPages ?>
                 </a>
               <?php endif; ?>
@@ -593,10 +593,21 @@ function sortTable(column, order, showType, search) {
   
   // Preserve existing parameters
   if(showType) {
-    if(showType === 'all' || showType === 'pending') {
+    if(showType === 'all') {
       url.searchParams.set('show', showType);
+    } else if(showType === 'pending') {
+      // For pending, we don't need to set show=pending since it's the default
+      // Just make sure show=all is not set
+      if(url.searchParams.get('show') === 'all') {
+        url.searchParams.delete('show');
+      }
     } else if(showType === 'journal') {
       url.searchParams.set('type', showType);
+    }
+  } else {
+    // If no showType is specified and we're on default view, ensure we don't have conflicting parameters
+    if(!url.searchParams.get('show') && !url.searchParams.get('type')) {
+      // Default case, no need to set anything as pending is default
     }
   }
   
@@ -634,9 +645,12 @@ document.getElementById('filterSelect')?.addEventListener('change', function() {
  } else if (selectedValue === 'journal') {
     url.searchParams.set('type', 'journal');
   } else if (selectedValue === 'pending') {
-    url.searchParams.set('show', 'pending');
+    // For 'pending' option, we don't need to set any parameter as it's the default
+    // Only remove the 'show=all' parameter if present
+    if(url.searchParams.get('show') === 'all') {
+      url.searchParams.delete('show');
+    }
   }
-  // For 'pending' option, we don't need to set any parameter as it's the default
   
   // Re-add sorting parameters if they existed
   if(sortParam) {

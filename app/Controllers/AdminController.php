@@ -105,9 +105,9 @@ class AdminController extends Controller {
                   $submissions = $submission->findPending(true, $page, $perPage, $sort, $order);
                   $totalResults = $submission->countPending();
               } else {
-                  // Show all submissions (default) - changed from showing only pending
-                  $submissions = $submission->findAll($page, $perPage, $sort, $order);
-                  $totalResults = $submission->countAll();
+                  // Show only pending submissions (default)
+                  $submissions = $submission->findPending(true, $page, $perPage, $sort, $order);
+                  $totalResults = $submission->countPending();
               }
               
               // Calculate pagination values
