@@ -564,9 +564,9 @@ class SubmissionRepository extends BaseRepository
                 $searchTerm = '%' . $search . '%';
                 
                 if (!empty($whereClause)) {
-                    $whereClause .= " AND (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+                    $whereClause .= " AND (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ? OR s.author_2 LIKE ? OR s.author_3 LIKE ? OR s.author_4 LIKE ? OR s.author_5 LIKE ? OR s.email LIKE ?)";
                 } else {
-                    $whereClause = "WHERE (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ?)";
+                    $whereClause = "WHERE (s.nama_mahasiswa LIKE ? OR s.nim LIKE ? OR s.judul_skripsi LIKE ? OR s.author_2 LIKE ? OR s.author_3 LIKE ? OR s.author_4 LIKE ? OR s.author_5 LIKE ? OR s.email LIKE ?)";
                 }
             }
             
@@ -587,8 +587,10 @@ class SubmissionRepository extends BaseRepository
             $types = "";
             
             if (!empty($search)) {
-                $params = [$searchTerm, $searchTerm, $perPage, $offset];
-                $types = "ssiii";
+                // For search, we have 8 placeholders in our WHERE clause plus 2 for pagination
+                $params = array_fill(0, 8, $searchTerm);
+                array_push($params, $perPage, $offset);
+                $types = str_repeat('s', 8) . 'ii';
                 
                 // Create array of references for bind_param
                 $refs = [];
@@ -671,7 +673,8 @@ class SubmissionRepository extends BaseRepository
             $types = "";
             
             if (!empty($search)) {
-                $params = [$searchTerm, $searchTerm];
+                // For search, we have 3 placeholders in our WHERE clause
+                $params = [$searchTerm, $searchTerm, $searchTerm];
                 $types = "sss";
                 
                 // Create array of references for bind_param

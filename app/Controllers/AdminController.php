@@ -77,6 +77,7 @@ class AdminController extends Controller {
               
               // Get query parameters
               $showAll = isset($_GET['show']) && $_GET['show'] === 'all';
+              $showPending = isset($_GET['show']) && $_GET['show'] === 'pending';
               $showJournal = isset($_GET['type']) && $_GET['type'] === 'journal';
               $search = isset($_GET['search']) ? trim($_GET['search']) : '';
               $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -99,6 +100,10 @@ class AdminController extends Controller {
                   // Show all submissions
                   $submissions = $submission->findAll($page, $perPage, $sort, $order);
                   $totalResults = $submission->countAll();
+              } else if ($showPending) {
+                  // Show only pending submissions
+                  $submissions = $submission->findPending(true, $page, $perPage, $sort, $order);
+                  $totalResults = $submission->countPending();
               } else {
                   // Show all submissions (default) - changed from showing only pending
                   $submissions = $submission->findAll($page, $perPage, $sort, $order);

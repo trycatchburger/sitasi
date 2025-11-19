@@ -633,6 +633,8 @@ document.getElementById('filterSelect')?.addEventListener('change', function() {
     url.searchParams.set('show', 'all');
  } else if (selectedValue === 'journal') {
     url.searchParams.set('type', 'journal');
+  } else if (selectedValue === 'pending') {
+    url.searchParams.set('show', 'pending');
   }
   // For 'pending' option, we don't need to set any parameter as it's the default
   
