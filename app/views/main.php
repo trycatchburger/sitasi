@@ -135,11 +135,12 @@
 
                 <?php if (isset($_SESSION['admin_id'])): ?>
                     <a href="<?= url('admin/dashboard') ?>" class="block px-4 py-2 md:p-0 hover:text-green-70 <?= isActive('admin/dashboard') ? 'font-bold text-green-700' : '' ?>">Dashboard</a>
-                    <a href="<?= url('admin/management_file') ?>" class="block px-4 py-2 md:p-0 hover:text-green-70 <?= isActive('admin/management_file') ? 'font-bold text-green-70' : '' ?>">Management File</a>
-                    <a href="<?= url('admin/repositoryManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/repositoryManagement') ? 'font-bold text-green-700' : '' ?>">Repository</a>
-                    <a href="<?= url('admin/adminManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/adminManagement') ? 'font-bold text-green-700' : '' ?>">Admin Management</a>
-                    <a href="<?= url('admin/userManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/userManagement') ? 'font-bold text-green-70' : '' ?>">User Management</a>
-                    
+                                        <a href="<?= url('admin/repositoryManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/repositoryManagement') ? 'font-bold text-green-700' : '' ?>">Repository</a>
+                                        <a href="<?= url('admin/management_file') ?>" class="block px-4 py-2 md:p-0 hover:text-green-70 <?= isActive('admin/management_file') ? 'font-bold text-green-70' : '' ?>">Management File</a>
+                                        <a href="<?= url('admin/adminManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/adminManagement') ? 'font-bold text-green-700' : '' ?>">Admin Management</a>
+                                        <a href="<?= url('admin/userManagement') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/userManagement') ? 'font-bold text-green-70' : '' ?>">User Management</a>
+                                        <a href="<?= url('admin/inventaris') ?>" class="block px-4 py-2 md:p-0 hover:text-green-700 <?= isActive('admin/inventaris') ? 'font-bold text-green-700' : '' ?>">Inventaris</a>
+                                        
 
                     <!-- Dropdown Admin -->
                     <div class="relative group">

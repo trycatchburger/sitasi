@@ -1005,4 +1005,50 @@ class Submission
      return $this->repository->countUnconverted();
  }
 
+ /**
+  * Get submissions for inventaris page (only accepted submissions) with pagination and sorting
+  * @param int $page Page number
+  * @param int $perPage Items per page
+  * @param string|null $sort Sort column
+  * @param string $order Sort order ('asc' or 'desc')
+  * @return array
+  */
+ public function getInventarisData(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
+ {
+     return $this->repository->getInventarisData($page, $perPage, $sort, $order);
+ }
+
+ /**
+  * Count submissions for inventaris page (only accepted submissions)
+  * @return int
+  */
+ public function countInventarisData(): int
+ {
+     return $this->repository->countInventarisData();
+ }
+ 
+ /**
+  * Search submissions for inventaris page (only accepted submissions) with pagination and sorting
+  * @param string $search Search term
+  * @param int $page Page number
+  * @param int $perPage Items per page
+  * @param string|null $sort Sort column
+  * @param string $order Sort order ('asc' or 'desc')
+  * @return array
+  */
+ public function searchInventarisData(string $search, int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
+ {
+     return $this->repository->searchInventarisData($search, $page, $perPage, $sort, $order);
+ }
+ 
+ /**
+  * Count search results for inventaris page
+  * @param string $search Search term
+  * @return int
+  */
+ public function countSearchInventarisData(string $search): int
+ {
+     return $this->repository->countSearchInventarisData($search);
+ }
+
 }

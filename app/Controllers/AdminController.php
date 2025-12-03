@@ -1240,6 +1240,51 @@ class AdminController extends Controller {
              $this->render('management_file', ['error' => "An error occurred: " . $e->getMessage()]);
          }
      }
-
-
-}
+     
+     public function inventaris() {
+          try {
+              if (!$this->isAdminLoggedIn()) {
+                  header('Location: ' . url('admin/login'));
+                  exit;
+              }
+              
+              $submissionModel = new Submission();
+              
+              // Get query parameters
+              $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+              $perPage = 10; // Default items per page
+              $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+              
+              // Get sort parameters
+              $sort = isset($_GET['sort']) ? $_GET['sort'] : null;
+              $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
+              
+              // Get submissions with pagination, sorting, and search
+              if (!empty($search)) {
+                  $submissions = $submissionModel->searchInventarisData($search, $page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countSearchInventarisData($search);
+              } else {
+                  $submissions = $submissionModel->getInventarisData($page, $perPage, $sort, $order);
+                  $totalResults = $submissionModel->countInventarisData();
+              }
+              
+              // Calculate pagination values
+              $totalPages = ceil($totalResults / $perPage);
+              
+              $this->render('admin/inventaris', [
+                  'submissions' => $submissions,
+                  'currentPage' => $page,
+                  'totalPages' => $totalPages,
+                  'totalResults' => $totalResults,
+                  'sort' => $sort,
+                  'order' => $order,
+                  'search' => $search
+              ]);
+          } catch (DatabaseException $e) {
+              $this->render('admin/inventaris', ['error' => "Database error occurred while loading inventaris."]);
+          } catch (Exception $e) {
+              $this->render('admin/inventaris', ['error' => "An error occurred: " . $e->getMessage()]);
+          }
+      }
+ 
+ }

@@ -948,6 +948,77 @@ class SubmissionRepository extends BaseRepository
     }
 
     /**
+     * Get submissions for inventaris page (only accepted submissions) with pagination and sorting
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
+     * @return array
+     * @throws DatabaseException
+     */
+    public function getInventarisData(int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
+    {
+        try {
+            // Calculate offset for pagination
+            $offset = ($page - 1) * $perPage;
+            
+            // Get accepted submissions (Diterima) with pagination and sorting
+            $sql = "SELECT s.id, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.status, s.serial_number, s.created_at, s.updated_at FROM submissions s WHERE s.status = 'Diterima'";
+            
+            // Add ORDER BY clause based on sort parameter
+            $sql .= $this->buildInventarisOrderByClause($sort, $order);
+            
+            $sql .= " LIMIT ? OFFSET ?";
+            
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt->bind_param("ii", $perPage, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $submissions = $result->fetch_all(MYSQLI_ASSOC);
+            
+            // For each submission, determine if it has inventaris status
+            foreach ($submissions as &$submission) {
+                if (!empty($submission['serial_number'])) {
+                    $submission['inventaris_status'] = 'Sudah Ada (Kode: ' . $submission['serial_number'] . ')';
+                    $submission['inventaris_action'] = 'Detail';
+                } else {
+                    $submission['inventaris_status'] = 'Belum Ada';
+                    $submission['inventaris_action'] = 'Tambah';
+                }
+            }
+            
+            return $submissions;
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while fetching inventaris data: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Count submissions for inventaris page (only accepted submissions)
+     * @return int
+     * @throws DatabaseException
+     */
+    public function countInventarisData(): int
+    {
+        try {
+            $sql = "SELECT COUNT(*) as count FROM submissions s WHERE s.status = 'Diterima'";
+            $result = $this->conn->query($sql);
+            if ($result === false) {
+                throw new DatabaseException("Database query failed: " . $this->conn->error);
+            }
+            
+            $row = $result->fetch_assoc();
+            return (int) $row['count'];
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while counting inventaris data: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Build ORDER BY clause based on sort parameter
      * @param string|null $sort Sort column
      * @param string $order Sort order ('asc' or 'desc')
@@ -971,6 +1042,121 @@ class SubmissionRepository extends BaseRepository
         } else {
             // Default to created_at DESC if no valid sort column is provided
             return " ORDER BY s.created_at DESC";
+        }
+    }
+    
+    /**
+     * Build ORDER BY clause for inventaris page based on sort parameter
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
+     * @return string
+     */
+    private function buildInventarisOrderByClause(?string $sort, string $order): string
+    {
+        $allowedSortColumns = [
+            'student_name' => 's.nama_mahasiswa',
+            'title' => 's.judul_skripsi',
+            'program_studi' => 's.program_studi',
+            'inventaris_status' => 's.serial_number',
+            'date' => 's.created_at'
+        ];
+        
+        // Validate sort column to prevent SQL injection
+        if ($sort !== null && array_key_exists($sort, $allowedSortColumns)) {
+            $column = $allowedSortColumns[$sort];
+            $direction = (strtolower($order) === 'desc') ? 'DESC' : 'ASC';
+            
+            // Special handling for inventaris status sorting (sort by serial_number presence)
+            if ($sort === 'inventaris_status') {
+                $column = "CASE WHEN s.serial_number IS NULL OR s.serial_number = '' THEN 1 ELSE 0 END, s.serial_number";
+                return " ORDER BY {$column} {$direction}";
+            }
+            
+            return " ORDER BY {$column} {$direction}";
+        } else {
+            // Default to student name ASC if no valid sort column is provided
+            return " ORDER BY s.nama_mahasiswa ASC";
+        }
+    }
+    
+    /**
+     * Search submissions for inventaris page (only accepted submissions) with pagination and sorting
+     * @param string $search Search term
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @param string|null $sort Sort column
+     * @param string $order Sort order ('asc' or 'desc')
+     * @return array
+     * @throws DatabaseException
+     */
+    public function searchInventarisData(string $search, int $page = 1, int $perPage = 10, string $sort = null, string $order = 'asc'): array
+    {
+        try {
+            // Calculate offset for pagination
+            $offset = ($page - 1) * $perPage;
+            
+            // Search accepted submissions (Diterima) with pagination and sorting
+            $sql = "SELECT s.id, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.status, s.serial_number, s.created_at, s.updated_at FROM submissions s WHERE s.status = 'Diterima' AND (s.nama_mahasiswa LIKE ? OR s.judul_skripsi LIKE ? OR s.program_studi LIKE ?)";
+            
+            // Add ORDER BY clause based on sort parameter
+            $sql .= $this->buildInventarisOrderByClause($sort, $order);
+            
+            $sql .= " LIMIT ? OFFSET ?";
+            
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            
+            $searchTerm = '%' . $search . '%';
+            $stmt->bind_param("ssiii", $searchTerm, $searchTerm, $searchTerm, $perPage, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $submissions = $result->fetch_all(MYSQLI_ASSOC);
+            
+            // For each submission, determine if it has inventaris status
+            foreach ($submissions as &$submission) {
+                if (!empty($submission['serial_number'])) {
+                    $submission['inventaris_status'] = 'Sudah Ada (Kode: ' . $submission['serial_number'] . ')';
+                    $submission['inventaris_action'] = 'Detail';
+                } else {
+                    $submission['inventaris_status'] = 'Belum Ada';
+                    $submission['inventaris_action'] = 'Tambah';
+                }
+            }
+            
+            return $submissions;
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while searching inventaris data: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Count search results for inventaris page
+     * @param string $search Search term
+     * @return int
+     * @throws DatabaseException
+     */
+    public function countSearchInventarisData(string $search): int
+    {
+        try {
+            $sql = "SELECT COUNT(*) as count FROM submissions s WHERE s.status = 'Diterima' AND (s.nama_mahasiswa LIKE ? OR s.judul_skripsi LIKE ? OR s.program_studi LIKE ?)";
+            
+            $stmt = $this->conn->prepare($sql);
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            
+            $searchTerm = '%' . $search . '%';
+            $stmt->bind_param("sss", $searchTerm, $searchTerm, $searchTerm);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $row = $result->fetch_assoc();
+            return (int) $row['count'];
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while counting search results for inventaris data: " . $e->getMessage());
         }
     }
 
