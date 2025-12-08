@@ -1,5 +1,5 @@
 <?php ob_start(); ?>
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="w-full py-8 px-4 sm:px-6 lg:px-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-6">Inventaris Skripsi</h1>
     
     <!-- Search Form -->
@@ -51,6 +51,14 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <a href="?<?php if(isset($search) && !empty($search)) echo 'search=' . urlencode($search) . '&'; ?>sort=serial_number&order=<?= isset($sort) && $sort === 'serial_number' && $order === 'asc' ? 'desc' : 'asc' ?>&page=<?= $currentPage ?>" class="hover:text-green-700">
+                            No Surat
+                            <?php if (isset($sort) && $sort === 'serial_number'): ?>
+                                <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <a href="?<?php if(isset($search) && !empty($search)) echo 'search=' . urlencode($search) . '&'; ?>sort=inventaris_status&order=<?= isset($sort) && $sort === 'inventaris_status' && $order === 'asc' ? 'desc' : 'asc' ?>&page=<?= $currentPage ?>" class="hover:text-green-700">
                             Status Inventaris
                             <?php if (isset($sort) && $sort === 'inventaris_status'): ?>
@@ -70,6 +78,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= htmlspecialchars($submission['nama_mahasiswa']) ?></td>
                             <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title="<?= htmlspecialchars($submission['judul_skripsi']) ?>"><?= htmlspecialchars($submission['judul_skripsi']) ?></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= htmlspecialchars($submission['program_studi']) ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= htmlspecialchars($submission['serial_number'] ?? '') ?></td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php if (strpos($submission['inventaris_status'], 'Sudah Ada') !== false): ?>
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"><?= htmlspecialchars($submission['inventaris_status']) ?></span>
@@ -81,14 +90,14 @@
                                 <?php if (strpos($submission['inventaris_status'], 'Sudah Ada') !== false): ?>
                                     <a href="#" class="text-blue-600 hover:text-blue-900">Detail</a>
                                 <?php else: ?>
-                                    <a href="#" class="text-green-600 hover:text-green-900">Tambah</a>
+                                    <a href="<?= url('admin/tambahInventaris') . '?submission_id=' . $submission['id'] ?>" class="text-green-600 hover:text-green-900">Tambah</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
                             Tidak ada data skripsi yang diterima untuk ditampilkan.
                         </td>
                     </tr>

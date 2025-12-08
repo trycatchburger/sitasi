@@ -20,7 +20,6 @@ class AdminController extends Controller {
         parent::__construct();
     }
 
-
     public function login() {
         if (SessionManager::isAdminLoggedIn()) {
             header('Location: ' . url('admin/dashboard'));
@@ -649,7 +648,188 @@ class AdminController extends Controller {
             }
         }
     }
+
+    public function tambahInventaris()
+    {
+        try {
+            if (!$this->isAdminLoggedIn()) {
+                header('Location: ' . url('admin/login'));
+                exit;
+            }
+            
+            // Get submission ID from GET parameter
+            $submissionId = isset($_GET['submission_id']) ? (int)$_GET['submission_id'] : null;
+            
+            if (!$submissionId) {
+                $_SESSION['error_message'] = 'Submission ID is required.';
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+            
+            // Get submission data from database
+            $submissionModel = new Submission();
+            $submission = $submissionModel->findById($submissionId);
+            
+            if (!$submission) {
+                $_SESSION['error_message'] = 'Submission not found.';
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+            
+            $this->render('admin/tambah_inventaris', ['submission' => $submission]);
+        } catch (Exception $e) {
+            $this->render('admin/tambah_inventaris', ['error' => "An error occurred: " . $e->getMessage()]);
+        }
+    }
     
+    public function simpanInventaris()
+    {
+        try {
+            if (!$this->isAdminLoggedIn()) {
+                header('Location: ' . url('admin/login'));
+                exit;
+            }
+            
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+            
+            // Validate CSRF token
+            $token = $_POST['csrf_token'] ?? '';
+            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+                $_SESSION['error_message'] = 'Invalid or expired CSRF token.';
+                header('Location: ' . url('admin/tambahInventaris'));
+                exit;
+            }
+            
+            // Get form data (excluding title and prodi which come from submission)
+            $inventoryCode = trim($_POST['inventory_code'] ?? '');
+            $callNumber = trim($_POST['call_number'] ?? '');
+            $shelfLocation = trim($_POST['shelf_location'] ?? '');
+            $itemStatus = trim($_POST['item_status'] ?? '');
+            $receivingDate = trim($_POST['receiving_date'] ?? '');
+            $source = trim($_POST['source'] ?? '');
+            $itemCode = trim($_POST['item_code'] ?? ''); // Get item_code from form
+            $submissionId = (int)($_POST['submission_id'] ?? 0); // Get submission ID from form
+            
+            // Validate submission ID first before processing other fields
+            if ($submissionId <= 0) {
+                $_SESSION['error_message'] = 'Submission ID is required. Please go back and try again.';
+                header('Location: ' . url('admin/tambahInventaris'));
+                exit;
+            }
+            
+            // Validate required fields (excluding title, itemCode, prodi which come from submission)
+            if (empty($inventoryCode) || empty($callNumber) ||
+                empty($shelfLocation) || empty($itemStatus) || empty($receivingDate) || empty($source)) {
+                $_SESSION['error_message'] = 'Required fields are missing.';
+                header('Location: ' . url('admin/tambahInventaris'));
+                exit;
+            }
+            
+            // Validate date format
+            $date = \DateTime::createFromFormat('Y-m-d', $receivingDate);
+            if (!$date || $date->format('Y-m-d') !== $receivingDate) {
+                $_SESSION['error_message'] = 'Invalid date format.';
+                header('Location: ' . url('admin/tambahInventaris'));
+                exit;
+            }
+            
+            // Validate item status
+            $validStatuses = ['Available', 'Repair', 'No Loan', 'Missing'];
+            if (!in_array($itemStatus, $validStatuses)) {
+                $_SESSION['error_message'] = 'Invalid item status.';
+                header('Location: ' . url('admin/tambahInventaris'));
+                exit;
+            }
+            
+            // Validate source
+            $validSources = ['Buy', 'Prize/Grant'];
+            if (!in_array($source, $validSources)) {
+                $_SESSION['error_message'] = 'Invalid source.';
+                header('Location: ' . url('admin/tambahInventaris'));
+                exit;
+            }
+            
+            // Get submission data to populate title and prodi from submissions table
+            $submissionModel = new Submission();
+            $submission = $submissionModel->findById($submissionId);
+            if (!$submission) {
+                $_SESSION['error_message'] = 'Related submission not found.';
+                header('Location: ' . url('admin/tambahInventaris'));
+                exit;
+            }
+            
+            $title = $submission['judul_skripsi']; // Take title from submission
+            $prodi = $submission['program_studi']; // Take prodi from submission
+            // Item code is already obtained from the form, but if it's still empty, generate it based on submission ID
+            if (empty($itemCode)) {
+                $itemCode = $submissionId . '_' . time(); // Use submission ID + timestamp as unique code
+            }
+            
+            // Check if inventaris table exists, if not create it
+            $db = \App\Models\Database::getInstance();
+            $tableCheck = $db->getConnection()->query("SHOW TABLES LIKE 'inventaris'");
+            if ($tableCheck->num_rows == 0) {
+                // Create the inventaris table if it doesn't exist
+                $createTableSql = "CREATE TABLE inventaris (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    title VARCHAR(500) NOT NULL,
+                    item_code VARCHAR(255) NOT NULL,
+                    inventory_code VARCHAR(100) NOT NULL,
+                    call_number VARCHAR(255) NOT NULL,
+                    prodi VARCHAR(100) NOT NULL,
+                    shelf_location VARCHAR(255) NOT NULL,
+                    item_status ENUM('Available', 'Repair', 'No Loan', 'Missing') NOT NULL,
+                    receiving_date DATE NOT NULL,
+                    source ENUM('Buy', 'Prize/Grant') NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_inventory_code (inventory_code),
+                    INDEX idx_call_number (call_number),
+                    INDEX idx_item_status (item_status)
+                )";
+                
+                if (!$db->getConnection()->query($createTableSql)) {
+                    throw new DatabaseException("Failed to create inventaris table: " . $db->getConnection()->error);
+                }
+            }
+            
+            // Insert data into database
+            $stmt = $db->getConnection()->prepare("
+                INSERT INTO inventaris (
+                    title, item_code, inventory_code, call_number, prodi, shelf_location,
+                    item_status, receiving_date, source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+            }
+            
+            $stmt->bind_param("sssssssss", $title, $itemCode, $inventoryCode, $callNumber, $prodi, $shelfLocation, $itemStatus, $receivingDate, $source);
+            
+            if ($stmt->execute()) {
+                $_SESSION['success_message'] = 'Data inventaris berhasil disimpan.';
+                header('Location: ' . url('admin/inventaris'));
+            } else {
+                throw new DatabaseException("Execute failed: " . $stmt->error);
+            }
+            
+            $stmt->close();
+            
+        } catch (DatabaseException $e) {
+            $_SESSION['error_message'] = "Database error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/tambahInventaris'));
+            exit;
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/tambahInventaris'));
+            exit;
+        }
+    }
+
     public function adminManagement() {
         // Run authentication middleware
         $this->runMiddleware(['auth']);
@@ -1005,7 +1185,7 @@ class AdminController extends Controller {
         
         if (!empty($search)) {
             $countStmt = $connection->prepare($countSql);
-            $countStmt->bind_param("ssss", $searchParam, $searchParam, $searchParam, $searchParam);
+            $countStmt->bind_param("ssss", $searchParam, $searchParam);
             $countStmt->execute();
             $countResult = $countStmt->get_result();
         } else {
@@ -1021,7 +1201,7 @@ class AdminController extends Controller {
         
         $stmt = $connection->prepare($sql);
         if (!empty($search)) {
-            $stmt->bind_param("ssi", $searchParam, $searchParam, $perPage, $offset);
+            $stmt->bind_param("ssi", $searchParam, $perPage, $offset);
         } else {
             $stmt->bind_param("ii", $perPage, $offset);
         }
@@ -1105,7 +1285,6 @@ class AdminController extends Controller {
                     if (empty($id_member) && empty($nama) && empty($email)) {
                         continue;
                     }
-                    
 
                     // Validate required fields
                     if (empty($id_member) || empty($nama)) {
@@ -1240,7 +1419,7 @@ class AdminController extends Controller {
              $this->render('management_file', ['error' => "An error occurred: " . $e->getMessage()]);
          }
      }
-     
+
      public function inventaris() {
           try {
               if (!$this->isAdminLoggedIn()) {
@@ -1286,5 +1465,5 @@ class AdminController extends Controller {
               $this->render('admin/inventaris', ['error' => "An error occurred: " . $e->getMessage()]);
           }
       }
- 
- }
+
+}

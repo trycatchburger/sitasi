@@ -1057,6 +1057,7 @@ class SubmissionRepository extends BaseRepository
             'student_name' => 's.nama_mahasiswa',
             'title' => 's.judul_skripsi',
             'program_studi' => 's.program_studi',
+            'serial_number' => 's.serial_number',
             'inventaris_status' => 's.serial_number',
             'date' => 's.created_at'
         ];
