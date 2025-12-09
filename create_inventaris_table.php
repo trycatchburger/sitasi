@@ -11,7 +11,7 @@ try {
     
     // SQL untuk membuat tabel inventaris
     $sql = "CREATE TABLE IF NOT EXISTS inventaris (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        submission_id INT PRIMARY KEY,
         title VARCHAR(500) NOT NULL,
         item_code VARCHAR(255) NOT NULL,
         inventory_code VARCHAR(100) NOT NULL,
@@ -22,6 +22,7 @@ try {
         receiving_date DATE NOT NULL,
         source ENUM('Buy', 'Prize/Grant') NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_inventory_code (inventory_code),
         INDEX idx_call_number (call_number),

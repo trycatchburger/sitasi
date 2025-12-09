@@ -962,8 +962,8 @@ class SubmissionRepository extends BaseRepository
             // Calculate offset for pagination
             $offset = ($page - 1) * $perPage;
             
-            // Get accepted submissions (Diterima) with pagination and sorting
-            $sql = "SELECT s.id, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.status, s.serial_number, s.created_at, s.updated_at FROM submissions s WHERE s.status = 'Diterima'";
+            // Get accepted submissions (Diterima) with pagination and sorting, joined with inventaris table to get item_code
+            $sql = "SELECT s.id, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.status, s.serial_number, s.created_at, s.updated_at, i.item_code FROM submissions s LEFT JOIN inventaris i ON s.id = i.submission_id WHERE s.status = 'Diterima'";
             
             // Add ORDER BY clause based on sort parameter
             $sql .= $this->buildInventarisOrderByClause($sort, $order);
@@ -982,12 +982,14 @@ class SubmissionRepository extends BaseRepository
             
             // For each submission, determine if it has inventaris status
             foreach ($submissions as &$submission) {
-                if (!empty($submission['serial_number'])) {
-                    $submission['inventaris_status'] = 'Sudah Ada (Kode: ' . $submission['serial_number'] . ')';
+                if (!empty($submission['item_code'])) {
+                    $submission['inventaris_status'] = 'Sudah Ada (Kode: ' . $submission['item_code'] . ')';
                     $submission['inventaris_action'] = 'Detail';
+                    $submission['item_code'] = $submission['item_code']; // Ensure item_code is available
                 } else {
                     $submission['inventaris_status'] = 'Belum Ada';
                     $submission['inventaris_action'] = 'Tambah';
+                    $submission['item_code'] = null; // Explicitly set as null when not available
                 }
             }
             
@@ -1058,7 +1060,8 @@ class SubmissionRepository extends BaseRepository
             'title' => 's.judul_skripsi',
             'program_studi' => 's.program_studi',
             'serial_number' => 's.serial_number',
-            'inventaris_status' => 's.serial_number',
+            'item_code' => 'i.item_code',
+            'inventaris_status' => 'i.item_code',
             'date' => 's.created_at'
         ];
         
@@ -1067,9 +1070,9 @@ class SubmissionRepository extends BaseRepository
             $column = $allowedSortColumns[$sort];
             $direction = (strtolower($order) === 'desc') ? 'DESC' : 'ASC';
             
-            // Special handling for inventaris status sorting (sort by serial_number presence)
+            // Special handling for inventaris status sorting (sort by item_code presence)
             if ($sort === 'inventaris_status') {
-                $column = "CASE WHEN s.serial_number IS NULL OR s.serial_number = '' THEN 1 ELSE 0 END, s.serial_number";
+                $column = "CASE WHEN i.item_code IS NULL OR i.item_code = '' THEN 1 ELSE 0 END, i.item_code";
                 return " ORDER BY {$column} {$direction}";
             }
             
@@ -1096,8 +1099,8 @@ class SubmissionRepository extends BaseRepository
             // Calculate offset for pagination
             $offset = ($page - 1) * $perPage;
             
-            // Search accepted submissions (Diterima) with pagination and sorting
-            $sql = "SELECT s.id, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.status, s.serial_number, s.created_at, s.updated_at FROM submissions s WHERE s.status = 'Diterima' AND (s.nama_mahasiswa LIKE ? OR s.judul_skripsi LIKE ? OR s.program_studi LIKE ?)";
+            // Search accepted submissions (Diterima) with pagination and sorting, joined with inventaris table to get item_code
+            $sql = "SELECT s.id, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.status, s.serial_number, s.created_at, s.updated_at, i.item_code FROM submissions s LEFT JOIN inventaris i ON s.id = i.submission_id WHERE s.status = 'Diterima' AND (s.nama_mahasiswa LIKE ? OR s.judul_skripsi LIKE ? OR s.program_studi LIKE ?)";
             
             // Add ORDER BY clause based on sort parameter
             $sql .= $this->buildInventarisOrderByClause($sort, $order);
@@ -1118,12 +1121,14 @@ class SubmissionRepository extends BaseRepository
             
             // For each submission, determine if it has inventaris status
             foreach ($submissions as &$submission) {
-                if (!empty($submission['serial_number'])) {
-                    $submission['inventaris_status'] = 'Sudah Ada (Kode: ' . $submission['serial_number'] . ')';
+                if (!empty($submission['item_code'])) {
+                    $submission['inventaris_status'] = 'Sudah Ada (Kode: ' . $submission['item_code'] . ')';
                     $submission['inventaris_action'] = 'Detail';
+                    $submission['item_code'] = $submission['item_code']; // Ensure item_code is available
                 } else {
                     $submission['inventaris_status'] = 'Belum Ada';
                     $submission['inventaris_action'] = 'Tambah';
+                    $submission['item_code'] = null; // Explicitly set as null when not available
                 }
             }
             
@@ -1142,7 +1147,7 @@ class SubmissionRepository extends BaseRepository
     public function countSearchInventarisData(string $search): int
     {
         try {
-            $sql = "SELECT COUNT(*) as count FROM submissions s WHERE s.status = 'Diterima' AND (s.nama_mahasiswa LIKE ? OR s.judul_skripsi LIKE ? OR s.program_studi LIKE ?)";
+            $sql = "SELECT COUNT(*) as count FROM submissions s LEFT JOIN inventaris i ON s.id = i.submission_id WHERE s.status = 'Diterima' AND (s.nama_mahasiswa LIKE ? OR s.judul_skripsi LIKE ? OR s.program_studi LIKE ?)";
             
             $stmt = $this->conn->prepare($sql);
             if (!$stmt) {

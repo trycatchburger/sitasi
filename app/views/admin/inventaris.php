@@ -59,9 +59,9 @@
                         </a>
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <a href="?<?php if(isset($search) && !empty($search)) echo 'search=' . urlencode($search) . '&'; ?>sort=inventaris_status&order=<?= isset($sort) && $sort === 'inventaris_status' && $order === 'asc' ? 'desc' : 'asc' ?>&page=<?= $currentPage ?>" class="hover:text-green-700">
-                            Status Inventaris
-                            <?php if (isset($sort) && $sort === 'inventaris_status'): ?>
+                        <a href="?<?php if(isset($search) && !empty($search)) echo 'search=' . urlencode($search) . '&'; ?>sort=item_code&order=<?= isset($sort) && $sort === 'item_code' && $order === 'asc' ? 'desc' : 'asc' ?>&page=<?= $currentPage ?>" class="hover:text-green-700">
+                            Kode Inventaris
+                            <?php if (isset($sort) && $sort === 'item_code'): ?>
                                 <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
                             <?php endif; ?>
                         </a>
@@ -79,20 +79,14 @@
                             <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title="<?= htmlspecialchars($submission['judul_skripsi']) ?>"><?= htmlspecialchars($submission['judul_skripsi']) ?></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= htmlspecialchars($submission['program_studi']) ?></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= htmlspecialchars($submission['serial_number'] ?? '') ?></td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <?php if (strpos($submission['inventaris_status'], 'Sudah Ada') !== false): ?>
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"><?= htmlspecialchars($submission['inventaris_status']) ?></span>
-                                <?php else: ?>
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800"><?= htmlspecialchars($submission['inventaris_status']) ?></span>
-                                <?php endif; ?>
-                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?= !empty($submission['item_code']) ? htmlspecialchars($submission['item_code']) : 'Belum Ada' ?></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <?php if (strpos($submission['inventaris_status'], 'Sudah Ada') !== false): ?>
-                                    <a href="#" class="text-blue-600 hover:text-blue-900">Detail</a>
+                                <?php if (!empty($submission['item_code'])): ?>
+                                    <a href="<?= url('admin/editInventaris') . '?submission_id=' . $submission['id'] ?>" class="text-blue-600 hover:text-blue-900">Edit</a>
                                 <?php else: ?>
                                     <a href="<?= url('admin/tambahInventaris') . '?submission_id=' . $submission['id'] ?>" class="text-green-600 hover:text-green-900">Tambah</a>
                                 <?php endif; ?>
-                            </td>
+                            </td>                            
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>

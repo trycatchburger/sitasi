@@ -668,7 +668,16 @@ class AdminController extends Controller {
             
             // Get submission data from database
             $submissionModel = new Submission();
-            $submission = $submissionModel->findById($submissionId);
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare(
+                "SELECT s.id, s.judul_skripsi, s.program_studi, s.updated_at 
+                 FROM submissions s 
+                 WHERE s.id = ?"
+            );
+            $stmt->bind_param("i", $submissionId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $submission = $result->fetch_assoc();
             
             if (!$submission) {
                 $_SESSION['error_message'] = 'Submission not found.';
@@ -709,14 +718,13 @@ class AdminController extends Controller {
             $shelfLocation = trim($_POST['shelf_location'] ?? '');
             $itemStatus = trim($_POST['item_status'] ?? '');
             $receivingDate = trim($_POST['receiving_date'] ?? '');
-            $source = trim($_POST['source'] ?? '');
-            $itemCode = trim($_POST['item_code'] ?? ''); // Get item_code from form
+            $source = trim($_POST['source'] ?? '');            
             $submissionId = (int)($_POST['submission_id'] ?? 0); // Get submission ID from form
             
             // Validate submission ID first before processing other fields
             if ($submissionId <= 0) {
                 $_SESSION['error_message'] = 'Submission ID is required. Please go back and try again.';
-                header('Location: ' . url('admin/tambahInventaris'));
+                header('Location: ' . url('admin/tambahInventaris') . '?submission_id=' . $submissionId);
                 exit;
             }
             
@@ -753,11 +761,19 @@ class AdminController extends Controller {
             }
             
             // Get submission data to populate title and prodi from submissions table
-            $submissionModel = new Submission();
-            $submission = $submissionModel->findById($submissionId);
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare(
+                "SELECT judul_skripsi, program_studi FROM submissions WHERE id = ?"
+            );
+            $stmt->bind_param("i", $submissionId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $submission = $result->fetch_assoc();
+            $stmt->close();
+
             if (!$submission) {
                 $_SESSION['error_message'] = 'Related submission not found.';
-                header('Location: ' . url('admin/tambahInventaris'));
+                header('Location: ' . url('admin/tambahInventaris') . '?submission_id=' . $submissionId);
                 exit;
             }
             
@@ -765,7 +781,7 @@ class AdminController extends Controller {
             $prodi = $submission['program_studi']; // Take prodi from submission
             
             // Generate item code using the new function
-            $itemCode = $this->generateItemCode($inventoryCode, $prodi, $receivingDate);
+            $itemCode = $this->generateItemCode($inventoryCode, $prodi, $receivingDate); // This is correct
             
             // Check if inventaris table exists, if not create it
             $db = \App\Models\Database::getInstance();
@@ -773,7 +789,7 @@ class AdminController extends Controller {
             if ($tableCheck->num_rows == 0) {
                 // Create the inventaris table if it doesn't exist
                 $createTableSql = "CREATE TABLE inventaris (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    submission_id INT PRIMARY KEY,
                     title VARCHAR(500) NOT NULL,
                     item_code VARCHAR(255) NOT NULL,
                     inventory_code VARCHAR(100) NOT NULL,
@@ -784,6 +800,7 @@ class AdminController extends Controller {
                     receiving_date DATE NOT NULL,
                     source ENUM('Buy', 'Prize/Grant') NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     INDEX idx_inventory_code (inventory_code),
                     INDEX idx_call_number (call_number),
@@ -796,13 +813,13 @@ class AdminController extends Controller {
             }
             
             // Insert data into database
-            $stmt = $db->getConnection()->prepare("INSERT INTO inventaris (title, item_code, inventory_code, call_number, prodi, shelf_location, item_status, receiving_date, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $db->getConnection()->prepare("INSERT INTO inventaris (submission_id, title, item_code, inventory_code, call_number, prodi, shelf_location, item_status, receiving_date, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
             }
             
-            $stmt->bind_param("sssssssss", $title, $itemCode, $inventoryCode, $callNumber, $prodi, $shelfLocation, $itemStatus, $receivingDate, $source);
+            $stmt->bind_param("isssssssss", $submissionId, $title, $itemCode, $inventoryCode, $callNumber, $prodi, $shelfLocation, $itemStatus, $receivingDate, $source);
             
             if ($stmt->execute()) {
                 $_SESSION['success_message'] = 'Data inventaris berhasil disimpan.';
@@ -815,11 +832,102 @@ class AdminController extends Controller {
             
         } catch (DatabaseException $e) {
             $_SESSION['error_message'] = "Database error occurred: " . $e->getMessage();
-            header('Location: ' . url('admin/tambahInventaris'));
+            header('Location: ' . url('admin/tambahInventaris') . '?submission_id=' . ($_POST['submission_id'] ?? ''));
             exit;
         } catch (Exception $e) {
             $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
-            header('Location: ' . url('admin/tambahInventaris'));
+            header('Location: ' . url('admin/tambahInventaris') . '?submission_id=' . ($_POST['submission_id'] ?? ''));
+            exit;
+        }
+    }
+
+    public function editInventaris()
+    {
+        try {
+            if (!$this->isAdminLoggedIn()) {
+                header('Location: ' . url('admin/login'));
+                exit;
+            }
+
+            // Get submission ID from GET parameter
+            $submissionId = isset($_GET['submission_id']) ? (int)$_GET['submission_id'] : null;
+
+            if (!$submissionId) {
+                $_SESSION['error_message'] = 'Submission ID is required.';
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+
+            // Get inventory data from database
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("SELECT i.*, s.judul_skripsi, s.program_studi, s.updated_at FROM inventaris i JOIN submissions s ON i.submission_id = s.id WHERE s.id = ?");
+            $stmt->bind_param("i", $submissionId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $inventory = $result->fetch_assoc();
+
+            if (!$inventory) {
+                $_SESSION['error_message'] = 'Inventory data not found.';
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+
+            $this->render('admin/edit_inventaris', ['inventory' => $inventory]);
+        } catch (Exception $e) {
+            $this->render('admin/edit_inventaris', ['error' => "An error occurred: " . $e->getMessage()]);
+        }
+    }
+
+    public function updateInventaris()
+    {
+        try {
+            if (!$this->isAdminLoggedIn()) {
+                header('Location: ' . url('admin/login'));
+                exit;
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+
+            // Validate CSRF token
+            $token = $_POST['csrf_token'] ?? '';
+            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+                $_SESSION['error_message'] = 'Invalid or expired CSRF token.';
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+
+            // Get form data
+            $submissionId = (int)($_POST['submission_id'] ?? 0); // Changed from inventory_id to submission_id
+            $inventoryCode = trim($_POST['inventory_code'] ?? '');
+            $callNumber = trim($_POST['call_number'] ?? '');
+            $shelfLocation = trim($_POST['shelf_location'] ?? '');
+            $itemStatus = trim($_POST['item_status'] ?? '');
+            $source = trim($_POST['source'] ?? '');
+
+            // Basic validation
+            if ($submissionId <= 0 || empty($inventoryCode) || empty($callNumber) || empty($shelfLocation) || empty($itemStatus) || empty($source)) {
+                $_SESSION['error_message'] = 'Required fields are missing.';
+                header('Location: ' . url('admin/editInventaris?submission_id=' . ($_POST['submission_id'] ?? '')));
+                exit;
+            }
+
+            // Update data in database
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("UPDATE inventaris SET inventory_code = ?, call_number = ?, shelf_location = ?, item_status = ?, source = ? WHERE submission_id = ?");
+            $stmt->bind_param("sssssi", $inventoryCode, $callNumber, $shelfLocation, $itemStatus, $source, $submissionId);
+
+            if ($stmt->execute()) {
+                $_SESSION['success_message'] = 'Data inventaris berhasil diperbarui.';
+                header('Location: ' . url('admin/inventaris'));
+            } else {
+                throw new DatabaseException("Execute failed: " . $stmt->error);
+            }
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+            header('Location: ' . url('admin/inventaris'));
             exit;
         }
     }
@@ -911,7 +1019,7 @@ class AdminController extends Controller {
             exit;
         } catch (Exception $e) {
             $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
-            header('Location: ' . url('admin/adminManagement'));
+            header('Location: ' . url('admin/editInventaris') . '?submission_id=' . ($_POST['submission_id'] ?? ''));
             exit;
         }
     }
