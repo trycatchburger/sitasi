@@ -763,10 +763,9 @@ class AdminController extends Controller {
             
             $title = $submission['judul_skripsi']; // Take title from submission
             $prodi = $submission['program_studi']; // Take prodi from submission
-            // Item code is already obtained from the form, but if it's still empty, generate it based on submission ID
-            if (empty($itemCode)) {
-                $itemCode = $submissionId . '_' . time(); // Use submission ID + timestamp as unique code
-            }
+            
+            // Generate item code using the new function
+            $itemCode = $this->generateItemCode($inventoryCode, $prodi, $receivingDate);
             
             // Check if inventaris table exists, if not create it
             $db = \App\Models\Database::getInstance();
@@ -797,12 +796,7 @@ class AdminController extends Controller {
             }
             
             // Insert data into database
-            $stmt = $db->getConnection()->prepare("
-                INSERT INTO inventaris (
-                    title, item_code, inventory_code, call_number, prodi, shelf_location,
-                    item_status, receiving_date, source
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ");
+            $stmt = $db->getConnection()->prepare("INSERT INTO inventaris (title, item_code, inventory_code, call_number, prodi, shelf_location, item_status, receiving_date, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
@@ -828,6 +822,42 @@ class AdminController extends Controller {
             header('Location: ' . url('admin/tambahInventaris'));
             exit;
         }
+    }
+
+    /**
+     * Generate item code with format: inventory_code + singkatan_program_studi + receiving_date (MMYYYY)
+     * @param string $inventoryCode
+     * @param string $programStudi
+     * @param string $receivingDate Format: YYYY-MM-DD
+     * @return string
+     */
+    private function generateItemCode(string $inventoryCode, string $programStudi, string $receivingDate): string
+    {
+        // Define program studi abbreviations
+        $prodiAbbreviations = [
+            'Pascasarjana Manajemen Pendidikan Islam' => 'S2MPI',
+            'Tadris Bahasa Inggris' => 'TBI',
+            'Manajemen Bisnis Syariah' => 'MBS',
+            'Pendidikan Islam Anak Usia Dini' => 'PIAUD',
+            'Manajemen Pendidikan Islam' => 'MPI',
+            'Komunikasi Penyiaran Islam' => 'KPI',
+            'Pendidikan Agama Islam' => 'PAI',
+            'Pendidikan Bahasa Arab' => 'PBA',
+            'Akuntansi Syariah' => 'AKS',
+            'Hukum Ekonomi Syariah' => 'HES',
+            'Hukum Keluarga Islam' => 'HKI',
+            'Ilmu Alquran dan Tafsir' => 'IAT'
+        ];
+        
+        // Get program studi abbreviation (default to empty string if not found)
+        $prodiAbbreviation = $prodiAbbreviations[$programStudi] ?? '';
+        
+        // Extract month and year from receiving date (format: YYYY-MM-DD)
+        $date = \DateTime::createFromFormat('Y-m-d', $receivingDate);
+        $monthYear = $date ? $date->format('mY') : '';
+        
+        // Combine all parts to form the item code
+        return $inventoryCode . $prodiAbbreviation . $monthYear;
     }
 
     public function adminManagement() {
@@ -1185,7 +1215,7 @@ class AdminController extends Controller {
         
         if (!empty($search)) {
             $countStmt = $connection->prepare($countSql);
-            $countStmt->bind_param("ssss", $searchParam, $searchParam);
+            $countStmt->bind_param("ss", $searchParam, $searchParam);
             $countStmt->execute();
             $countResult = $countStmt->get_result();
         } else {
@@ -1313,7 +1343,7 @@ class AdminController extends Controller {
                     } else {
                         // Insert new member
                         $insertStmt = $connection->prepare("INSERT INTO anggota (id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                        $insertStmt->bind_param("ssssssss", $id_member, $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired);
+                        $insertStmt->bind_param("ssssss", $id_member, $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired);
                         
                         if ($insertStmt->execute()) {
                             $successCount++;
