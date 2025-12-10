@@ -135,6 +135,29 @@
                 Kembali
             </a>
 
+            <!-- Tombol Print -->
+            <div class="relative group">
+                <button type="button"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 4H7v6h6V8z" clip-rule="evenodd" />
+                    </svg>
+                    Print
+                </button>
+                <div class="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 border border-gray-200">
+                    <a href="<?= url('admin/printLabel?submission_id=' . urlencode($inventory['submission_id'] ?? 0)) ?>"
+                       target="_blank"
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100">
+                        Print Label
+                    </a>
+                    <a href="<?= url('admin/printBarcode?submission_id=' . urlencode($inventory['submission_id'] ?? 0)) ?>"
+                       target="_blank"
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 last:border-b-0">
+                        Print Barcode
+                    </a>
+                </div>
+            </div>
+
             <a href="<?= url('admin/editInventaris?submission_id=' . urlencode($inventory['submission_id'] ?? 0)) ?>"
                class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
                 Edit

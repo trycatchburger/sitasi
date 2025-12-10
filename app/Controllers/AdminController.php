@@ -587,7 +587,6 @@ class AdminController extends Controller {
         $this->runMiddleware(['auth']);
         
         try {
-
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $submissionId = (int)$_POST['submission_id'];
 
@@ -1353,7 +1352,7 @@ class AdminController extends Controller {
             $whereClause = "WHERE id_member LIKE ? OR nama LIKE ? OR prodi LIKE ? OR email LIKE ?";
             $searchParam = "%{$search}%";
             $countParams = [$searchParam, $searchParam];
-            $dataParams = [$searchParam, $searchParam];
+            $dataParams = [$searchParam, $searchParam, $searchParam];
         }
 
         // Get total count for pagination
@@ -1362,7 +1361,7 @@ class AdminController extends Controller {
         
         if (!empty($search)) {
             $countStmt = $connection->prepare($countSql);
-            $countStmt->bind_param("ss", $searchParam, $searchParam);
+            $countStmt->bind_param("ssss", $countParams[0], $countParams[1], $countParams[2], $countParams[3]);
             $countStmt->execute();
             $countResult = $countStmt->get_result();
         } else {
@@ -1378,7 +1377,7 @@ class AdminController extends Controller {
         
         $stmt = $connection->prepare($sql);
         if (!empty($search)) {
-            $stmt->bind_param("ssi", $searchParam, $perPage, $offset);
+            $stmt->bind_param("ssssi", $dataParams[0], $dataParams[1], $dataParams[2], $dataParams[3], $perPage, $offset);
         } else {
             $stmt->bind_param("ii", $perPage, $offset);
         }
@@ -1596,51 +1595,135 @@ class AdminController extends Controller {
              $this->render('management_file', ['error' => "An error occurred: " . $e->getMessage()]);
          }
      }
+public function inventaris() {
+     try {
+         if (!$this->isAdminLoggedIn()) {
+             header('Location: ' . url('admin/login'));
+             exit;
+         }
+         
+         $submissionModel = new Submission();
+         
+         // Get query parameters
+         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+         $perPage = 10; // Default items per page
+         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+         
+         // Get sort parameters
+         $sort = isset($_GET['sort']) ? $_GET['sort'] : null;
+         $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
+         
+         // Get submissions with pagination, sorting, and search
+         if (!empty($search)) {
+             $submissions = $submissionModel->searchInventarisData($search, $page, $perPage, $sort, $order);
+             $totalResults = $submissionModel->countSearchInventarisData($search);
+         } else {
+             $submissions = $submissionModel->getInventarisData($page, $perPage, $sort, $order);
+             $totalResults = $submissionModel->countInventarisData();
+         }
+         
+         // Calculate pagination values
+         $totalPages = ceil($totalResults / $perPage);
+         
+         $this->render('admin/inventaris', [
+             'submissions' => $submissions,
+             'currentPage' => $page,
+             'totalPages' => $totalPages,
+             'totalResults' => $totalResults,
+             'sort' => $sort,
+             'order' => $order,
+             'search' => $search
+         ]);
+     } catch (DatabaseException $e) {
+         $this->render('admin/inventaris', ['error' => "Database error occurred while loading inventaris."]);
+     } catch (Exception $e) {
+         $this->render('admin/inventaris', ['error' => "An error occurred: " . $e->getMessage()]);
+     }
+ }
 
-     public function inventaris() {
-          try {
-              if (!$this->isAdminLoggedIn()) {
-                  header('Location: ' . url('admin/login'));
-                  exit;
-              }
-              
-              $submissionModel = new Submission();
-              
-              // Get query parameters
-              $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-              $perPage = 10; // Default items per page
-              $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-              
-              // Get sort parameters
-              $sort = isset($_GET['sort']) ? $_GET['sort'] : null;
-              $order = isset($_GET['order']) && $_GET['order'] === 'desc' ? 'desc' : 'asc';
-              
-              // Get submissions with pagination, sorting, and search
-              if (!empty($search)) {
-                  $submissions = $submissionModel->searchInventarisData($search, $page, $perPage, $sort, $order);
-                  $totalResults = $submissionModel->countSearchInventarisData($search);
-              } else {
-                  $submissions = $submissionModel->getInventarisData($page, $perPage, $sort, $order);
-                  $totalResults = $submissionModel->countInventarisData();
-              }
-              
-              // Calculate pagination values
-              $totalPages = ceil($totalResults / $perPage);
-              
-              $this->render('admin/inventaris', [
-                  'submissions' => $submissions,
-                  'currentPage' => $page,
-                  'totalPages' => $totalPages,
-                  'totalResults' => $totalResults,
-                  'sort' => $sort,
-                  'order' => $order,
-                  'search' => $search
-              ]);
-          } catch (DatabaseException $e) {
-              $this->render('admin/inventaris', ['error' => "Database error occurred while loading inventaris."]);
-          } catch (Exception $e) {
-              $this->render('admin/inventaris', ['error' => "An error occurred: " . $e->getMessage()]);
-          }
-      }
+public function printBarcode()
+{
+   try {
+       if (!$this->isAdminLoggedIn()) {
+           header('Location: ' . url('admin/login'));
+           exit;
+       }
 
+       // Get submission ID from GET parameter
+       $submissionId = isset($_GET['submission_id']) ? (int)$_GET['submission_id'] : null;
+
+       if (!$submissionId) {
+           $_SESSION['error_message'] = 'Submission ID is required.';
+           header('Location: ' . url('admin/inventaris'));
+           exit;
+       }
+
+       // Get inventory data from database
+       $db = \App\Models\Database::getInstance();
+       $stmt = $db->getConnection()->prepare("SELECT i.*, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.created_at as submission_date, s.updated_at as submission_updated FROM inventaris i JOIN submissions s ON i.submission_id = s.id WHERE s.id = ?");
+       $stmt->bind_param("i", $submissionId);
+       $stmt->execute();
+       $result = $stmt->get_result();
+       $inventory = $result->fetch_assoc();
+
+       if (!$inventory) {
+           $_SESSION['error_message'] = 'Inventory data not found.';
+           header('Location: ' . url('admin/inventaris'));
+           exit;
+       }
+
+       // Use PrintService to generate barcode
+       $printService = new \App\Services\PrintService();
+       $printService->printBarcode($inventory);
+       
+   } catch (Exception $e) {
+       error_log("PrintBarcode error: " . $e->getMessage());
+       $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+       header('Location: ' . url('admin/inventaris'));
+       exit;
+   }
+}
+
+public function printLabel()
+{
+   try {
+       if (!$this->isAdminLoggedIn()) {
+           header('Location: ' . url('admin/login'));
+           exit;
+       }
+
+       // Get submission ID from GET parameter
+       $submissionId = isset($_GET['submission_id']) ? (int)$_GET['submission_id'] : null;
+
+       if (!$submissionId) {
+           $_SESSION['error_message'] = 'Submission ID is required.';
+           header('Location: ' . url('admin/inventaris'));
+           exit;
+       }
+
+       // Get inventory data from database
+       $db = \App\Models\Database::getInstance();
+       $stmt = $db->getConnection()->prepare("SELECT i.*, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.created_at as submission_date, s.updated_at as submission_updated FROM inventaris i JOIN submissions s ON i.submission_id = s.id WHERE s.id = ?");
+       $stmt->bind_param("i", $submissionId);
+       $stmt->execute();
+       $result = $stmt->get_result();
+       $inventory = $result->fetch_assoc();
+
+       if (!$inventory) {
+           $_SESSION['error_message'] = 'Inventory data not found.';
+           header('Location: ' . url('admin/inventaris'));
+           exit;
+       }
+
+       // Use PrintService to generate label
+       $printService = new \App\Services\PrintService();
+       $printService->printLabel($inventory);
+       
+   } catch (Exception $e) {
+       error_log("PrintLabel error: " . $e->getMessage());
+       $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+       header('Location: ' . url('admin/inventaris'));
+       exit;
+   }
+}
 }
