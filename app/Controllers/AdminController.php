@@ -718,7 +718,7 @@ class AdminController extends Controller {
             $shelfLocation = trim($_POST['shelf_location'] ?? '');
             $itemStatus = trim($_POST['item_status'] ?? '');
             $receivingDate = trim($_POST['receiving_date'] ?? '');
-            $source = trim($_POST['source'] ?? '');            
+            $source = trim($_POST['source'] ?? '');
             $submissionId = (int)($_POST['submission_id'] ?? 0); // Get submission ID from form
             
             // Validate submission ID first before processing other fields
@@ -763,7 +763,7 @@ class AdminController extends Controller {
             // Get submission data to populate title and prodi from submissions table
             $db = \App\Models\Database::getInstance();
             $stmt = $db->getConnection()->prepare(
-                "SELECT judul_skripsi, program_studi FROM submissions WHERE id = ?"
+                "SELECT judul_skripsi, program_studi, updated_at FROM submissions WHERE id = ?"
             );
             $stmt->bind_param("i", $submissionId);
             $stmt->execute();
@@ -780,8 +780,8 @@ class AdminController extends Controller {
             $title = $submission['judul_skripsi']; // Take title from submission
             $prodi = $submission['program_studi']; // Take prodi from submission
             
-            // Generate item code using the new function
-            $itemCode = $this->generateItemCode($inventoryCode, $prodi, $receivingDate); // This is correct
+            // Generate item code using the new function with updated_at from submission
+            $itemCode = $this->generateItemCode($inventoryCode, $prodi, $submission['updated_at']); // Using updated_at from submission instead of receiving date
             
             // Check if inventaris table exists, if not create it
             $db = \App\Models\Database::getInstance();
@@ -933,13 +933,13 @@ class AdminController extends Controller {
     }
 
     /**
-     * Generate item code with format: inventory_code + singkatan_program_studi + receiving_date (MMYYYY)
+     * Generate item code with format: inventory_code + singkatan_program_studi + submission_updated_date (MMYYYY)
      * @param string $inventoryCode
      * @param string $programStudi
-     * @param string $receivingDate Format: YYYY-MM-DD
+     * @param string $submissionUpdatedDate Format: YYYY-MM-DD HH:MM:SS (from submissions table updated_at)
      * @return string
      */
-    private function generateItemCode(string $inventoryCode, string $programStudi, string $receivingDate): string
+    private function generateItemCode(string $inventoryCode, string $programStudi, string $submissionUpdatedDate): string
     {
         // Define program studi abbreviations
         $prodiAbbreviations = [
@@ -960,8 +960,10 @@ class AdminController extends Controller {
         // Get program studi abbreviation (default to empty string if not found)
         $prodiAbbreviation = $prodiAbbreviations[$programStudi] ?? '';
         
-        // Extract month and year from receiving date (format: YYYY-MM-DD)
-        $date = \DateTime::createFromFormat('Y-m-d', $receivingDate);
+        // Extract date part and format as MMYYYY
+        // The submissionUpdatedDate might be in format 'YYYY-MM-DD HH:MM:SS', so we need to extract just the date part
+        $datePart = substr($submissionUpdatedDate, 0, 10); // Extract 'YYYY-MM-DD'
+        $date = \DateTime::createFromFormat('Y-m-d', $datePart);
         $monthYear = $date ? $date->format('mY') : '';
         
         // Combine all parts to form the item code
