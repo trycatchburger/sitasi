@@ -1024,6 +1024,43 @@ class AdminController extends Controller {
         }
     }
 
+    public function detailInventaris()
+    {
+        try {
+            if (!$this->isAdminLoggedIn()) {
+                header('Location: ' . url('admin/login'));
+                exit;
+            }
+
+            // Get submission ID from GET parameter
+            $submissionId = isset($_GET['submission_id']) ? (int)$_GET['submission_id'] : null;
+
+            if (!$submissionId) {
+                $_SESSION['error_message'] = 'Submission ID is required.';
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+
+            // Get inventory data from database
+            $db = \App\Models\Database::getInstance();
+            $stmt = $db->getConnection()->prepare("SELECT i.*, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.created_at as submission_date, s.updated_at as submission_updated FROM inventaris i JOIN submissions s ON i.submission_id = s.id WHERE s.id = ?");
+            $stmt->bind_param("i", $submissionId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $inventory = $result->fetch_assoc();
+
+            if (!$inventory) {
+                $_SESSION['error_message'] = 'Inventory data not found.';
+                header('Location: ' . url('admin/inventaris'));
+                exit;
+            }
+
+            $this->render('admin/detail_inventaris', ['inventory' => $inventory]);
+        } catch (Exception $e) {
+            $this->render('admin/detail_inventaris', ['error' => "An error occurred: " . $e->getMessage()]);
+        }
+    }
+
     public function userManagement()
     {
         // Run authentication middleware

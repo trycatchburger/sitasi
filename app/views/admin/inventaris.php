@@ -83,6 +83,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <?php if (!empty($submission['item_code'])): ?>
                                     <a href="<?= url('admin/editInventaris') . '?submission_id=' . $submission['id'] ?>" class="text-blue-600 hover:text-blue-900">Edit</a>
+                                    <a href="<?= url('admin/detailInventaris') . '?submission_id=' . $submission['id'] ?>" class="text-blue-600 hover:text-blue-900">Detail</a>
                                 <?php else: ?>
                                     <a href="<?= url('admin/tambahInventaris') . '?submission_id=' . $submission['id'] ?>" class="text-green-600 hover:text-green-900">Tambah</a>
                                 <?php endif; ?>
