@@ -3,145 +3,146 @@
 namespace App\Services;
 
 use TCPDF;
-use App\Models\Database;
 
 class PrintService
 {
     /**
-     * Generate barcode PDF for a single item
+     * Generate barcode PDF (sesuai format contoh label)
      */
-    public function printBarcode($inventory)
-    {
-        // Create new PDF document
-        $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-        
-        // Set document information
-        $pdf->SetCreator(PDF_CREATOR);
-        $pdf->SetTitle('Barcode - ' . $inventory['item_code']);
-        
-        // Remove default header/footer
-        $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
-        
-        // Set margins
-        $pdf->SetMargins(10, 10, 10);
-        $pdf->SetAutoPageBreak(TRUE, 10);
-        
-        // Add a page
-        $pdf->AddPage();
-        
-        // Set font for barcode
-        $pdf->SetFont('helvetica', '', 10);
-        
-        // Add item information
-        $pdf->Cell(0, 10, 'Item Code: ' . $inventory['item_code'], 0, 1, 'C');
-        $pdf->Ln(5);
-        
-        // Generate barcode
-        $style = array(
-            'border' => false,
-            'padding' => 4,
-            'fgcolor' => array(0,0,0),
-            'bgcolor' => false, //array(255,255,255)
-            'text' => true,
-            'font' => 'helvetica',
-            'fontsize' => 8,
-            'stretchtext' => 4
-        );
-        
-        // Add barcode
-        $pdf->write1DBarcode($inventory['item_code'], 'C128', '', '', '', 18, 0.4, $style, 'N');
-        
-        $pdf->Ln(10);
-        
-        // Add title below barcode
-        $pdf->Cell(0, 10, $inventory['judul_skripsi'], 0, 1, 'C');
-        $pdf->Ln(5);
-        
-        // Add student name
-        $pdf->Cell(0, 8, $inventory['nama_mahasiswa'], 0, 1, 'C');
-        
-        // Output the PDF
-        $pdf->Output('barcode_' . $inventory['item_code'] . '.pdf', 'I');
-        exit; // Tambahkan exit setelah output PDF untuk mencegah output lainnya
-    }
-    
+public function printBarcode($inventory)
+{
+    $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    $pdf->AddPage();
+
+    // ==== Ukuran masing-masing kolom (50 × 30 mm) ====
+    $labelW = 50;
+    $labelH = 30;
+
+    // Posisi awal
+    $x1 = 10;           // kolom kiri
+    $x2 = $x1 + $labelW + 5; // kolom kanan (jarak 5 mm)
+    $y = 10;
+
+    // ----------------------------------------------------
+    //   1) KOLOM KIRI — sama seperti printLabel
+    // ----------------------------------------------------
+    $pdf->Rect($x1, $y, $labelW, $labelH);
+
+    $pdf->SetFillColor(220, 220, 220);
+    $pdf->Rect($x1, $y, $labelW, 7, 'F');
+
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->SetXY($x1, $y + 1.5);
+    $pdf->Cell($labelW, 4, 'PERPUSTAKAAN STAIN SAR KEPRI', 0, 0, 'C');
+
+    // Call Number
+    $callNumber = trim($inventory['call_number']);
+    $parts = preg_split('/\r\n|\r|\n|\s+/', $callNumber);
+
+    $line1 = $parts[0] ?? '';
+    $line2 = $parts[1] ?? '';
+    $line3 = $parts[2] ?? '';
+
+    $pdf->SetXY($x1, $y + 8);
+    $pdf->SetFont('helvetica', '', 12);
+    $pdf->Cell($labelW, 6, $line1, 0, 1, 'C');
+
+    $pdf->SetFont('helvetica', 'B', 12);
+    $pdf->Cell($labelW, 6, strtoupper($line2), 0, 1, 'C');
+
+    $pdf->SetFont('helvetica', '', 12);
+    $pdf->Cell($labelW, 6, strtolower($line3), 0, 1, 'C');
+
+    // ----------------------------------------------------
+    //   2) KOLOM KANAN — Judul + Barcode + Item Code
+    // ----------------------------------------------------
+    $pdf->Rect($x2, $y, $labelW, $labelH);
+
+    // Judul Buku
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetXY($x2 + 2, $y + 2);
+    $pdf->MultiCell($labelW - 4, 4, $inventory['judul_skripsi'], 0, 'L');
+
+    // Barcode Style
+    $style = [
+        'border' => false,
+        'padding' => 0,
+        'fgcolor' => [0,0,0],
+        'bgcolor' => false,
+        'text' => false
+    ];
+
+    // Barcode Position
+    $barcodeY = $y + 12;
+
+    $pdf->write1DBarcode(
+        $inventory['item_code'],
+        'C128',
+        $x2 + 2,
+        $barcodeY,
+        $labelW - 4,
+        10,
+        0.3,
+        $style,
+        'N'
+    );
+
+    // Item Code Text
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->SetXY($x2, $barcodeY + 10);
+    $pdf->Cell($labelW, 5, $inventory['item_code'], 0, 0, 'C');
+
+    // Output
+    $pdf->Output('barcode_' . $inventory['item_code'] . '.pdf', 'I');
+    exit;
+}
+
+
     /**
-     * Generate label PDF for a single item
+     * Generate Call Number label (versi sebelumnya)
      */
     public function printLabel($inventory)
     {
-        // Create new PDF document
         $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-        
-        // Set document information
-        $pdf->SetCreator(PDF_CREATOR);
-        $pdf->SetTitle('Label - ' . $inventory['item_code']);
-        
-        // Remove default header/footer
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
-        
-        // Set margins
-        $pdf->SetMargins(10, 10, 10);
-        $pdf->SetAutoPageBreak(TRUE, 10);
-        
-        // Add a page
         $pdf->AddPage();
-        
-        // Set font
-        $pdf->SetFont('helvetica', 'B', 16);
-        
-        // Add title
-        $pdf->Cell(0, 10, 'LABEL INVENTARIS', 0, 1, 'C');
-        $pdf->Ln(5);
-        
-        // Add item information
+
+        $callNumber = trim($inventory['call_number']);
+        $parts = preg_split('/\r\n|\r|\n|\s+/', $callNumber);
+        $line1 = $parts[0] ?? '';
+        $line2 = $parts[1] ?? '';
+        $line3 = $parts[2] ?? '';
+
+        // Ukuran label
+        $w = 80;
+        $h = 30;
+        $x = 10;
+        $y = 10;
+
+        $pdf->Rect($x, $y, $w, $h);
+
+        $pdf->SetFillColor(230, 230, 230);
+        $pdf->Rect($x, $y, $w, 8, 'F');
+
+        $pdf->SetFont('helvetica', 'B', 10);
+        $pdf->SetXY($x, $y + 2);
+        $pdf->Cell($w, 4, 'PERPUSTAKAAN STAIN SAR KEPRI', 0, 1, 'C');
+
+        $pdf->SetXY($x, $y + 10);
         $pdf->SetFont('helvetica', '', 12);
-        $pdf->Cell(0, 8, 'Kode Item: ' . $inventory['item_code'], 0, 1, 'L');
-        $pdf->Ln(2);
-        
-        $pdf->Cell(0, 8, 'Kode Inventaris: ' . $inventory['inventory_code'], 0, 1, 'L');
-        $pdf->Ln(2);
-        
-        $pdf->Cell(0, 8, 'Nomor Panggil: ' . $inventory['call_number'], 0, 1, 'L');
-        $pdf->Ln(2);
-        
-        $pdf->Cell(0, 8, 'Program Studi: ' . $inventory['program_studi'], 0, 1, 'L');
-        $pdf->Ln(2);
-        
-        $pdf->Cell(0, 8, 'Lokasi Rak: ' . $inventory['shelf_location'], 0, 1, 'L');
-        $pdf->Ln(2);
-        
-        $pdf->Cell(0, 8, 'Status Item: ' . $inventory['item_status'], 0, 1, 'L');
-        $pdf->Ln(5);
-        
-        // Add thesis title
-        $pdf->SetFont('helvetica', 'B', 14);
-        $pdf->MultiCell(0, 8, 'Judul Skripsi: ' . $inventory['judul_skripsi'], 0, 'L');
-        $pdf->Ln(5);
-        
-        // Add student name
+        $pdf->Cell($w, 6, $line1, 0, 1, 'C');
+
+        $pdf->SetFont('helvetica', 'B', 12);
+        $pdf->Cell($w, 6, strtoupper($line2), 0, 1, 'C');
+
         $pdf->SetFont('helvetica', '', 12);
-        $pdf->Cell(0, 8, 'Nama Mahasiswa: ' . $inventory['nama_mahasiswa'], 0, 1, 'L');
-        $pdf->Ln(5);
-        
-        // Generate and add barcode
-        $style = array(
-            'border' => false,
-            'padding' => 4,
-            'fgcolor' => array(0,0,0),
-            'bgcolor' => false,
-            'text' => true,
-            'font' => 'helvetica',
-            'fontsize' => 8,
-            'stretchtext' => 4
-        );
-        
-        $pdf->write1DBarcode($inventory['item_code'], 'C128', '', '', '', 18, 0.4, $style, 'N');
-        
-        // Output the PDF
+        $pdf->Cell($w, 6, strtolower($line3), 0, 1, 'C');
+
         $pdf->Output('label_' . $inventory['item_code'] . '.pdf', 'I');
-        exit; // Tambahkan exit setelah output PDF untuk mencegah output lainnya
+        exit;
     }
 }
