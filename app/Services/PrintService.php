@@ -65,8 +65,8 @@ public function printBarcode($inventory)
     $pdf->SetFont('helvetica', 'B', 12);
     $pdf->Cell(54, 6, strtoupper($line2), 0, 1, 'C');
 
-    $pdf->SetFont('helvetica', '', 12);
-    $pdf->Cell(54, 6, strtolower($line3), 0, 1, 'C');
+    $pdf->SetFont('helvetica', 'B', 12);
+    $pdf->Cell(54, 3, strtolower($line3), 0, 1, 'C');
 
     // ====== BARCODE & AREA KANAN ======
     $rightAreaX = $x + $leftW; // separuh label kiri/kanan
@@ -74,12 +74,18 @@ public function printBarcode($inventory)
     //$pdf->Rect($rightX, $y, 40, $labelH);
 
 
+    // Calculate positions to avoid overlapping while staying within the 30x30mm right box
+    // The right box starts at ($rightAreaX, $y) and goes to ($rightAreaX + 30, $y + 30)
+    // When rotating 90 degrees, we need to be careful with positioning to stay within bounds
+    $boxCenterX = $rightAreaX + 15;  // Center of the 30mm wide box
+    $boxCenterY = $y + 15;          // Center of the 30mm tall box
+
     // ====== JUDUL DIPUTAR 90° ======
     $pdf->StartTransform();
-    $pdf->Rotate(90, $rightAreaX + 15, $y + 15); 
-    $pdf->SetFont('helvetica', '', 8);
-    $pdf->SetXY($rightAreaX + 5, $y + 5);
-    $pdf->MultiCell(22, 4, $inventory['judul_skripsi'], 0, 'C');
+    $pdf->Rotate(90, $boxCenterX, $y + 6);  // Rotate at upper third of the box
+    $pdf->SetFont('helvetica', '', 5);      // Even smaller font to fit better
+    $pdf->SetXY($boxCenterX - 20, $y - 7);  // Adjust position to center text in rotated space
+    $pdf->MultiCell(24, 2.5, $inventory['judul_skripsi'], 0, 'C');
     $pdf->StopTransform();
 
     // ====== BARCODE VERTICAL ======
@@ -92,17 +98,17 @@ public function printBarcode($inventory)
     ];
 
     $pdf->StartTransform();
-    // Putar 90 derajat
-    $pdf->Rotate(90, $rightAreaX + 15, $y + 15);
+    // Putar 90 derajat - position in the middle of the box
+    $pdf->Rotate(90, $boxCenterX, $y + 15);
     
-    // Tulis Barcode
+    // Tulis Barcode - adjusted position to not overlap with title and stay in bounds
     $pdf->write1DBarcode(
         $inventory['item_code'],
         'C128',
-        $rightAreaX + 2, // Geser posisi barcode di dalam area putar
-        $y + 2,
-        26, // Panjang barcode (setelah diputar jadi tinggi)
-        12, // Tinggi barcode (setelah diputar jadi lebar)
+        $rightAreaX + 2,      // X position inside the right box
+        $y + 12,              // Y position inside the right box
+        26,                   // Width of barcode (rotated becomes height)
+        12,                    // Height of barcode (rotated becomes width)
         0.4,
         $style,
         'N'
@@ -111,9 +117,10 @@ public function printBarcode($inventory)
 
     // ====== ITEM CODE TEXT VERTIKAL ======
     $pdf->StartTransform();
-    $pdf->Rotate(90, $rightAreaX + 25, $y + 15);
-    $pdf->SetFont('helvetica', 'B', 8);
-    $pdf->Text($rightAreaX + 18, $y + 2, $inventory['item_code']);
+    $pdf->Rotate(90, $boxCenterX, $y + 24);  // Rotate at lower part of the box
+    $pdf->SetFont('helvetica', 'B', 6);      // Font for item code
+    $pdf->SetXY($boxCenterX - 2, $y + 34);  // Position the text in rotated space
+    $pdf->Cell(20, 4, $inventory['item_code'], 0, 0, 'C');
     $pdf->StopTransform();
 
     // ====== OUTPUT PDF ======
