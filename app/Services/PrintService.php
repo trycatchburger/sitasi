@@ -17,28 +17,40 @@ public function printBarcode($inventory)
     $pdf->setPrintFooter(false);
     $pdf->AddPage();
 
-    // ==== Ukuran masing-masing kolom (50 × 30 mm) ====
-    $labelW = 50;
+    // ==== Ukuran label sesuai contoh gambar ====
+    $labelW = 80;
     $labelH = 30;
 
-    // Posisi awal
-    $x1 = 10;           // kolom kiri
-    $x2 = $x1 + $labelW + 5; // kolom kanan (jarak 5 mm)
+    // Pembagian Lebar (Kiri 50mm, Kanan 30mm)
+    $leftW = 50; 
+    $rightW = 30;
+
+    // Pembagian Tinggi area Kiri (Header 10mm, Callnumber 20mm)
+    $headerH = 10;
+    $bodyH = 20;
+
+    // Posisi label
+    $x = 10;
     $y = 10;
 
-    // ----------------------------------------------------
-    //   1) KOLOM KIRI — sama seperti printLabel
-    // ----------------------------------------------------
-    $pdf->Rect($x1, $y, $labelW, $labelH);
+    // ====== HEADER PINK ======
+    $pdf->SetFillColor(255, 200, 210);   // warna pink lembut
 
-    $pdf->SetFillColor(220, 220, 220);
-    $pdf->Rect($x1, $y, $labelW, 7, 'F');
+    // Parameter 'DF' artinya Draw border & Fill color
+    $pdf->Rect($x, $y, $leftW, $headerH, 'DF');
 
-    $pdf->SetFont('helvetica', 'B', 9);
-    $pdf->SetXY($x1, $y + 1.5);
-    $pdf->Cell($labelW, 4, 'PERPUSTAKAAN STAIN SAR KEPRI', 0, 0, 'C');
+    // KOTAK 2: Kiri Bawah (Call Number)
+    $pdf->Rect($x, $y + $headerH, $leftW, $bodyH);
 
-    // Call Number
+    // KOTAK 3: Kanan Full (Barcode Area)
+    $pdf->Rect($x + $leftW, $y, $rightW, $labelH);
+
+    // --- A. Teks Header (Kiri Atas) ---
+    $pdf->SetFont('helvetica', 'B', 7);
+    $pdf->SetXY($x, $y + 2.5);
+    $pdf->Cell($leftW, 5, 'PERPUSTAKAAN STAIN SAR KEPRI', 0, 0, 'C');
+
+    // ====== CALL NUMBER (Kiri Bawah) ======
     $callNumber = trim($inventory['call_number']);
     $parts = preg_split('/\r\n|\r|\n|\s+/', $callNumber);
 
@@ -46,59 +58,69 @@ public function printBarcode($inventory)
     $line2 = $parts[1] ?? '';
     $line3 = $parts[2] ?? '';
 
-    $pdf->SetXY($x1, $y + 8);
-    $pdf->SetFont('helvetica', '', 12);
-    $pdf->Cell($labelW, 6, $line1, 0, 1, 'C');
+    $pdf->SetFont('helvetica', 'B', 14);
+    $pdf->SetXY($x, $y + 12);
+    $pdf->Cell(54, 6, $line1, 0, 1, 'C');
 
     $pdf->SetFont('helvetica', 'B', 12);
-    $pdf->Cell($labelW, 6, strtoupper($line2), 0, 1, 'C');
+    $pdf->Cell(54, 6, strtoupper($line2), 0, 1, 'C');
 
     $pdf->SetFont('helvetica', '', 12);
-    $pdf->Cell($labelW, 6, strtolower($line3), 0, 1, 'C');
+    $pdf->Cell(54, 6, strtolower($line3), 0, 1, 'C');
 
-    // ----------------------------------------------------
-    //   2) KOLOM KANAN — Judul + Barcode + Item Code
-    // ----------------------------------------------------
-    $pdf->Rect($x2, $y, $labelW, $labelH);
+    // ====== BARCODE & AREA KANAN ======
+    $rightAreaX = $x + $leftW; // separuh label kiri/kanan
 
-    // Judul Buku
+    //$pdf->Rect($rightX, $y, 40, $labelH);
+
+
+    // ====== JUDUL DIPUTAR 90° ======
+    $pdf->StartTransform();
+    $pdf->Rotate(90, $rightAreaX + 15, $y + 15); 
     $pdf->SetFont('helvetica', '', 8);
-    $pdf->SetXY($x2 + 2, $y + 2);
-    $pdf->MultiCell($labelW - 4, 4, $inventory['judul_skripsi'], 0, 'L');
+    $pdf->SetXY($rightAreaX + 5, $y + 5);
+    $pdf->MultiCell(22, 4, $inventory['judul_skripsi'], 0, 'C');
+    $pdf->StopTransform();
 
-    // Barcode Style
+    // ====== BARCODE VERTICAL ======
     $style = [
-        'border' => false,
+        'border' => 0,
         'padding' => 0,
         'fgcolor' => [0,0,0],
         'bgcolor' => false,
         'text' => false
     ];
 
-    // Barcode Position
-    $barcodeY = $y + 12;
-
+    $pdf->StartTransform();
+    // Putar 90 derajat
+    $pdf->Rotate(90, $rightAreaX + 15, $y + 15);
+    
+    // Tulis Barcode
     $pdf->write1DBarcode(
         $inventory['item_code'],
         'C128',
-        $x2 + 2,
-        $barcodeY,
-        $labelW - 4,
-        10,
-        0.3,
+        $rightAreaX + 2, // Geser posisi barcode di dalam area putar
+        $y + 2,
+        26, // Panjang barcode (setelah diputar jadi tinggi)
+        12, // Tinggi barcode (setelah diputar jadi lebar)
+        0.4,
         $style,
         'N'
     );
+    $pdf->StopTransform();
 
-    // Item Code Text
-    $pdf->SetFont('helvetica', 'B', 9);
-    $pdf->SetXY($x2, $barcodeY + 10);
-    $pdf->Cell($labelW, 5, $inventory['item_code'], 0, 0, 'C');
+    // ====== ITEM CODE TEXT VERTIKAL ======
+    $pdf->StartTransform();
+    $pdf->Rotate(90, $rightAreaX + 25, $y + 15);
+    $pdf->SetFont('helvetica', 'B', 8);
+    $pdf->Text($rightAreaX + 18, $y + 2, $inventory['item_code']);
+    $pdf->StopTransform();
 
-    // Output
+    // ====== OUTPUT PDF ======
     $pdf->Output('barcode_' . $inventory['item_code'] . '.pdf', 'I');
     exit;
 }
+
 
 
     /**
