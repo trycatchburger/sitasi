@@ -169,13 +169,15 @@ public function printBarcode($inventory)
 
     $pdf->SetFont('helvetica', 'B', 14);
     $pdf->SetXY($x, $y + 12);
-    $pdf->Cell(54, 6, $line1, 0, 1, 'C');
+    $pdf->Cell(54, 6, $line1, 0, 0, 'C'); // Changed ln from 1 to 0
 
     $pdf->SetFont('helvetica', 'B', 12);
-    $pdf->Cell(54, 6, strtoupper($line2), 0, 1, 'C');
+    $pdf->SetXY($x, $y + 18); // Fixed Y position for line 2
+    $pdf->Cell(54, 6, strtoupper($line2), 0, 0, 'C'); // Changed ln from 1 to 0
 
     $pdf->SetFont('helvetica', 'B', 12);
-    $pdf->Cell(54, 3, strtolower($line3), 0, 1, 'C');
+    $pdf->SetXY($x, $y + 24); // Fixed Y position for line 3
+    $pdf->Cell(54, 3, strtolower($line3), 0, 0, 'C'); // Changed ln from 1 to 0
 
     // ====== BARCODE & AREA KANAN ======
     $rightAreaX = $x + $leftW; // separuh label kiri/kanan
@@ -567,13 +569,15 @@ public function printBarcode($inventory)
 
             $pdf->SetFont('helvetica', 'B', 14);
             $pdf->SetXY($x, $y + 12);
-            $pdf->Cell(54, 6, $line1, 0, 1, 'C');
+            $pdf->Cell(54, 6, $line1, 0, 0, 'C'); // Changed ln from 1 to 0
 
             $pdf->SetFont('helvetica', 'B', 12);
-            $pdf->Cell(54, 6, strtoupper($line2), 0, 1, 'C');
+            $pdf->SetXY($x, $y + 18); // Fixed Y position for line 2
+            $pdf->Cell(54, 6, strtoupper($line2), 0, 0, 'C'); // Changed ln from 1 to 0
 
             $pdf->SetFont('helvetica', 'B', 12);
-            $pdf->Cell(54, 3, strtolower($line3), 0, 1, 'C');
+            $pdf->SetXY($x, $y + 24); // Fixed Y position for line 3
+            $pdf->Cell(54, 3, strtolower($line3), 0, 0, 'C'); // Changed ln from 1 to 0
 
             // ====== BARCODE & AREA KANAN ======
             $rightAreaX = $x + $leftW; // separuh label kiri/kanan
