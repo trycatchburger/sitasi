@@ -1726,4 +1726,89 @@ public function printLabel()
        exit;
    }
 }
+
+   public function bulkPrintInventaris()
+   {
+       try {
+           if (!$this->isAdminLoggedIn()) {
+               header('Location: ' . url('admin/login'));
+               exit;
+           }
+           
+           if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+               header('Location: ' . url('admin/inventaris'));
+               exit;
+           }
+           
+           // Validate CSRF token
+           $token = $_POST['csrf_token'] ?? '';
+           if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+               $_SESSION['error_message'] = 'Invalid or expired CSRF token.';
+               header('Location: ' . url('admin/inventaris'));
+               exit;
+           }
+           
+           // Get selected submission IDs
+           $selectedIds = $_POST['selected_ids'] ?? [];
+           
+           if (empty($selectedIds)) {
+               $_SESSION['error_message'] = 'No items selected for printing.';
+               header('Location: ' . url('admin/inventaris'));
+               exit;
+           }
+           
+           // Validate that all IDs are numeric
+           foreach ($selectedIds as $id) {
+               if (!is_numeric($id)) {
+                   $_SESSION['error_message'] = 'Invalid submission ID provided.';
+                   header('Location: ' . url('admin/inventaris'));
+                   exit;
+               }
+           }
+           
+           // Get inventory data for selected IDs
+           $db = \App\Models\Database::getInstance();
+           $placeholders = str_repeat('?,', count($selectedIds) - 1) . '?';
+           $sql = "SELECT i.*, s.nama_mahasiswa, s.judul_skripsi, s.program_studi, s.created_at as submission_date, s.updated_at as submission_updated FROM inventaris i JOIN submissions s ON i.submission_id = s.id WHERE s.id IN ($placeholders)";
+           
+           $stmt = $db->getConnection()->prepare($sql);
+           if (!$stmt) {
+               throw new \App\Exceptions\DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+           }
+           
+           // Create array of references for bind_param
+           $params = $selectedIds;
+           $types = str_repeat('i', count($params));
+           
+           $refs = [];
+           foreach ($params as $key => $value) {
+               $refs[$key] = &$params[$key];
+           }
+           
+           $stmt->bind_param($types, ...$refs);
+           $stmt->execute();
+           $result = $stmt->get_result();
+           
+           $inventarisData = [];
+           while ($row = $result->fetch_assoc()) {
+               $inventarisData[] = $row;
+           }
+           
+           if (empty($inventarisData)) {
+               $_SESSION['error_message'] = 'No inventory data found for selected items.';
+               header('Location: ' . url('admin/inventaris'));
+               exit;
+           }
+           
+           // Use PrintService to generate bulk barcode PDF
+           $printService = new \App\Services\PrintService();
+           $printService->printBulkBarcodes($inventarisData);
+           
+       } catch (Exception $e) {
+           error_log("BulkPrintInventaris error: " . $e->getMessage());
+           $_SESSION['error_message'] = "An error occurred: " . $e->getMessage();
+           header('Location: ' . url('admin/inventaris'));
+           exit;
+       }
+   }
 }
