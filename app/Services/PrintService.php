@@ -197,10 +197,11 @@ public function printBarcode($inventory)
     $pdf->SetFont('helvetica', '', 5);      // Even smaller font to fit better
     $pdf->SetXY($boxCenterX - 22, $y - 7);  // Adjust position to center text in rotated space
     
-    // Batasi judul_skripsi menjadi 100 karakter
-    $limitedTitle = strlen($inventory['judul_skripsi']) > 100 ?
-                    substr($inventory['judul_skripsi'], 0, 100) . '...' :
-                    $inventory['judul_skripsi'];
+    // Jadikan judul_skripsi menjadi huruf kapital dan batasi menjadi 70 karakter
+    $judulSkripsiUpper = strtoupper($inventory['judul_skripsi']);
+    $limitedTitle = strlen($judulSkripsiUpper) > 70 ?
+                    substr($judulSkripsiUpper, 0, 70) . '...' :
+                    $judulSkripsiUpper;
     
     $pdf->MultiCell(24, 2.5, $limitedTitle, 0, 'C');
     $pdf->StopTransform();
@@ -600,10 +601,11 @@ public function printBarcode($inventory)
             $pdf->SetFont('helvetica', '', 5);      // Even smaller font to fit better
             $pdf->SetXY($boxCenterX - 22, $y - 7);  // Adjust position to center text in rotated space
             
-            // Batasi judul_skripsi menjadi 100 karakter
-            $limitedTitle = strlen($inventory['judul_skripsi']) > 100 ?
-                            substr($inventory['judul_skripsi'], 0, 100) . '...' :
-                            $inventory['judul_skripsi'];
+            // Jadikan judul_skripsi menjadi huruf kapital dan batasi menjadi 70 karakter
+            $judulSkripsiUpper = strtoupper($inventory['judul_skripsi']);
+            $limitedTitle = strlen($judulSkripsiUpper) > 70 ?
+                            substr($judulSkripsiUpper, 0, 70) . '...' :
+                            $judulSkripsiUpper;
             
             $pdf->MultiCell(24, 2.5, $limitedTitle, 0, 'C');
             $pdf->StopTransform();
