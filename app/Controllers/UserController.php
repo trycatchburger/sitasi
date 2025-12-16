@@ -771,7 +771,7 @@ class UserController extends Controller
                 $new_password_hash = password_hash($new_password, PASSWORD_DEFAULT);
 
                 // Update the password in the database
-                $update_stmt = $db->getConnection()->prepare("UPDATE users_login SET password = ? WHERE id = ?");
+                $update_stmt = $db->getConnection()->prepare("UPDATE users_login SET password_hash = ? WHERE id = ?");
                 if (!$update_stmt) {
                     throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
                 }
