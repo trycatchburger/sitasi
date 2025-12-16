@@ -1068,62 +1068,15 @@ class AdminController extends Controller {
         $this->runMiddleware(['auth']);
         
         try {
-            // Fetch users from users_login table and match with anggota table
+            // Fetch all members from anggota table to show all imported members
             $db = \App\Models\Database::getInstance();
             
-            // Check if the id_member column exists in users_login table
-            $checkColumnSql = "SHOW COLUMNS FROM users_login LIKE 'id_member'";
-            $columnResult = $db->getConnection()->query($checkColumnSql);
-            
-            if (!$columnResult) {
-                throw new DatabaseException("SHOW COLUMNS query failed: " . $db->getConnection()->error);
-            }
-            
-            if ($columnResult->num_rows > 0) {
-                // Join users_login with anggota table to get complete user information
-                // Originally, the relationship was users_login.id_member to anggota.nim_nip
-                // So we'll use that relationship for proper matching
-                $sql = "SELECT ul.id, ul.id_member as library_card_number, COALESCE(a.nama, ul.name, 'N/A') as name, COALESCE(a.email, ul.email, 'N/A') as email, ul.created_at, COALESCE(ul.status, 'active') as status
-                        FROM users_login ul
-                        LEFT JOIN anggota a ON ul.id_member = a.nim_nip
-                        ORDER BY ul.created_at DESC";
-            } else {
-                // Fallback query if id_member column doesn't exist
-                // Check if username and name fields exist instead
-                $checkUsernameColumnSql = "SHOW COLUMNS FROM users_login LIKE 'username'";
-                $usernameColumnResult = $db->getConnection()->query($checkUsernameColumnSql);
-                
-                if (!$usernameColumnResult) {
-                    throw new DatabaseException("SHOW COLUMNS query failed: " . $db->getConnection()->error);
-                }
-                
-                if ($usernameColumnResult->num_rows > 0) {
-                    // Check if name field exists
-                    $checkNameColumnSql = "SHOW COLUMNS FROM users_login LIKE 'name'";
-                    $nameColumnResult = $db->getConnection()->query($checkNameColumnSql);
-                    
-                    if (!$nameColumnResult) {
-                        throw new DatabaseException("SHOW COLUMNS query failed: " . $db->getConnection()->error);
-                    }
-                    
-                    if ($nameColumnResult->num_rows > 0) {
-                        // Username and name fields exist
-                        $sql = "SELECT ul.id, ul.username as library_card_number, ul.name as name, ul.email, ul.created_at, COALESCE(ul.status, 'active') as status
-                                FROM users_login ul
-                                ORDER BY ul.created_at DESC";
-                    } else {
-                        // Only username exists, use it as name too
-                        $sql = "SELECT ul.id, ul.username as library_card_number, ul.username as name, ul.email, ul.created_at, COALESCE(ul.status, 'active') as status
-                                FROM users_login ul
-                                ORDER BY ul.created_at DESC";
-                    }
-                } else {
-                    // If no username field, just use id as identifier
-                    $sql = "SELECT ul.id, ul.id as library_card_number, 'N/A' as name, 'N/A' as email, ul.created_at, COALESCE(ul.status, 'active') as status
-                            FROM users_login ul
-                            ORDER BY ul.created_at DESC";
-                }
-            }
+            // Get all members from anggota table with user account status
+            $sql = "SELECT a.id_member as library_card_number, a.nama as name, a.email, a.tipe_member, a.member_since, a.expired, a.prodi, a.no_hp,
+                           ul.id as user_id, ul.status as user_status, ul.created_at as user_created_at
+                    FROM anggota a
+                    LEFT JOIN users_login ul ON a.id_member = ul.id_member
+                    ORDER BY COALESCE(ul.created_at, a.member_since) DESC";
             
             $result = $db->getConnection()->query($sql);
             if (!$result) {
@@ -1133,7 +1086,22 @@ class AdminController extends Controller {
             $users = [];
             if ($result) {
                 while ($row = $result->fetch_assoc()) {
-                    $users[] = $row;
+                    // Determine if the member has an account
+                    $hasAccount = !empty($row['user_id']);
+                    
+                    // Format the data to match the expected structure in the view
+                    $users[] = [
+                        'id' => $row['user_id'] ?? 'N/A', // Use user ID if available, otherwise 'N/A'
+                        'library_card_number' => $row['library_card_number'],
+                        'name' => $row['name'],
+                        'email' => $row['email'],
+                        'created_at' => $row['user_created_at'] ?? $row['member_since'] ?? 'N/A',
+                        'status' => $row['user_status'] ?? 'No Account', // Show 'No Account' if user doesn't have login
+                        'has_account' => $hasAccount,
+                        'tipe_member' => $row['tipe_member'] ?? 'N/A',
+                        'prodi' => $row['prodi'] ?? 'N/A',
+                        'no_hp' => $row['no_hp'] ?? 'N/A'
+                    ];
                 }
             }
             
@@ -1697,6 +1665,29 @@ class AdminController extends Controller {
                         $insertStmt->close();
                     }
                     $checkStmt->close();
+                    
+                    // After successfully inserting/updating member, create a user account if one doesn't already exist
+                    if ($successCount > 0) { // Only proceed if the member operation was successful
+                        // Check if a user account already exists for this member
+                        $userCheckStmt = $connection->prepare("SELECT id FROM users_login WHERE id_member = ?");
+                        $userCheckStmt->bind_param("s", $id_member);
+                        $userCheckStmt->execute();
+                        $userResult = $userCheckStmt->get_result();
+                        
+                        if ($userResult->num_rows === 0) {
+                            // Create a new user account with default password and active status
+                            $defaultPassword = password_hash('123456', PASSWORD_DEFAULT);
+                            $userInsertStmt = $connection->prepare("INSERT INTO users_login (id_member, password_hash, status, name, email) VALUES (?, ?, 'active', ?, ?)");
+                            $userInsertStmt->bind_param("ssss", $id_member, $defaultPassword, $nama, $email);
+                            
+                            if (!$userInsertStmt->execute()) {
+                                $errorCount++;
+                                $errors[] = "Row " . ($rowIndex + 1) . ": Failed to create user account for member ID: $id_member. Error: " . $connection->error;
+                            }
+                            $userInsertStmt->close();
+                        }
+                        $userCheckStmt->close();
+                    }
                 }
 
                 // Prepare success message

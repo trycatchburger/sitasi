@@ -48,30 +48,8 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php
-                // Check if users array is empty, if so use dummy data
+                // Use the users array directly from the controller
                 $displayUsers = !empty($users) ? $users : [];
-                
-                // Add dummy data if no users exist
-                if (empty($displayUsers)) {
-                    $displayUsers = [
-                        [
-                            'id' => 999,
-                            'library_card_number' => 'LIB2023001',
-                            'name' => 'John Doe',
-                            'email' => 'john.doe@example.com',
-                            'created_at' => date('Y-m-d H:i:s'),
-                            'status' => 'active'
-                        ],
-                        [
-                            'id' => 998,
-                            'library_card_number' => 'LIB2023002',
-                            'name' => 'Jane Smith',
-                            'email' => 'jane.smith@example.com',
-                            'created_at' => date('Y-m-d H:i:s', strtotime('-2 days')),
-                            'status' => 'suspended'
-                        ]
-                    ];
-                }
                 
                 foreach ($displayUsers as $user): ?>
                 <tr>
@@ -90,37 +68,47 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <?php if (isset($user['status']) && $user['status'] === 'suspended'): ?>
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
-                        <?php else: ?>
+                        <?php elseif (isset($user['status']) && $user['status'] === 'No Account'): ?>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">No Account</span>
+                        <?php elseif (isset($user['status']) && $user['status'] === 'active'): ?>
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                        <?php else: ?>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800"><?= htmlspecialchars($user['status']) ?></span>
                         <?php endif; ?>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <form method="POST" action="<?= url('admin/resetUserPassword') ?>" class="inline mr-1" id="resetForm_<?= $user['id'] ?>">
-                            <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                            <button type="button" onclick="showResetConfirmation(<?= $user['id'] ?>)" class="text-blue-600 hover:text-blue-800 font-medium cursor-pointer">
-                                Reset Password
-                            </button>
-                        </form>
-                        
-                        <form method="POST" action="<?= url('admin/suspendUser') ?>" class="inline mr-1" id="suspendForm_<?= $user['id'] ?>">
-                            <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                            <?php if (isset($user['status']) && $user['status'] === 'suspended'): ?>
-                                <button type="button" onclick="showSuspendConfirmation(<?= $user['id'] ?>, 'activate')" class="text-green-600 hover:text-green-800 font-medium cursor-pointer">
-                                    Activate
+                        <?php if ($user['has_account']): ?>
+                            <!-- Show user management actions only for users with accounts -->
+                            <form method="POST" action="<?= url('admin/resetUserPassword') ?>" class="inline mr-1" id="resetForm_<?= $user['id'] ?>">
+                                <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                                <button type="button" onclick="showResetConfirmation(<?= $user['id'] ?>)" class="text-blue-600 hover:text-blue-80 font-medium cursor-pointer">
+                                    Reset Password
                                 </button>
-                            <?php else: ?>
-                                <button type="button" onclick="showSuspendConfirmation(<?= $user['id'] ?>, 'suspend')" class="text-yellow-600 hover:text-yellow-800 font-medium cursor-pointer">
-                                    Suspend
+                            </form>
+                            
+                            <form method="POST" action="<?= url('admin/suspendUser') ?>" class="inline mr-1" id="suspendForm_<?= $user['id'] ?>">
+                                <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                                <?php if (isset($user['status']) && $user['status'] === 'suspended'): ?>
+                                    <button type="button" onclick="showSuspendConfirmation(<?= $user['id'] ?>, 'activate')" class="text-green-600 hover:text-green-800 font-medium cursor-pointer">
+                                        Activate
+                                    </button>
+                                <?php else: ?>
+                                    <button type="button" onclick="showSuspendConfirmation(<?= $user['id'] ?>, 'suspend')" class="text-yellow-600 hover:text-yellow-800 font-medium cursor-pointer">
+                                        Suspend
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+                            
+                            <form method="POST" action="<?= url('admin/deleteUser') ?>" class="inline" onsubmit="return confirm('Are you sure you want to delete this user account?');">
+                                <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+                                <button type="submit" class="text-red-600 hover:text-red-80 font-medium">
+                                    Delete
                                 </button>
-                            <?php endif; ?>
-                        </form>
-                        
-                        <form method="POST" action="<?= url('admin/deleteUser') ?>" class="inline" onsubmit="return confirm('Are you sure you want to delete this user?');">
-                            <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                            <button type="submit" class="text-red-600 hover:text-red-80 font-medium">
-                                Delete
-                            </button>
-                        </form>
+                            </form>
+                        <?php else: ?>
+                            <!-- For members without accounts, show a message or registration reminder -->
+                            <span class="text-gray-500 text-sm">No account</span>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
