@@ -1,0 +1,4 @@
+ID Member,Nama,NIM/NIP,Prodi,Email,HP,Tipe Member,Member Since,Expired
+MHS001,Ahmad Fauzi,123456789012345,Teknik Informatika,ahmad.fauzi@example.com,081234567890,mahasiswa,2023-01-15,2025-01-15
+MHS002,Siti Nurhaliza,123456789012346,Sistem Informasi,siti.nur@example.com,082345678901,mahasiswa,2023-02-20,2025-02-20
+MHS003,Budi Santoso,123456789012347,Manajemen,budi.santoso@example.com,083456789012,mahasiswa,2023-03-10,2025-03-10

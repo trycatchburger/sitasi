@@ -5,7 +5,7 @@
 return [
     'db' => [
         'host' => 'localhost',                  // Usually localhost in cPanel
-        'dbname' => 'skripsi_db',               // Database name for thesis submission system
+        'dbname' => 'lib_skripsi_db',               // Database name for thesis submission system
         'username' => 'root',                   // Database username (adjust as needed)
         'password' => '',                       // Database password (adjust as needed)
         'charset' => 'utf8mb4'

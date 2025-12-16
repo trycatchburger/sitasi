@@ -66,66 +66,66 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=id_member&order=<?= ($sort === 'id_member' && $order === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
+                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=id_member&order=<?= (($sort ?? 'id_member') === 'id_member' && ($order ?? 'desc') === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
                                     ID
-                                    <?php if ($sort === 'id_member'): ?>
-                                        <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                                    <?php if (($sort ?? 'id_member') === 'id_member'): ?>
+                                        <span class="ml-1"><?= ($order ?? 'desc') === 'asc' ? '↑' : '↓' ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=nama&order=<?= ($sort === 'nama' && $order === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
+                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=nama&order=<?= (($sort ?? 'id_member') === 'nama' && ($order ?? 'desc') === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
                                     Name
-                                    <?php if ($sort === 'nama'): ?>
-                                        <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                                    <?php if (($sort ?? 'id_member') === 'nama'): ?>
+                                        <span class="ml-1"><?= ($order ?? 'desc') === 'asc' ? '↑' : '↓' ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=prodi&order=<?= ($sort === 'prodi' && $order === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
+                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=prodi&order=<?= (($sort ?? 'id_member') === 'prodi' && ($order ?? 'desc') === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
                                     Prodi
-                                    <?php if ($sort === 'prodi'): ?>
-                                        <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                                    <?php if (($sort ?? 'id_member') === 'prodi'): ?>
+                                        <span class="ml-1"><?= ($order ?? 'desc') === 'asc' ? '↑' : '↓' ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=email&order=<?= ($sort === 'email' && $order === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
+                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=email&order=<?= (($sort ?? 'id_member') === 'email' && ($order ?? 'desc') === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
                                     Email
-                                    <?php if ($sort === 'email'): ?>
-                                        <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                                    <?php if (($sort ?? 'id_member') === 'email'): ?>
+                                        <span class="ml-1"><?= ($order ?? 'desc') === 'asc' ? '↑' : '↓' ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=no_hp&order=<?= ($sort === 'no_hp' && $order === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
+                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=no_hp&order=<?= (($sort ?? 'id_member') === 'no_hp' && ($order ?? 'desc') === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
                                     Phone
-                                    <?php if ($sort === 'no_hp'): ?>
-                                        <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                                    <?php if (($sort ?? 'id_member') === 'no_hp'): ?>
+                                        <span class="ml-1"><?= ($order ?? 'desc') === 'asc' ? '↑' : '↓' ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=tipe_member&order=<?= ($sort === 'tipe_member' && $order === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
+                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=tipe_member&order=<?= (($sort ?? 'id_member') === 'tipe_member' && ($order ?? 'desc') === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
                                     Type
-                                    <?php if ($sort === 'tipe_member'): ?>
-                                        <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                                    <?php if (($sort ?? 'id_member') === 'tipe_member'): ?>
+                                        <span class="ml-1"><?= ($order ?? 'desc') === 'asc' ? '↑' : '↓' ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=member_since&order=<?= ($sort === 'member_since' && $order === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
+                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=member_since&order=<?= (($sort ?? 'id_member') === 'member_since' && ($order ?? 'desc') === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
                                     Since
-                                    <?php if ($sort === 'member_since'): ?>
-                                        <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                                    <?php if (($sort ?? 'id_member') === 'member_since'): ?>
+                                        <span class="ml-1"><?= ($order ?? 'desc') === 'asc' ? '↑' : '↓' ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=expired&order=<?= ($sort === 'expired' && $order === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
+                                <a href="?search=<?= urlencode($search ?? '') ?>&page=<?= $currentPage ?? 1 ?>&sort=expired&order=<?= (($sort ?? 'id_member') === 'expired' && ($order ?? 'desc') === 'asc') ? 'desc' : 'asc' ?>" class="flex items-center">
                                     Expired
-                                    <?php if ($sort === 'expired'): ?>
-                                        <span class="ml-1"><?= $order === 'asc' ? '↑' : '↓' ?></span>
+                                    <?php if (($sort ?? 'id_member') === 'expired'): ?>
+                                        <span class="ml-1"><?= ($order ?? 'desc') === 'asc' ? '↑' : '↓' ?></span>
                                     <?php endif; ?>
                                 </a>
                             </th>
@@ -182,9 +182,11 @@
             </div>
             <?php endif; ?>
             
+            <?php if (isset($totalCount)): ?>
             <div class="mt-4 text-sm text-gray-600 text-center">
                 Showing <?= count($members) ?> of <?= $totalCount ?> member(s) in the database
             </div>
+            <?php endif; ?>
         <?php else: ?>
             <div class="text-center py-6 text-gray-500">
                 No members data found. Please import data using the form above.

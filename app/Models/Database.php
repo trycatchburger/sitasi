@@ -22,7 +22,7 @@ class Database
         $this->host = $config['host'] ?? 'localhost';
         $this->user = $config['username'] ?? 'root';
         $this->pass = $config['password'] ?? '';
-        $this->name = $config['dbname'] ?? 'skripsi_db';
+        $this->name = $config['dbname'] ?? 'lib_skripsi_db';
 
         try {
             $this->conn = new mysqli($this->host, $this->user, $this->pass, $this->name);
@@ -86,7 +86,7 @@ class Database
                 'host' => $_ENV['DB_HOST'] ?? 'localhost',
                 'username' => $_ENV['DB_USERNAME'] ?? 'root',
                 'password' => $_ENV['DB_PASSWORD'] ?? '',
-                'dbname' => $_ENV['DB_NAME'] ?? 'skripsi_db',
+                'dbname' => $_ENV['DB_NAME'] ?? 'lib_skripsi_db',
                 'charset' => 'utf8mb4'
             ];
         }

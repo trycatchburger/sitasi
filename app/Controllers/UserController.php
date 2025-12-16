@@ -41,8 +41,8 @@ class UserController extends Controller
                 $user = $this->findUserLoginByIdMember($id_member);
 
                 // Check if user exists and password is valid before verifying
-                if ($user && isset($user['password']) && $user['password'] &&
-                    password_verify($password, $user['password'])) {
+                if ($user && isset($user['password_hash']) && $user['password_hash'] &&
+                    password_verify($password, $user['password_hash'])) {
                     
                     // Additional check: verify that the user's id_member exists in the anggota table
                     $anggotaExists = $this->checkAnggotaExists($id_member);
@@ -443,7 +443,7 @@ class UserController extends Controller
         try {
             $db = \App\Models\Database::getInstance();
             
-            $stmt = $db->getConnection()->prepare("SELECT id, id_member, password FROM users_login WHERE id_member = ?");
+            $stmt = $db->getConnection()->prepare("SELECT id, id_member, password_hash FROM users_login WHERE id_member = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
             }
@@ -466,7 +466,7 @@ class UserController extends Controller
         try {
             $db = \App\Models\Database::getInstance();
             
-            $stmt = $db->getConnection()->prepare("INSERT INTO users_login (id_member, password, created_at) VALUES (?, ?, NOW())");
+            $stmt = $db->getConnection()->prepare("INSERT INTO users_login (id_member, password_hash, created_at) VALUES (?, ?, NOW())");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
             }
@@ -737,7 +737,7 @@ class UserController extends Controller
 
                 // Get user's current password hash from database
                 $db = \App\Models\Database::getInstance();
-                $stmt = $db->getConnection()->prepare("SELECT password FROM users_login WHERE id = ?");
+                $stmt = $db->getConnection()->prepare("SELECT password_hash FROM users_login WHERE id = ?");
                 if (!$stmt) {
                     throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
                 }
@@ -746,6 +746,13 @@ class UserController extends Controller
                 $stmt->execute();
                 $result = $stmt->get_result();
                 $user = $result->fetch_assoc();
+                
+                // Check if password_hash exists in the result
+                if (!$user || !isset($user['password_hash'])) {
+                    $_SESSION['error_message'] = "User password data not found.";
+                    header('Location: ' . url('user/change_password'));
+                    exit;
+                }
 
                 if (!$user) {
                     $_SESSION['error_message'] = "User not found.";
@@ -754,7 +761,7 @@ class UserController extends Controller
                 }
 
                 // Verify current password matches
-                if (!password_verify($current_password, $user['password'])) {
+                if (!password_verify($current_password, $user['password_hash'])) {
                     $_SESSION['error_message'] = "Current password is incorrect.";
                     header('Location: ' . url('user/change_password'));
                     exit;

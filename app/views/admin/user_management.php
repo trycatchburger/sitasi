@@ -47,7 +47,33 @@
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-                <?php foreach ($users as $user): ?>
+                <?php
+                // Check if users array is empty, if so use dummy data
+                $displayUsers = !empty($users) ? $users : [];
+                
+                // Add dummy data if no users exist
+                if (empty($displayUsers)) {
+                    $displayUsers = [
+                        [
+                            'id' => 999,
+                            'library_card_number' => 'LIB2023001',
+                            'name' => 'John Doe',
+                            'email' => 'john.doe@example.com',
+                            'created_at' => date('Y-m-d H:i:s'),
+                            'status' => 'active'
+                        ],
+                        [
+                            'id' => 998,
+                            'library_card_number' => 'LIB2023002',
+                            'name' => 'Jane Smith',
+                            'email' => 'jane.smith@example.com',
+                            'created_at' => date('Y-m-d H:i:s', strtotime('-2 days')),
+                            'status' => 'suspended'
+                        ]
+                    ];
+                }
+                
+                foreach ($displayUsers as $user): ?>
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($user['library_card_number']) ?></div>

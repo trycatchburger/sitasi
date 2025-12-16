@@ -1081,6 +1081,8 @@ class AdminController extends Controller {
             
             if ($columnResult->num_rows > 0) {
                 // Join users_login with anggota table to get complete user information
+                // Originally, the relationship was users_login.id_member to anggota.nim_nip
+                // So we'll use that relationship for proper matching
                 $sql = "SELECT ul.id, ul.id_member as library_card_number, COALESCE(a.nama, ul.name, 'N/A') as name, COALESCE(a.email, ul.email, 'N/A') as email, ul.created_at, COALESCE(ul.status, 'active') as status
                         FROM users_login ul
                         LEFT JOIN anggota a ON ul.id_member = a.nim_nip
@@ -1332,7 +1334,7 @@ class AdminController extends Controller {
         $offset = ($page - 1) * $perPage;
 
         // Validate sort column to prevent SQL injection
-        $allowedSortColumns = ['id_member', 'nama', 'prodi', 'email', 'no_hp', 'tipe_member', 'member_since', 'expired'];
+        $allowedSortColumns = ['id_member', 'nama', 'nim_nip', 'prodi', 'email', 'no_hp', 'tipe_member', 'member_since', 'expired'];
         if (!in_array($sort, $allowedSortColumns)) {
             $sort = 'id_member'; // Default sort column to show most recent first (assuming higher ID = more recent)
             $order = 'DESC'; // Default to descending order for most recent first
@@ -1349,35 +1351,31 @@ class AdminController extends Controller {
         $dataParams = [];
         
         if (!empty($search)) {
-            $whereClause = "WHERE id_member LIKE ? OR nama LIKE ? OR prodi LIKE ? OR email LIKE ?";
+            $whereClause = "WHERE id_member LIKE ? OR nama LIKE ? OR nim_nip LIKE ? OR prodi LIKE ? OR email LIKE ?";
             $searchParam = "%{$search}%";
-            $countParams = [$searchParam, $searchParam];
-            $dataParams = [$searchParam, $searchParam, $searchParam];
         }
 
         // Get total count for pagination
         $countSql = "SELECT COUNT(*) as total FROM anggota ";
         $countSql .= $whereClause;
         
+        $countStmt = $connection->prepare($countSql);
         if (!empty($search)) {
-            $countStmt = $connection->prepare($countSql);
-            $countStmt->bind_param("ssss", $countParams[0], $countParams[1], $countParams[2], $countParams[3]);
-            $countStmt->execute();
-            $countResult = $countStmt->get_result();
-        } else {
-            $countResult = $connection->query($countSql);
+            $countStmt->bind_param("sssss", $searchParam, $searchParam, $searchParam, $searchParam, $searchParam);
         }
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
         
         $totalCount = $countResult->fetch_assoc()['total'];
         $totalPages = ceil($totalCount / $perPage);
         
-        $sql = "SELECT id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired FROM anggota ";
+        $sql = "SELECT id_member, nama, nim_nip, prodi, email, no_hp, tipe_member, member_since, expired FROM anggota ";
         $sql .= $whereClause;
         $sql .= " ORDER BY {$sort} {$order} LIMIT ? OFFSET ?";
         
         $stmt = $connection->prepare($sql);
         if (!empty($search)) {
-            $stmt->bind_param("ssssi", $dataParams[0], $dataParams[1], $dataParams[2], $dataParams[3], $perPage, $offset);
+            $stmt->bind_param("sssssii", $searchParam, $searchParam, $searchParam, $searchParam, $searchParam, $perPage, $offset);
         } else {
             $stmt->bind_param("ii", $perPage, $offset);
         }
@@ -1401,6 +1399,168 @@ class AdminController extends Controller {
             'sort' => $sort,
             'order' => $order
         ]);
+    }
+    
+    public function editMember()
+    {
+        // Check if user is authenticated
+        if (!$this->isAdminLoggedIn()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Authentication required.']);
+            exit;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Validate CSRF token for security
+            $token = $_POST['csrf_token'] ?? '';
+            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid or expired CSRF token.']);
+                exit;
+            }
+            
+            $id_member = $_POST['id_member'] ?? '';
+            
+            if (empty($id_member)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Member ID is required.']);
+                exit;
+            }
+            
+            try {
+                $db = \App\Models\Database::getInstance();
+                $stmt = $db->getConnection()->prepare(
+                    "SELECT id_member, nama, nim_nip, prodi, email, no_hp, tipe_member, member_since, expired
+                     FROM anggota
+                     WHERE id_member = ?"
+                );
+                
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+                }
+                
+                $stmt->bind_param("s", $id_member);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                if ($result && $member = $result->fetch_assoc()) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'member' => $member]);
+                } else {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Member not found.']);
+                }
+                
+                $stmt->close();
+            } catch (DatabaseException $e) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Database error occurred while fetching member data.']);
+            } catch (Exception $e) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'An error occurred while fetching member data.']);
+            }
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+        }
+    }
+    
+    public function updateMember()
+    {
+        // Check if user is authenticated
+        if (!$this->isAdminLoggedIn()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Authentication required.']);
+            exit;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Validate CSRF token for security
+            $token = $_POST['csrf_token'] ?? '';
+            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid or expired CSRF token.']);
+                exit;
+            }
+            
+            $id_member = $_POST['id_member'] ?? '';
+            $nama = trim($_POST['nama'] ?? '');
+            $prodi = trim($_POST['prodi'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $no_hp = trim($_POST['no_hp'] ?? '');
+            $tipe_member = trim($_POST['tipe_member'] ?? '');
+            $member_since = trim($_POST['member_since'] ?? '');
+            $expired = trim($_POST['expired'] ?? '');
+            
+            // Validate required fields
+            if (empty($id_member) || empty($nama)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'ID Member and Name are required.']);
+                exit;
+            }
+            
+            // Validate email format
+            if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid email format.']);
+                exit;
+            }
+            
+            // Validate date formats
+            if (!empty($member_since) && !\DateTime::createFromFormat('Y-m-d', $member_since)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid member since date format.']);
+                exit;
+            }
+            
+            if (!empty($expired) && !\DateTime::createFromFormat('Y-m-d', $expired)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid expired date format.']);
+                exit;
+            }
+            
+            try {
+                $db = \App\Models\Database::getInstance();
+                
+                // Update the member in the database
+                $stmt = $db->getConnection()->prepare(
+                    "UPDATE anggota
+                     SET nama = ?, prodi = ?, email = ?, no_hp = ?, tipe_member = ?, member_since = ?, expired = ?
+                     WHERE id_member = ?"
+                );
+                
+                if (!$stmt) {
+                    throw new DatabaseException("Statement preparation failed: " . $db->getConnection()->error);
+                }
+                
+                $stmt->bind_param("ssssssss", $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired, $id_member);
+                
+                if ($stmt->execute()) {
+                    // Check if any rows were affected
+                    if ($stmt->affected_rows > 0) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => true, 'message' => 'Member updated successfully.']);
+                    } else {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => 'No changes were made to the member.']);
+                    }
+                } else {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Failed to update member.']);
+                }
+                
+                $stmt->close();
+            } catch (DatabaseException $e) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Database error occurred while updating member.']);
+            } catch (Exception $e) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'An error occurred while updating member.']);
+            }
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+        }
     }
     
     public function prosesImportAnggota()
@@ -1433,7 +1593,7 @@ class AdminController extends Controller {
                 $inputFileName = $file['tmp_name'];
                 $spreadsheet = IOFactory::load($inputFileName);
                 $worksheet = $spreadsheet->getActiveSheet();
-                $rows = $worksheet->toArray(null, true, true, true);
+                $rows = $worksheet->toArray();
 
                 // Skip header row (assuming first row is header)
                 array_shift($rows); // Remove header row
@@ -1446,19 +1606,18 @@ class AdminController extends Controller {
                 $errors = [];
 
                 foreach ($rows as $rowIndex => $row) {
-                    // Assuming columns are: id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired
+                    $id_member = isset($row[0]) ? trim($row[0]) : '';
+                    $nama = isset($row[1]) ? trim($row[1]) : '';
+                    $nim_nip = isset($row[2]) ? trim($row[2]) : '';
+                    $prodi = isset($row[3]) ? trim($row[3]) : '';
+                    $email = isset($row[4]) ? trim($row[4]) : '';
+                    $no_hp = isset($row[5]) ? trim($row[5]) : '';
+                    $tipe_member = isset($row[6]) ? trim($row[6]) : '';
+                    $member_since = isset($row[7]) ? trim($row[7]) : '';
+                    $expired = isset($row[8]) ? trim($row[8]) : '';
                     
-                    $id_member = trim($row['A'] ?? $row[0] ?? '');
-                    $nama = trim($row['B'] ?? $row[1] ?? '');
-                    $prodi = trim($row['C'] ?? $row[2] ?? '');
-                    $email = trim($row['D'] ?? $row[3] ?? '');
-                    $no_hp = trim($row['E'] ?? $row[4] ?? '');
-                    $tipe_member = trim($row['F'] ?? $row[5] ?? '');
-                    $member_since = trim($row['G'] ?? $row[6] ?? '');
-                    $expired = trim($row['H'] ?? $row[7] ?? '');
-                    
-                    // Skip empty rows
-                    if (empty($id_member) && empty($nama) && empty($email)) {
+                    // Skip empty rows - check if all key fields are empty
+                    if (empty($id_member) && empty($nama) && empty($nim_nip) && empty($email)) {
                         continue;
                     }
 
@@ -1468,34 +1627,72 @@ class AdminController extends Controller {
                         $errors[] = "Row " . ($rowIndex + 1) . ": Missing required fields (ID Member or Nama)";
                         continue;
                     }
-
-                    // Check if member already exists
+                    
+                    // If nim_nip is empty, use id_member as nim_nip
+                    if (empty($nim_nip)) {
+                        $nim_nip = $id_member;
+                    }
+                    
+                    // Validate member_since and expired dates
+                    if (!empty($member_since)) {
+                        // Try to parse the date - it might be in different formats
+                        $date = \DateTime::createFromFormat('Y-m-d', $member_since);
+                        if (!$date) {
+                            $date = \DateTime::createFromFormat('d/m/Y', $member_since);
+                        }
+                        if (!$date) {
+                            $date = \DateTime::createFromFormat('m/d/Y', $member_since);
+                        }
+                        if ($date) {
+                            $member_since = $date->format('Y-m-d');
+                        } else {
+                            $member_since = null; // or set to current date
+                        }
+                    }
+                    
+                    if (!empty($expired)) {
+                        // Try to parse the date - it might be in different formats
+                        $date = \DateTime::createFromFormat('Y-m-d', $expired);
+                        if (!$date) {
+                            $date = \DateTime::createFromFormat('d/m/Y', $expired);
+                        }
+                        if (!$date) {
+                            $date = \DateTime::createFromFormat('m/d/Y', $expired);
+                        }
+                        if ($date) {
+                            $expired = $date->format('Y-m-d');
+                        } else {
+                            $expired = null; // or set to a default expiry date
+                        }
+                    }
+                    
+                    // Check if member already exists by id_member
                     $checkStmt = $connection->prepare("SELECT id_member FROM anggota WHERE id_member = ?");
                     $checkStmt->bind_param("s", $id_member);
                     $checkStmt->execute();
                     $result = $checkStmt->get_result();
                     if ($result->num_rows > 0) {
                         // Update existing member
-                        $updateStmt = $connection->prepare("UPDATE anggota SET nama = ?, prodi = ?, email = ?, no_hp = ?, tipe_member = ?, member_since = ?, expired = ? WHERE id_member = ?");
-                        $updateStmt->bind_param("ssssssss", $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired, $id_member);
+                        $updateStmt = $connection->prepare("UPDATE anggota SET nama = ?, nim_nip = ?, prodi = ?, email = ?, no_hp = ?, tipe_member = ?, member_since = ?, expired = ? WHERE id_member = ?");
+                        $updateStmt->bind_param("sssssssss", $nama, $nim_nip, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired, $id_member);
                     
                         if ($updateStmt->execute()) {
                             $successCount++;
                         } else {
                             $errorCount++;
-                            $errors[] = "Row " . ($rowIndex + 1) . ": Failed to update member with ID: $id_member";
+                            $errors[] = "Row " . ($rowIndex + 1) . ": Failed to update member with ID: $id_member. Error: " . $connection->error;
                         }
                         $updateStmt->close();
                     } else {
                         // Insert new member
-                        $insertStmt = $connection->prepare("INSERT INTO anggota (id_member, nama, prodi, email, no_hp, tipe_member, member_since, expired) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                        $insertStmt->bind_param("ssssss", $id_member, $nama, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired);
+                        $insertStmt = $connection->prepare("INSERT INTO anggota (id_member, nama, nim_nip, prodi, email, no_hp, tipe_member, member_since, expired) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        $insertStmt->bind_param("sssssssss", $id_member, $nama, $nim_nip, $prodi, $email, $no_hp, $tipe_member, $member_since, $expired);
                         
                         if ($insertStmt->execute()) {
                             $successCount++;
                         } else {
                             $errorCount++;
-                            $errors[] = "Row " . ($rowIndex + 1) . ": Failed to insert member with ID: $id_member";
+                            $errors[] = "Row " . ($rowIndex + 1) . ": Failed to insert member with ID: $id_member. Error: " . $connection->error;
                         }
                         $insertStmt->close();
                     }

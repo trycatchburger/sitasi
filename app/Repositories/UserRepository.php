@@ -9,7 +9,7 @@ class UserRepository extends BaseRepository
     public function findByIdMember(string $idMember): ?array
     {
         try {
-            $stmt = $this->conn->prepare("SELECT id, id_member, password, status, username, email, name FROM users_login WHERE id_member = ?");
+            $stmt = $this->conn->prepare("SELECT id, id_member, password_hash, status, username, email, name FROM users_login WHERE id_member = ?");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -26,7 +26,7 @@ class UserRepository extends BaseRepository
     {
         try {
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $this->conn->prepare("INSERT INTO users_login (id_member, password, created_at) VALUES (?, ?, NOW())");
+            $stmt = $this->conn->prepare("INSERT INTO users_login (id_member, password_hash, created_at) VALUES (?, ?, NOW())");
             if (!$stmt) {
                 throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
             }
@@ -83,7 +83,9 @@ class UserRepository extends BaseRepository
 
             foreach ($data as $field => $value) {
                 if (in_array($field, $allowed_fields)) {
-                    $set_parts[] = "{$field} = ?";
+                    // Map 'password' field to 'password_hash' in the database
+                    $db_field = $field === 'password' ? 'password_hash' : $field;
+                    $set_parts[] = "{$db_field} = ?";
                     $params[] = $value;
                     $param_types .= is_int($value) ? 'i' : 's';
                 }
