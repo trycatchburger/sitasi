@@ -1676,9 +1676,11 @@ class AdminController extends Controller {
                         
                         if ($userResult->num_rows === 0) {
                             // Create a new user account with default password and active status
+                            // Generate a unique username based on id_member to avoid duplicate entry errors
+                            $username = $id_member; // Use id_member as username to ensure uniqueness
                             $defaultPassword = password_hash('123456', PASSWORD_DEFAULT);
-                            $userInsertStmt = $connection->prepare("INSERT INTO users_login (id_member, password_hash, status, name, email) VALUES (?, ?, 'active', ?, ?)");
-                            $userInsertStmt->bind_param("ssss", $id_member, $defaultPassword, $nama, $email);
+                            $userInsertStmt = $connection->prepare("INSERT INTO users_login (id_member, username, password_hash, status, name, email) VALUES (?, ?, ?, 'active', ?, ?)");
+                            $userInsertStmt->bind_param("sssss", $id_member, $username, $defaultPassword, $nama, $email);
                             
                             if (!$userInsertStmt->execute()) {
                                 $errorCount++;
