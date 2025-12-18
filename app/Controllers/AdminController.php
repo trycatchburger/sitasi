@@ -2001,4 +2001,81 @@ public function printLabel()
            exit;
        }
    }
+
+   public function changePassword() {
+       // Run authentication middleware
+       $this->runMiddleware(['auth']);
+
+       try {
+           if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+               // Run CSRF middleware
+               $this->runMiddleware(['csrf']);
+
+               $currentPassword = $_POST['current_password'] ?? '';
+               $newPassword = $_POST['new_password'] ?? '';
+               $confirmNewPassword = $_POST['confirm_new_password'] ?? '';
+
+               // Validate input
+               if (empty($currentPassword) || empty($newPassword) || empty($confirmNewPassword)) {
+                   $_SESSION['error_message'] = 'All fields are required.';
+                   $this->render('admin/change_password', ['csrf_token' => $this->generateCsrfToken()]);
+                   return;
+               }
+
+               if ($newPassword !== $confirmNewPassword) {
+                   $_SESSION['error_message'] = 'New password and confirmation do not match.';
+                   $this->render('admin/change_password', ['csrf_token' => $this->generateCsrfToken()]);
+                   return;
+               }
+
+               if (strlen($newPassword) < 8) {
+                   $_SESSION['error_message'] = 'New password must be at least 8 characters long.';
+                   $this->render('admin/change_password', ['csrf_token' => $this->generateCsrfToken()]);
+                   return;
+               }
+
+               // Get current admin
+               $adminModel = new Admin();
+               $admin = $adminModel->findById($_SESSION['admin_id']);
+
+               if (!$admin) {
+                   $_SESSION['error_message'] = 'Admin not found.';
+                   $this->render('admin/change_password', ['csrf_token' => $this->generateCsrfToken()]);
+                   return;
+               }
+
+               // Verify current password
+               if (!password_verify($currentPassword, $admin['password_hash'])) {
+                   $_SESSION['error_message'] = 'Current password is incorrect.';
+                   $this->render('admin/change_password', ['csrf_token' => $this->generateCsrfToken()]);
+                   return;
+               }
+
+               // Update password
+               $hashedNewPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+               $result = $adminModel->updatePassword($admin['id'], $hashedNewPassword);
+
+               if ($result) {
+                   $_SESSION['success_message'] = 'Password changed successfully!';
+                   header('Location: ' . url('admin/dashboard'));
+                   exit;
+               } else {
+                   $_SESSION['error_message'] = 'Failed to update password.';
+                   $this->render('admin/change_password', ['csrf_token' => $this->generateCsrfToken()]);
+                   return;
+               }
+           } else {
+               // Render the change password form for GET requests
+               $this->render('admin/change_password', ['csrf_token' => $this->generateCsrfToken()]);
+           }
+       } catch (AuthenticationException $e) {
+           $this->render('admin/change_password', ['error' => $e->getMessage()]);
+       } catch (ValidationException $e) {
+           $this->render('admin/change_password', ['error' => $e->getMessage(), 'errors' => $e->getErrors()]);
+       } catch (DatabaseException $e) {
+           $this->render('admin/change_password', ['error' => "Database error occurred while changing password."]);
+       } catch (Exception $e) {
+           $this->render('admin/change_password', ['error' => "An error occurred: " . $e->getMessage()]);
+       }
+   }
 }

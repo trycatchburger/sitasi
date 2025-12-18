@@ -153,8 +153,15 @@
                             </svg>
                             <?= htmlspecialchars($_SESSION['admin_username'] ?? 'Admin') ?>
                         </button>
-                        <div class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform group-hover:translate-y-1">
-                            <a href="<?= url('admin/logout') ?>" class="block px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-800 border-b border-gray-100 last:border-b-0 transition-colors duration-150 first:rounded-t-md last:rounded-b-md">
+                        <div class="absolute right-0 mt-2 w-48 bg-white border-gray-200 rounded-md shadow-lg z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform group-hover:translate-y-1">
+                            <a href="<?= url('admin/change_password') ?>" class="block px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-800 border-b border-gray-100 transition-colors duration-150 first:rounded-t-md">
+                                <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M15 7a2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                </svg>
+                                Ubah Password
+                            </a>
+                            <a href="<?= url('admin/logout') ?>" class="block px-4 py-3 text-gray-700 hover:bg-green-50 hover:text-green-800 border-b border-gray-100 last:border-b-0 transition-colors duration-150 last:rounded-b-md">
                                 <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>

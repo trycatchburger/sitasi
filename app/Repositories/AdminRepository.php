@@ -33,6 +33,28 @@ class AdminRepository extends BaseRepository
     }
     
     /**
+     * Find admin by ID
+     * @param int $id Admin ID
+     * @return array|null
+     * @throws DatabaseException
+     */
+    public function findById(int $id): ?array
+    {
+        try {
+            $stmt = $this->conn->prepare("SELECT id, username, password_hash FROM admins WHERE id = ?");
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            return $result->fetch_assoc();
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while finding admin by ID: " . $e->getMessage());
+        }
+    }
+    
+    /**
      * Create a new admin user
      * @param string $username Admin username
      * @param string $password Admin password
@@ -95,6 +117,27 @@ class AdminRepository extends BaseRepository
             return $stmt->execute();
         } catch (\Exception $e) {
             throw new DatabaseException("Error while deleting admin: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Update admin password by ID
+     * @param int $id Admin ID
+     * @param string $password_hash New password hash
+     * @return bool
+     * @throws DatabaseException
+     */
+    public function updatePassword(int $id, string $password_hash): bool
+    {
+        try {
+            $stmt = $this->conn->prepare("UPDATE admins SET password_hash = ? WHERE id = ?");
+            if (!$stmt) {
+                throw new DatabaseException("Statement preparation failed: " . $this->conn->error);
+            }
+            $stmt->bind_param("si", $password_hash, $id);
+            return $stmt->execute();
+        } catch (\Exception $e) {
+            throw new DatabaseException("Error while updating admin password: " . $e->getMessage());
         }
     }
 }

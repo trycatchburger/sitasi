@@ -126,12 +126,23 @@ if ($controller_name === 'user' && isset($segments[1]) && $segments[1] === 'subm
         case 'dashboard':
         case 'logout':
         case 'confirmSubmissionAssociation':
+        case 'changePassword': // Add changePassword to user routes
             call_user_func_array([$controller, $method_name], array_slice($segments, 2));
             break;
         default:
             http_response_code(404);
             require_once __DIR__ . '/../app/views/errors/404.php';
             break;
+    }
+} else if ($controller_name === 'admin') {
+    // Add route handling for admin routes
+    $controller = new \App\Controllers\AdminController();
+    // Map admin-specific methods
+    if (method_exists($controller, $method_name)) {
+        call_user_func_array([$controller, $method_name], array_slice($segments, 2));
+    } else {
+        http_response_code(404);
+        require_once __DIR__ . '/../app/views/errors/404.php';
     }
 } else if ($controller_name === 'referensi') {
     // Handle referensi route - this is a special case that maps to SubmissionController

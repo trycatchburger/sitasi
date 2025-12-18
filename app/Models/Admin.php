@@ -58,4 +58,25 @@ class Admin
     {
         return $this->repository->getAll();
     }
+    
+    /**
+     * Find admin by ID
+     * @param int $id Admin ID
+     * @return array|null The admin data or null if not found.
+     */
+    public function findById(int $id): ?array
+    {
+        return $this->repository->findById($id);
+    }
+    
+    /**
+     * Update admin password
+     * @param int $id Admin ID
+     * @param string $password_hash New password hash
+     * @return bool True if successful, false otherwise.
+     */
+    public function updatePassword(int $id, string $password_hash): bool
+    {
+        return $this->repository->updatePassword($id, $password_hash);
+    }
 }
