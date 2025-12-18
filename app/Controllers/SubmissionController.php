@@ -95,6 +95,32 @@ class SubmissionController extends Controller {
 
     public function create() {
         try {
+            // Verify reCAPTCHA
+            $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
+            if (empty($recaptchaResponse)) {
+                throw new ValidationException([], "Please complete the reCAPTCHA verification.");
+            }
+            
+            // Verify reCAPTCHA with Google's API
+            $config_path = dirname(__DIR__, 2) . '/config/recaptcha.php'; // Go up 2 levels from Controllers directory
+            if (file_exists($config_path)) {
+                $recaptchaConfig = include $config_path;
+                if (is_array($recaptchaConfig)) {
+                    $recaptchaSecret = $recaptchaConfig['secret_key'] ?? 'your_secret_key_here';
+                } else {
+                    throw new ValidationException([], "reCAPTCHA configuration error.");
+                }
+            } else {
+                throw new ValidationException([], "reCAPTCHA configuration file not found.");
+            }
+            
+            $recaptchaVerify = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret={$recaptchaSecret}&response={$recaptchaResponse}");
+            $recaptchaData = json_decode($recaptchaVerify, true);
+            
+            if (!$recaptchaData['success']) {
+                throw new ValidationException([], "reCAPTCHA verification failed. Please try again.");
+            }
+
             // Get user details to check if they're allowed to submit skripsi
             $userDetails = null;
             if (isset($_SESSION['user_library_card_number'])) {
@@ -174,6 +200,32 @@ class SubmissionController extends Controller {
 
     public function createMaster() {
         try {
+            // Verify reCAPTCHA
+            $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
+            if (empty($recaptchaResponse)) {
+                throw new ValidationException([], "Please complete the reCAPTCHA verification.");
+            }
+            
+            // Verify reCAPTCHA with Google's API
+            $config_path = dirname(__DIR__, 2) . '/config/recaptcha.php'; // Go up 2 levels from Controllers directory
+            if (file_exists($config_path)) {
+                $recaptchaConfig = include $config_path;
+                if (is_array($recaptchaConfig)) {
+                    $recaptchaSecret = $recaptchaConfig['secret_key'] ?? 'your_secret_key_here';
+                } else {
+                    throw new ValidationException([], "reCAPTCHA configuration error.");
+                }
+            } else {
+                throw new ValidationException([], "reCAPTCHA configuration file not found.");
+            }
+            
+            $recaptchaVerify = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret={$recaptchaSecret}&response={$recaptchaResponse}");
+            $recaptchaData = json_decode($recaptchaVerify, true);
+            
+            if (!$recaptchaData['success']) {
+                throw new ValidationException([], "reCAPTCHA verification failed. Please try again.");
+            }
+
             // Get user details to check if they're allowed to submit tesis
             $userDetails = null;
             if (isset($_SESSION['user_library_card_number'])) {
@@ -253,6 +305,32 @@ class SubmissionController extends Controller {
 
     public function createJournal() {
         try {
+            // Verify reCAPTCHA
+            $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
+            if (empty($recaptchaResponse)) {
+                throw new ValidationException([], "Please complete the reCAPTCHA verification.");
+            }
+            
+            // Verify reCAPTCHA with Google's API
+            $config_path = dirname(__DIR__, 3) . '/config/recaptcha.php'; // Go up 3 levels from Controllers directory
+            if (file_exists($config_path)) {
+                $recaptchaConfig = include $config_path;
+                if (is_array($recaptchaConfig)) {
+                    $recaptchaSecret = $recaptchaConfig['secret_key'] ?? 'your_secret_key_here';
+                } else {
+                    throw new ValidationException([], "reCAPTCHA configuration error.");
+                }
+            } else {
+                throw new ValidationException([], "reCAPTCHA configuration file not found.");
+            }
+            
+            $recaptchaVerify = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret={$recaptchaSecret}&response={$recaptchaResponse}");
+            $recaptchaData = json_decode($recaptchaVerify, true);
+            
+            if (!$recaptchaData['success']) {
+                throw new ValidationException([], "reCAPTCHA verification failed. Please try again.");
+            }
+
             // Get user details to verify user type
             $userDetails = null;
             if (isset($_SESSION['user_library_card_number'])) {
@@ -279,7 +357,7 @@ class SubmissionController extends Controller {
             // Validate form data and files
             $isFormValid = $validationService->validateJournalSubmissionForm($_POST);
             $areFilesValid = $validationService->validateJournalSubmissionFiles($_FILES);
-
+            
             if (!$isFormValid || !$areFilesValid) {
                 $errors = $validationService->getErrors();
                 throw new ValidationException($errors, "There were issues with the information you provided. Please check your input and try again.");

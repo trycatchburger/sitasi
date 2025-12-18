@@ -16,6 +16,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         /* Applying the Inter font family as the default */
         body {
@@ -648,6 +650,19 @@
                 class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
               <input type="password" name="password" placeholder="Password"
                 class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+              <div class="g-recaptcha" data-sitekey="<?php
+              $config_path = dirname(__DIR__, 2) . '/config/recaptcha.php'; // Go up 2 levels from views directory
+              if (file_exists($config_path)) {
+                  $config = include $config_path; // Use include instead of require_once to prevent errors
+                  if (is_array($config) && isset($config['site_key'])) {
+                      echo htmlspecialchars($config['site_key']);
+                  } else {
+                      echo 'your_site_key_here';
+                  }
+              } else {
+                  echo 'your_site_key_here';
+              }
+              ?>" data-form-type="user"></div>
               <button type="submit"
                 class="w-full bg-green-700 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-80 transition">
                 Login
@@ -662,6 +677,19 @@
           class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
         <input type="password" name="password" placeholder="Password"
           class="w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-green-500 outline-none">
+        <div class="g-recaptcha" data-sitekey="<?php
+        $config_path = dirname(__DIR__, 2) . '/config/recaptcha.php'; // Go up 2 levels from views directory
+        if (file_exists($config_path)) {
+            $config = include $config_path; // Use include instead of require_once to prevent errors
+            if (is_array($config) && isset($config['site_key'])) {
+                echo htmlspecialchars($config['site_key']);
+            } else {
+                echo 'your_site_key_here';
+            }
+        } else {
+            echo 'your_site_key_here';
+        }
+        ?>" data-form-type="admin"></div>
         <button type="submit"
           class="w-full bg-green-800 text-white py-2 rounded-md text-sm font-semibold hover:bg-green-900 transition">
           Login Admin
@@ -681,12 +709,53 @@
   const formUser = document.getElementById('form-user');
   const formAdmin = document.getElementById('form-admin');
 
+  // Function to initialize reCAPTCHA for the active form
+  function initializeRecaptcha() {
+    // Wait for grecaptcha to be fully loaded
+    if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.render === 'function') {
+      // Get the currently visible form
+      const visibleForm = document.querySelector('form:not(.hidden)');
+      if (visibleForm) {
+        const recaptchaContainer = visibleForm.querySelector('.g-recaptcha');
+        if (recaptchaContainer && !recaptchaContainer.hasAttribute('data-recaptcha-rendered')) {
+          const siteKey = recaptchaContainer.getAttribute('data-sitekey');
+          if (siteKey) {
+            // Render the reCAPTCHA widget after a small delay to ensure DOM is ready
+            setTimeout(() => {
+              try {
+                grecaptcha.render(recaptchaContainer, {
+                  'sitekey': siteKey
+                });
+                recaptchaContainer.setAttribute('data-recaptcha-rendered', 'true');
+              } catch (error) {
+                console.error('Error rendering reCAPTCHA:', error);
+              }
+            }, 100);
+          }
+        }
+      }
+    } else {
+      // If grecaptcha is not ready yet, try again after a delay
+      setTimeout(initializeRecaptcha, 500);
+    }
+  }
+
   // Buka popup
-  openBtn.addEventListener('click', () => popup.classList.remove('hidden'));
+  openBtn.addEventListener('click', () => {
+    popup.classList.remove('hidden');
+    // Initialize reCAPTCHA when popup is opened
+    setTimeout(initializeRecaptcha, 100); // Small delay to ensure popup is visible
+  });
 
   // Tutup popup
-  closeBtn.addEventListener('click', () => popup.classList.add('hidden'));
-  popup.addEventListener('click', (e) => { if (e.target === popup) popup.classList.add('hidden'); });
+  closeBtn.addEventListener('click', () => {
+    popup.classList.add('hidden');
+  });
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) {
+      popup.classList.add('hidden');
+    }
+  });
 
   // Fungsi aktifkan tab
   function activateTab(activeTab, inactiveTab, showForm, hideForm) {
@@ -696,10 +765,13 @@
     inactiveTab.classList.remove('border-green-600', 'text-green-700');
     showForm.classList.remove('hidden');
     hideForm.classList.add('hidden');
+    
+    // Initialize reCAPTCHA for the newly shown form
+    setTimeout(initializeRecaptcha, 100);
   }
 
   // Event tab
- tabUser.addEventListener('click', () => {
+tabUser.addEventListener('click', () => {
     activateTab(tabUser, tabAdmin, formUser, formAdmin);
   });
 tabAdmin.addEventListener('click', () => {

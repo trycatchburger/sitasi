@@ -28,6 +28,32 @@ class UserController extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
+                // Verify reCAPTCHA
+                $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
+                if (empty($recaptchaResponse)) {
+                    throw new ValidationException([], "Please complete the reCAPTCHA verification.");
+                }
+                
+                // Verify reCAPTCHA with Google's API
+                $config_path = dirname(__DIR__, 2) . '/config/recaptcha.php'; // Go up 2 levels from Controllers directory
+                if (file_exists($config_path)) {
+                    $recaptchaConfig = include $config_path;
+                    if (is_array($recaptchaConfig)) {
+                        $recaptchaSecret = $recaptchaConfig['secret_key'] ?? 'your_secret_key_here';
+                    } else {
+                        throw new ValidationException([], "reCAPTCHA configuration error.");
+                    }
+                } else {
+                    throw new ValidationException([], "reCAPTCHA configuration file not found.");
+                }
+                
+                $recaptchaVerify = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret={$recaptchaSecret}&response={$recaptchaResponse}");
+                $recaptchaData = json_decode($recaptchaVerify, true);
+                
+                if (!$recaptchaData['success']) {
+                    throw new ValidationException([], "reCAPTCHA verification failed. Please try again.");
+                }
+
                 // Get form data - now using id_member instead of library_card_number
                 $id_member = trim($_POST['library_card_number'] ?? '');  // Using same field name for now
                 $password = $_POST['password'] ?? '';

@@ -7,6 +7,9 @@ require_once __DIR__ . '/vendor/autoload.php';
 $config = require_once __DIR__ . '/config.php';
 $basePath = $config['base_path'] ?? '';
 
+// Load helper functions
+require_once __DIR__ . '/app/helpers/url.php';
+
 // Configure session security BEFORE starting the session
 \App\Config\SessionConfig::configure();
 

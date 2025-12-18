@@ -82,9 +82,22 @@
                 </div>
 
                 <div class="pt-4">
+                    <div class="g-recaptcha" data-sitekey="<?php
+                    $config_path = dirname(__DIR__, 2) . '/config/recaptcha.php'; // Go up 2 levels from views directory
+                    if (file_exists($config_path)) {
+                        $config = include $config_path;
+                        if (is_array($config) && isset($config['site_key'])) {
+                            echo htmlspecialchars($config['site_key']);
+                        } else {
+                            echo 'your_site_key_here';
+                        }
+                    } else {
+                        echo 'your_site_key_here';
+                    }
+                    ?>"></div>
                     <button
                         type="submit"
-                        class="w-full flex items-center justify-center gap-2 bg-[#113f2d] hover:bg-[#0d3325] text-white font-semibold py-2 px-4 rounded-md transition duration-200">
+                        class="w-full flex items-center justify-center gap-2 bg-[#113f2d] hover:bg-[#0d3325] text-white font-semibold py-2 px-4 rounded-md transition duration-200 mt-4">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 16l-4-4m0 0l4-4m-4 4h14" />
                         </svg>
